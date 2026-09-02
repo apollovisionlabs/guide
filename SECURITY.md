@@ -28,8 +28,8 @@ the real reporting channel. Treat it as an open task, not as a documented proces
 | --- | --- |
 | 0.1.x | Yes, the only released line. |
 
-Both packages are at `0.1.0` and have never been published to a registry (see
-[INFRA.md](INFRA.md)). Pre-1.0, fixes land on the current minor only.
+Both packages are published at `0.1.0` (see [INFRA.md](INFRA.md)). That first version was
+published by hand rather than by the release workflow, and carries no provenance attestation. Pre-1.0, fixes land on the current minor only.
 
 ## What these packages touch
 

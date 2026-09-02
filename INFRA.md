@@ -120,13 +120,18 @@ Everything below is what *exists*, not what is planned.
   one time act; every later release goes through the workflow.
 - **A git remote exists.** `origin` points at `https://github.com/apollovisionlabs/guide`, which
   is also the `repository` URL in both manifests.
-- **Never executed for real**: publishing has only ever been exercised as a dry run.
-  `changeset version` and `changeset publish` have never run against a registry, so the first
-  successful workflow run will publish `0.1.0` for both packages.
-- **Provenance is expected but unverified.** Trusted publishing normally attaches a provenance
-  attestation, and pnpm 10.20.0 exposes no provenance option of its own. Whether an attestation is
-  actually produced through `pnpm changeset publish` must be checked on the npm page of the first
-  package published this way, and this document corrected to say what was observed.
+- **Both packages are published at `0.1.0`**, on 2026-09-02, by hand from a maintainer's machine,
+  which is the bootstrap the previous point describes. A consumer install was checked against the
+  registry: both module formats resolve, the type declarations typecheck under `strict`, and the
+  dependency of the MUI package on the core one was rewritten from the workspace protocol to
+  `0.1.0` in the published manifest. That rewrite is done by `pnpm publish` and not by
+  `npm publish`, so the bootstrap has to use pnpm.
+- **`changeset version` and `changeset publish` have still never run against a registry.** The
+  first workflow release will be their first real execution.
+- **The published `0.1.0` carries no provenance attestation**, checked on the registry after the
+  fact. That is expected: an attestation comes from a publish that authenticates through OIDC, and
+  the bootstrap was manual. Whether the workflow path produces one is still unobserved, and must be
+  checked on the registry after the first release published by the workflow.
 - **The pnpm major matters.** OIDC publishing is reported working in pnpm 10, which is the version
   pinned here, and broken in pnpm 11.0.8. Treat a pnpm major upgrade as a change that has to be
   revalidated against the registry, not as routine maintenance.

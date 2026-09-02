@@ -4,6 +4,11 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Published `@apollovisionlabs/guide-core@0.1.0` and `@apollovisionlabs/guide-mui@0.1.0` by hand,
+  the bootstrap that trusted publishing cannot do. Corrected `INFRA.md` and `SECURITY.md`,
+  which said the packages had never reached a registry, and recorded what was verified against
+  it: both module formats resolve, the declarations typecheck under `strict`, the workspace
+  dependency was rewritten to `0.1.0`, and there is no provenance attestation on this version.
 - Replaced the release workflow's stored `NPM_TOKEN` with npm trusted publishing, after npm
   advised against long lived tokens for continuous integration. Recorded as
   [ADR 0014](adr/0014-authenticate-releases-with-trusted-publishing.md), which supersedes the
