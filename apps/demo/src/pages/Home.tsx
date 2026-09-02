@@ -17,7 +17,7 @@ export function Home() {
       <Button
         variant="contained"
         data-testid="start-tour"
-        onClick={() => tour.start({ resume: false })}
+        onClick={() => tour.start()}
       >
         Start the tour
       </Button>
