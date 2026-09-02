@@ -139,10 +139,11 @@ Everything below is what *exists*, not what is planned.
   `npm publish`, so the bootstrap has to use pnpm.
 - **`changeset version` and `changeset publish` have still never run against a registry.** The
   first workflow release will be their first real execution.
-- **The published `0.1.0` carries no provenance attestation**, checked on the registry after the
-  fact. That is expected: an attestation comes from a publish that authenticates through OIDC, and
-  the bootstrap was manual. The workflow now asks npm for one, and whether it is actually attached
-  must be checked on the registry after the first release the workflow publishes.
+- **Provenance works, and this is observed rather than expected.** `0.1.1` was published by the
+  workflow on 2026-09-02 and both packages carry a signed provenance attestation, checked on the
+  registry after the fact and recorded in the Sigstore transparency log. `0.1.0` carries none,
+  which is correct: it was published by hand, and an attestation comes only from a publish that
+  authenticates through OIDC.
 - **The pnpm major matters.** OIDC publishing is reported working in pnpm 10, which is the version
   pinned here, and broken in pnpm 11.0.8. Treat a pnpm major upgrade as a change that has to be
   revalidated against the registry, not as routine maintenance.

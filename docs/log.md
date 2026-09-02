@@ -4,6 +4,10 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Released `0.1.1` through the workflow, which is the first version published without a human
+  touching the registry. Both packages carry a signed provenance attestation, verified on the
+  registry rather than taken from the publish output. `INFRA.md` now states provenance as
+  observed instead of expected.
 - Replaced the `changesets/action` publish step with `pnpm pack` followed by `npm publish`,
   after two failed release runs established that pnpm 10 does not perform the OIDC exchange
   and that `actions/setup-node` writes a placeholder auth line which prevents it. Recorded as
