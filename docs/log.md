@@ -4,6 +4,9 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Corrected `docs/migrations.md`, which still said nothing had been released and no release
+  workflow existed. Both statements were contradicted by `INFRA.md` and by `0.1.1` shipping
+  from the workflow.
 - Added [adoption.md](adoption.md), the integration playbook: the ordered sequence from installing
   the two packages to a multi-page tour, then the choices that follow (missing-target policy,
   persistence and why browser storage is wrong on a shared workstation, text and labels,

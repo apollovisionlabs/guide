@@ -49,7 +49,7 @@ See [ADR 0005](adr/0005-disable-treeshake-to-keep-use-client.md).
 
 ## Public API changes
 
-Both packages are `0.1.0` and versioned with [Changesets](references/changesets.md).
+Both packages are published and versioned with [Changesets](references/changesets.md).
 
 - A user-visible change to a published package needs a changeset in the same commit.
 - The public surface includes `Spotlight` and `StepPopover` with their prop interfaces, not only
@@ -59,9 +59,9 @@ Both packages are `0.1.0` and versioned with [Changesets](references/changesets.
 - Removing or renaming an exported type from `@apollovisionlabs/guide-core` breaks `@apollovisionlabs/guide-mui` too; both packages
   move together, which is what `updateInternalDependencies: "patch"` handles.
 
-Nothing has been released yet: `changeset version` and `changeset publish` have never run for
-real, and there is no release workflow. See [INFRA.md](../INFRA.md) before assuming a release
-process exists.
+Releases are published by the workflow, with the version bump made in the repository beforehand
+rather than by a pull request the workflow opens. See [INFRA.md](../INFRA.md) for the exact
+sequence and for the two package managers the publish step relies on.
 
 ## Consumer-facing migrations
 
