@@ -3,50 +3,50 @@ import { matchRoute, isLiteralRoute } from '../src/matchRoute'
 
 describe('matchRoute', () => {
   it('accepte une correspondance exacte', () => {
-    expect(matchRoute('/nc', '/nc')).toBe(true)
+    expect(matchRoute('/items', '/items')).toBe(true)
   })
 
   it('refuse un chemin différent', () => {
-    expect(matchRoute('/nc', '/audit')).toBe(false)
+    expect(matchRoute('/items', '/reports')).toBe(false)
   })
 
   it('refuse un chemin plus profond que le motif', () => {
-    expect(matchRoute('/nc', '/nc/123')).toBe(false)
+    expect(matchRoute('/items', '/items/123')).toBe(false)
   })
 
   it('accepte un segment paramétré', () => {
-    expect(matchRoute('/nc/:id', '/nc/123')).toBe(true)
+    expect(matchRoute('/items/:id', '/items/123')).toBe(true)
   })
 
   it('refuse un segment paramétré vide', () => {
-    expect(matchRoute('/nc/:id', '/nc/')).toBe(false)
+    expect(matchRoute('/items/:id', '/items/')).toBe(false)
   })
 
   it('accepte un joker en fin de motif', () => {
-    expect(matchRoute('/nc/*', '/nc/123/details')).toBe(true)
+    expect(matchRoute('/items/*', '/items/123/details')).toBe(true)
   })
 
   it('ignore la barre oblique finale', () => {
-    expect(matchRoute('/nc/', '/nc')).toBe(true)
+    expect(matchRoute('/items/', '/items')).toBe(true)
   })
 
   it('ignore la chaîne de requête', () => {
-    expect(matchRoute('/nc', '/nc?page=2')).toBe(true)
+    expect(matchRoute('/items', '/items?page=2')).toBe(true)
   })
 
   it('gère la racine', () => {
     expect(matchRoute('/', '/')).toBe(true)
-    expect(matchRoute('/', '/nc')).toBe(false)
+    expect(matchRoute('/', '/items')).toBe(false)
   })
 })
 
 describe('isLiteralRoute', () => {
   it('reconnaît un motif littéral', () => {
-    expect(isLiteralRoute('/nc')).toBe(true)
+    expect(isLiteralRoute('/items')).toBe(true)
   })
 
   it('rejette un motif paramétré ou joker', () => {
-    expect(isLiteralRoute('/nc/:id')).toBe(false)
-    expect(isLiteralRoute('/nc/*')).toBe(false)
+    expect(isLiteralRoute('/items/:id')).toBe(false)
+    expect(isLiteralRoute('/items/*')).toBe(false)
   })
 })
