@@ -32,7 +32,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 ## Decisions
 
-[adr/index.md](adr/index.md) lists fourteen records, `0001` to `0014`, plus [adr/template.md](adr/template.md).
+[adr/index.md](adr/index.md) lists fifteen records, `0001` to `0015`, plus [adr/template.md](adr/template.md).
 
 - [0001](adr/0001-headless-core-and-rendering-layer.md) Split a headless core from the rendering layer
 - [0002](adr/0002-logical-targets-via-data-attribute.md) Resolve targets by logical key, never by CSS selector
@@ -48,6 +48,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 - [0012](adr/0012-publish-under-the-apollovisionlabs-scope.md) Publish under the apollovisionlabs scope
 - [0013](adr/0013-publish-from-a-release-workflow.md) Publish from a release workflow driven by Changesets
 - [0014](adr/0014-authenticate-releases-with-trusted-publishing.md) Authenticate releases with npm trusted publishing
+- [0015](adr/0015-pack-with-pnpm-publish-with-npm.md) Pack with pnpm, publish with npm
 
 ## Plans
 

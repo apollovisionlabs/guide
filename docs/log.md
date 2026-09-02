@@ -4,6 +4,12 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Replaced the `changesets/action` publish step with `pnpm pack` followed by `npm publish`,
+  after two failed release runs established that pnpm 10 does not perform the OIDC exchange
+  and that `actions/setup-node` writes a placeholder auth line which prevents it. Recorded as
+  [ADR 0015](adr/0015-pack-with-pnpm-publish-with-npm.md), which refines
+  [ADR 0014](adr/0014-authenticate-releases-with-trusted-publishing.md) and removes the step
+  [ADR 0013](adr/0013-publish-from-a-release-workflow.md) introduced.
 - Recorded that versioning runs locally rather than through a pull request opened by
   `changesets/action`: the organisation does not allow GitHub Actions to create pull requests.
   Corrected the release workflow description in `INFRA.md` accordingly.

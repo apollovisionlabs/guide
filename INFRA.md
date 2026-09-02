@@ -103,16 +103,21 @@ Everything below is what *exists*, not what is planned.
   a `repository` field pointing at `https://github.com/apollovisionlabs/guide.git`, and a `0.1.0` entry in
   each `CHANGELOG.md`.
 - **A release workflow exists**: `.github/workflows/release.yml`, triggered by a push to `main`.
-  It reinstalls, typechecks, tests, builds and runs the end to end suite, then hands over to
-  `changesets/action`, which publishes every package whose version is not yet on the registry. A
-  `concurrency` group keeps two releases from racing.
+  It reinstalls, typechecks, tests, builds and runs the end to end suite, then publishes every
+  package whose version is not yet on the registry. A `concurrency` group keeps two releases from
+  racing.
+- **The tarball is built by pnpm and sent by npm.** pnpm rewrites the workspace protocol into a
+  real version at pack time, which npm does not do, and npm performs the OIDC exchange that
+  trusted publishing needs, which pnpm 10 does not. Each package is packed with `pnpm pack` and
+  published with `npm publish <tarball> --access public --provenance`, skipping any version the
+  registry already has. This was established by two failed runs, recorded in
+  [ADR 0015](docs/adr/0015-pack-with-pnpm-publish-with-npm.md).
 - **Versioning happens locally, not in a pull request opened by the workflow.** The
   `apollovisionlabs` organisation does not allow GitHub Actions to create pull requests, so the
-  action's version step cannot run. Bump with `pnpm changeset version` on a branch, review the
+  action's version step could not run. Bump with `pnpm changeset version` on a branch, review the
   changed manifests and changelogs like any other diff, and merge. The workflow then publishes what
-  the registry lacks. The action keeps its `version` argument so that the standard flow resumes by
-  itself if the organisation setting is ever relaxed, and pushing a pending changeset to `main`
-  would fail the release step rather than publish anything unexpected.
+  the registry lacks. A changeset left pending on `main` is simply not applied, so the versions stay
+  where they are and nothing unexpected is published.
 - **Authentication is npm trusted publishing, not a stored token.** The job asks for
   `id-token: write`, GitHub mints an OIDC token, and npm exchanges it for a short lived
   credential. No long lived npm token exists in the repository secrets.
@@ -136,8 +141,8 @@ Everything below is what *exists*, not what is planned.
   first workflow release will be their first real execution.
 - **The published `0.1.0` carries no provenance attestation**, checked on the registry after the
   fact. That is expected: an attestation comes from a publish that authenticates through OIDC, and
-  the bootstrap was manual. Whether the workflow path produces one is still unobserved, and must be
-  checked on the registry after the first release published by the workflow.
+  the bootstrap was manual. The workflow now asks npm for one, and whether it is actually attached
+  must be checked on the registry after the first release the workflow publishes.
 - **The pnpm major matters.** OIDC publishing is reported working in pnpm 10, which is the version
   pinned here, and broken in pnpm 11.0.8. Treat a pnpm major upgrade as a change that has to be
   revalidated against the registry, not as routine maintenance.

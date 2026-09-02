@@ -21,3 +21,4 @@ sequentially, zero-padded.
 | [0012](0012-publish-under-the-apollovisionlabs-scope.md) | Publish under the apollovisionlabs scope | stable |
 | [0013](0013-publish-from-a-release-workflow.md) | Publish from a release workflow driven by Changesets | stable, authentication superseded by 0014 |
 | [0014](0014-authenticate-releases-with-trusted-publishing.md) | Authenticate releases with npm trusted publishing | stable |
+| [0015](0015-pack-with-pnpm-publish-with-npm.md) | Pack with pnpm, publish with npm | stable |

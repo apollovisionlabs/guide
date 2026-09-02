@@ -14,8 +14,9 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write
+  # Nothing is written back to the repository any more: versioning happens in a
+  # normal commit, so the job only needs to read the code and mint an OIDC token.
+  contents: read
   # Lets GitHub mint the OIDC token that npm trusted publishing exchanges for a
   # short lived credential. No long lived npm token is stored anywhere.
   id-token: write
@@ -84,15 +85,26 @@ jobs:
             echo "::warning::NPM_CONFIG_USERCONFIG is not set, nothing to clean."
           fi
 
-      # With pending changesets, this opens or updates a version pull request and
-      # publishes nothing. With none, it publishes every package whose version is
-      # not yet on the registry.
-      - uses: changesets/action@v1
+      # pnpm 10 does not perform the OIDC exchange that trusted publishing needs:
+      # it simply asks to be logged in. npm does, from 11.5.1 onwards, so the
+      # tarball is built by pnpm, which rewrites the workspace protocol into a real
+      # version, and sent by npm, which authenticates. Versioning is done in the
+      # repository beforehand, see INFRA.md.
+      - name: Publish with npm trusted publishing
         if: env.RELEASE_ENABLED == 'true'
-        with:
-          version: pnpm changeset version
-          publish: pnpm changeset publish
-          commit: "chore: version packages"
-          title: "chore: version packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          npm install -g npm@latest
+          npm --version
+          for dir in packages/*/; do
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is already on the registry, skipping."
+              continue
+            fi
+            out=$(mktemp -d)
+            (cd "$dir" && pnpm pack --pack-destination "$out" >/dev/null)
+            echo "Publishing $name@$version"
+            npm publish "$out"/*.tgz --access public --provenance
+          done
