@@ -17,18 +17,18 @@ function anchorWithRect(rect: { top: number; left: number; width: number; height
 }
 
 describe('useElementRect', () => {
-  it('renvoie null sans élément', () => {
+  it('returns null when there is no element', () => {
     const { result } = renderHook(() => useElementRect(null))
     expect(result.current).toBeNull()
   })
 
-  it('mesure l élément au montage', () => {
+  it('measures the element on mount', () => {
     const element = anchorWithRect({ top: 10, left: 20, width: 100, height: 40 })
     const { result } = renderHook(() => useElementRect(element))
     expect(result.current).toEqual({ top: 10, left: 20, width: 100, height: 40 })
   })
 
-  it('remesure au défilement', () => {
+  it('re-measures on scroll', () => {
     const element = anchorWithRect({ top: 10, left: 20, width: 100, height: 40 })
     const { result } = renderHook(() => useElementRect(element))
 
@@ -43,7 +43,7 @@ describe('useElementRect', () => {
     expect(result.current?.top).toBe(0)
   })
 
-  it('garde la même référence quand rien ne change', () => {
+  it('keeps the same reference when nothing changes', () => {
     const element = anchorWithRect({ top: 10, left: 20, width: 100, height: 40 })
     const { result } = renderHook(() => useElementRect(element))
     const first = result.current
@@ -53,9 +53,9 @@ describe('useElementRect', () => {
     expect(result.current).toBe(first)
   })
 
-  // Le fait que la mesure ait lieu avant la peinture n'est pas observable sous jsdom,
-  // car act() vide les effets de mise en page et les effets passifs indifféremment : ce test garantit la valeur obtenue, pas l'ordre.
-  it('suit le rectangle quand l élément change pour un autre élément non nul', () => {
+  // Measuring before paint is not observable under jsdom, because act() flushes layout effects
+  // and passive effects alike. This test pins the value obtained, not the ordering.
+  it('follows the rectangle when the element changes to another non-null element', () => {
     const first = anchorWithRect({ top: 10, left: 20, width: 100, height: 40 })
     const second = anchorWithRect({ top: 200, left: 5, width: 60, height: 30 })
     const { result, rerender } = renderHook(

@@ -6,9 +6,8 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { GuideProvider, useTour, type Tour } from '@guide/core'
 import { GuideTour } from '../src/GuideTour'
 
-// L'ondulation de ButtonBase declenche des mises a jour asynchrones que jsdom signale en
-// avertissement act(). On la desactive pour les tests uniquement, le rendu de production
-// gardant le comportement MUI par defaut.
+// The ButtonBase ripple triggers asynchronous updates that jsdom reports as an act() warning.
+// It is disabled for the tests only; the production rendering keeps the MUI default behaviour.
 const testTheme = createTheme({
   components: { MuiButtonBase: { defaultProps: { disableRipple: true } } },
 })
@@ -20,21 +19,21 @@ function renderTour(ui: ReactElement) {
 const tour: Tour = {
   id: 'demo',
   steps: [
-    { target: 'one', title: 'Première', body: 'Corps un' },
-    { target: 'two', title: 'Deuxième', body: 'Corps deux', interactive: true },
+    { target: 'one', title: 'First', body: 'Body one' },
+    { target: 'two', title: 'Second', body: 'Body two', interactive: true },
   ],
 }
 
 function Starter() {
   const { start } = useTour('demo')
-  return <button onClick={() => void start()}>démarrer</button>
+  return <button onClick={() => void start()}>start</button>
 }
 
 function Harness() {
   return (
     <GuideProvider tours={[tour]}>
-      <button data-guide="one">un</button>
-      <button data-guide="two">deux</button>
+      <button data-guide="one">one</button>
+      <button data-guide="two">two</button>
       <Starter />
       <GuideTour />
     </GuideProvider>
@@ -42,54 +41,54 @@ function Harness() {
 }
 
 describe('GuideTour', () => {
-  it('ne rend rien tant qu aucun tour ne tourne', () => {
+  it('renders nothing while no tour is running', () => {
     renderTour(<Harness />)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.queryByTestId('guide-spotlight')).not.toBeInTheDocument()
   })
 
-  it('affiche le spotlight et le popover au démarrage', async () => {
+  it('shows the spotlight and the popover when the tour starts', async () => {
     const user = userEvent.setup()
     renderTour(<Harness />)
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
     expect(screen.getByTestId('guide-spotlight')).toBeInTheDocument()
-    expect(screen.getByText('Première')).toBeInTheDocument()
+    expect(screen.getByText('First')).toBeInTheDocument()
   })
 
-  it('avance jusqu à l étape interactive et laisse passer les clics', async () => {
+  it('advances to the interactive step and lets clicks through', async () => {
     const user = userEvent.setup()
     renderTour(<Harness />)
-    await user.click(screen.getByText('démarrer'))
-    await screen.findByText('Première')
+    await user.click(screen.getByText('start'))
+    await screen.findByText('First')
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await screen.findByText('Deuxième')
+    await screen.findByText('Second')
     expect(screen.getByTestId('guide-spotlight')).toHaveStyle({ pointerEvents: 'none' })
   })
 
-  it('ferme tout quand le tour est arrêté', async () => {
+  it('closes everything when the tour is stopped', async () => {
     const user = userEvent.setup()
     renderTour(<Harness />)
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await screen.findByRole('dialog')
     await user.click(screen.getByRole('button', { name: 'Close' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
-  it('rend le popover modal sur une étape normale et non modal sur une étape interactive', async () => {
+  it('renders the popover modal on a normal step and non-modal on an interactive step', async () => {
     const user = userEvent.setup()
     renderTour(<Harness />)
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     const firstDialog = await screen.findByRole('dialog')
     expect(firstDialog).toHaveAttribute('aria-modal', 'true')
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await screen.findByText('Deuxième')
+    await screen.findByText('Second')
     const secondDialog = screen.getByRole('dialog')
     expect(secondDialog).not.toHaveAttribute('aria-modal')
   })
-  it('laisse Échap quitter le tour pendant l attente d une cible', async () => {
+  it('lets Escape quit the tour while a target is awaited', async () => {
     const user = userEvent.setup()
-    const waiting: Tour = { id: 'demo', steps: [{ target: 'absente', title: 'Absente' }] }
+    const waiting: Tour = { id: 'demo', steps: [{ target: 'absent', title: 'Absent' }] }
 
     function Status() {
       const { status } = useTour('demo')
@@ -104,9 +103,9 @@ describe('GuideTour', () => {
       </GuideProvider>,
     )
 
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('running'))
-    // L'attente reste silencieuse : rien ne s'affiche tant que la cible n'est pas resolue.
+    // The wait stays silent: nothing is drawn until the target resolves.
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     await user.keyboard('{Escape}')

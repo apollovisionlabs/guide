@@ -101,8 +101,8 @@ export function GuideProvider({
   const [state, dispatch] = useReducer(tourReducer, initialTourState)
   const announce = useAnnouncer()
 
-  // Élément qui avait le focus au démarrage du tour : le popover se démonte et se remonte à
-  // chaque étape, donc son propre piège à focus ne peut pas rendre le focus à cette origine.
+  // Element that held focus when the tour started: the popover unmounts and remounts on every
+  // step, so its own focus trap cannot restore focus to that origin.
   const focusOriginRef = useRef<HTMLElement | null>(null)
   const storageWarnedRef = useRef(false)
 
@@ -129,12 +129,12 @@ export function GuideProvider({
   )
   const rect = useElementRect(element)
 
-  // Une étape dont la route ne correspond jamais ne demande aucune cible, donc aucun délai ne
-  // court : sans ce compteur, un motif de route erroné ou une navigation qui échoue laisserait
-  // le tour en cours, invisible et sans issue. Le délai armé ici fait s'appliquer la politique.
+  // A step whose route never matches requests no target, so no timeout is running. Without this
+  // timer, a wrong route pattern or a failed navigation would leave the tour running, invisible
+  // and with no way out. The timer armed here is what makes the policy apply.
   const waitingForRoute = isActive && !!step && !routeMatches
-  // On retient l'étape expirée plutôt qu'un booléen : sinon, l'étape suivante hériterait de
-  // l'expiration de la précédente le temps d'un rendu et la politique s'appliquerait deux fois.
+  // The expired step is stored rather than a boolean: otherwise the next step would inherit the
+  // previous one's expiry for one render and the policy would apply twice.
   const [routeTimeoutStep, setRouteTimeoutStep] = useState<Step | null>(null)
 
   useEffect(() => {
@@ -162,9 +162,9 @@ export function GuideProvider({
     dispatch({ type: 'STOP' })
   }, [tour, state.stepIndex, emit])
 
-  // Navigation déléguée : l'étape vit ailleurs, on demande le déplacement.
-  // La destination déjà demandée pour l'étape courante est conservée dans une ref : sans
-  // ça, si la route ne correspond jamais, cet effet rappellerait navigate a chaque rendu.
+  // Delegated navigation: the step lives elsewhere, so we ask for the move.
+  // The destination already requested for the current step is kept in a ref: without it, if the
+  // route never matches, this effect would call navigate again on every render.
   const navigationRef = useRef<{ step: Step | null; destination: string | null }>({
     step: null,
     destination: null,
@@ -172,8 +172,8 @@ export function GuideProvider({
 
   const start = useCallback(
     async (tourId: string, options?: { from?: number; resume?: boolean }) => {
-      // Reentrance : un second appel pendant que ce meme tour tourne relirait la
-      // persistance et pourrait faire reculer la progression. Changer de tour reste permis.
+      // Reentrancy: a second call while this same tour is running would re-read persistence and
+      // could move the progress backwards. Switching to another tour stays allowed.
       if (state.tourId === tourId && state.status === 'running') return
 
       const target = toursById.get(tourId)
@@ -188,7 +188,7 @@ export function GuideProvider({
 
       let stepIndex = options?.from ?? 0
       if (options?.from === undefined && options?.resume !== false && storage) {
-        // Une persistance qui échoue ne doit pas empêcher le tour : on repart du début.
+        // Storage that fails must not block the tour: we start from the beginning.
         let progress: TourProgress | null = null
         try {
           progress = await storage.read(tourId)
@@ -207,8 +207,8 @@ export function GuideProvider({
         }
       }
 
-      // Redémarrer le même tour sur la même étape doit renaviguer : sans cette remise à zéro,
-      // la destination déjà demandée resterait mémorisée et l'effet ne rappellerait pas navigate.
+      // Restarting the same tour on the same step must navigate again: without this reset, the
+      // destination already requested would stay remembered and the effect would skip navigate.
       navigationRef.current = { step: null, destination: null }
 
       dispatch({ type: 'START', tourId, stepIndex })
@@ -237,7 +237,7 @@ export function GuideProvider({
     navigate(destination)
   }, [isActive, step, routeMatches, navigate])
 
-  // Cible introuvable : application de la politique.
+  // Target not found: apply the policy.
   useEffect(() => {
     if (!timedOut || !tour || !step) return
 
@@ -254,12 +254,12 @@ export function GuideProvider({
     else dispatch({ type: 'PAUSE' })
   }, [timedOut, tour, step, state.stepIndex, onMissingTarget, emit])
 
-  // Reprise automatique quand la cible réapparaît après une pause.
+  // Automatic resume when the target reappears after a pause.
   useEffect(() => {
     if (state.status === 'paused' && element) dispatch({ type: 'RESUME' })
   }, [state.status, element])
 
-  // Étape effectivement affichée.
+  // Step actually on screen.
   useEffect(() => {
     if (state.status !== 'running' || !tour || !step || !element) return
     emit({
@@ -271,8 +271,7 @@ export function GuideProvider({
     announce(`${state.stepIndex + 1} / ${tour.steps.length}`)
   }, [state.status, state.stepIndex, tour, step, element, emit, announce])
 
-  // Persistance de la progression. Une écriture qui échoue ne casse rien : la progression
-  // n'est simplement pas retenue.
+  // Progress persistence. A write that fails breaks nothing: the progress is simply not kept.
   useEffect(() => {
     if (!storage || !state.tourId) return
     const status =
@@ -291,7 +290,7 @@ export function GuideProvider({
     }
   }, [storage, state.tourId, state.status, state.stepIndex, warnStorageFailure])
 
-  // Retour du focus à son origine, une fois le tour arrêté ou terminé.
+  // Focus returns to its origin once the tour is stopped or completed.
   useEffect(() => {
     if (state.status !== 'idle' && state.status !== 'completed') return
     const origin = focusOriginRef.current

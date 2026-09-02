@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/')
 })
 
-test('le tour traverse trois pages et se termine', async ({ page }) => {
+test('the tour crosses three pages and completes', async ({ page }) => {
   await page.getByTestId('start-tour').click()
 
   const dialog = page.getByRole('dialog')
@@ -25,7 +25,7 @@ test('le tour traverse trois pages et se termine', async ({ page }) => {
   await expect(dialog).toBeHidden()
 })
 
-test('le tour reprend là où il a été interrompu', async ({ page }) => {
+test('the tour resumes where it was interrupted', async ({ page }) => {
   await page.getByTestId('start-tour').click()
   await page.getByRole('dialog').getByRole('button', { name: 'Next' }).click()
   await expect(page).toHaveURL('/projects')
@@ -36,7 +36,7 @@ test('le tour reprend là où il a été interrompu', async ({ page }) => {
   await expect(page.getByRole('dialog')).toContainText('Create a project')
 })
 
-test('le spotlight reste sur la cible après défilement', async ({ page }) => {
+test('the spotlight stays on the target after scrolling', async ({ page }) => {
   await page.getByTestId('start-tour').click()
   const hole = page.locator('mask rect').last()
   const before = await hole.getAttribute('y')
@@ -44,7 +44,7 @@ test('le spotlight reste sur la cible après défilement', async ({ page }) => {
   await expect.poll(() => hole.getAttribute('y')).not.toBe(before)
 })
 
-test('l étape interactive laisse cliquer la page', async ({ page }) => {
+test('an interactive step lets the page be clicked', async ({ page }) => {
   await page.getByTestId('start-tour').click()
   const dialog = page.getByRole('dialog')
   await dialog.getByRole('button', { name: 'Next' }).click()

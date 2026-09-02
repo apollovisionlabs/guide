@@ -41,9 +41,9 @@ export interface StepPopoverProps {
   isLast: boolean
   placement?: Placement
   zIndex?: number
-  /** Élément mis en avant, qui reçoit une description accessible reliée au corps. */
+  /** Highlighted element, which receives an accessible description linked to the body. */
   describeElement?: HTMLElement | null
-  /** Une étape non modale laisse l'utilisateur atteindre la page ; défaut : true. */
+  /** A non-modal step lets the user reach the page. Defaults to true. */
   modal?: boolean
   labels?: Partial<StepPopoverLabels>
   onNext: () => void
@@ -75,8 +75,8 @@ export function StepPopover({
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const text = { ...DEFAULT_LABELS, ...labels }
 
-  // Le focus va sur le Paper, pas sur la fermeture : une touche Entrée réflexe après une
-  // flèche ne doit pas interrompre le tour.
+  // Focus lands on the Paper, not on the close button: a reflex Enter after an arrow key must
+  // not stop the tour.
   useFocusTrap(container, open && modal, { initialFocus: 'container' })
 
   const onKeyDown = useCallback(
@@ -102,7 +102,7 @@ export function StepPopover({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [open, onKeyDown])
 
-  // L'élément mis en avant est décrit par le corps du popover.
+  // The highlighted element is described by the popover body.
   useEffect(() => {
     if (!open || !describeElement) return
     describeElement.setAttribute('aria-describedby', bodyId)

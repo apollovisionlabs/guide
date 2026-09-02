@@ -52,28 +52,34 @@ pull request flow to follow yet; when a remote is added this section needs updat
 
 ## Commits
 
-Conventional commits, **written in French**, as `git log` shows without exception:
+Conventional commits, **written in English**. Lowercase type, an imperative subject, no trailing
+period and no dash:
 
 ```
-feat(core): fournisseur de contexte, useTour et useGuideStep
-fix(mui): échappatoire clavier, focus sur le conteneur et trou cliquable
-test(core): supprimer l'avertissement act du test de politique skip
-docs: retirer la référence à une capture inexistante
-chore: accès public, marge de défilement de la démo et annonce assertée
+feat(core): context provider, useTour and useGuideStep
+fix(mui): keyboard escape hatch, container focus and clickable hole
+test(core): drop the act warning from the skip policy test
+docs: remove the reference to a missing screenshot
+chore: public access, demo scroll margin and asserted announcement
 ```
+
+Commits made before the move to the apollovisionlabs organisation are in French. That history is
+left as it is ([ADR 0011](docs/adr/0011-move-to-apollo-vision-labs.md)).
 
 Scopes in use: `core`, `mui`, `demo`. `docs`, `test` and `chore` are used unscoped as well.
 
 ## Language policy
 
-The repository is bilingual on purpose, and inconsistently so. This is the current state, not a
-target:
+Code, comments, test names, commit messages and documentation are written in English. That covers
+the READMEs, the demo's page copy, the popover's default button labels, the public type
+documentation, source comments and `describe` and `it` titles.
 
-- **English**: everything a stranger reads, namely the READMEs, the demo's page copy, the popover's
-  default button labels, the public type documentation.
-- **French**: source comments and test names (`test('le tour traverse trois pages et se termine')`).
+Two exceptions, both deliberate:
 
-Match the file you are editing rather than converting it.
+- the documents under `docs/superpowers/`, which are the historical design and plan and stay in
+  French because they record what was decided at the time;
+- the git history, whose commit subjects are French up to the move to the apollovisionlabs
+  organisation.
 
 ## Licence discipline, not optional
 

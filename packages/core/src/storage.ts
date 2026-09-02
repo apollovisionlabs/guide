@@ -33,7 +33,7 @@ export function createBrowserStorage(namespace = 'guide'): GuideStorage {
       try {
         window.localStorage.setItem(key(tourId), JSON.stringify(progress))
       } catch {
-        // quota dépassé ou stockage bloqué : la persistance est optionnelle
+        // quota exceeded or storage blocked: persistence is optional
       }
     },
   }

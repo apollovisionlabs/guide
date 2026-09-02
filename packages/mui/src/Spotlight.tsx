@@ -28,8 +28,8 @@ export function Spotlight({
 
   if (!rect) return null
 
-  // Le masque SVG ne découpe que le rendu, pas la zone cliquable : sans ce test, un clic dans
-  // le trou mis en avant fermerait le tour au lieu d'atteindre l'élément désigné.
+  // The SVG mask only cuts the rendering, not the clickable area: without this test, a click in
+  // the highlighted hole would stop the tour instead of reaching the element it points at.
   const onClick = (event: MouseEvent) => {
     const insideHole =
       event.clientX >= rect.left - padding &&

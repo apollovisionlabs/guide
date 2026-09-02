@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import type { Rect } from './types'
 
-// Mesurer avant la peinture : au changement d'etape, un useEffect laisserait passer une
-// image ou le spotlight est encore sur la cible precedente.
+// Measure before paint: on a step change, a plain useEffect would let one frame through with
+// the spotlight still on the previous step's target.
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect
 

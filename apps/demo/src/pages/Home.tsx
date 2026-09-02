@@ -5,8 +5,8 @@ export function Home() {
   const tour = useTour('product')
 
   return (
-    // Marge confortable sous la ligne de flottaison : le scénario end-to-end de défilement
-    // dépend d'une page plus haute que la fenêtre.
+    // Comfortable margin below the fold: the end-to-end scroll scenario depends on a page
+    // taller than the viewport.
     <Stack spacing={3} sx={{ minHeight: 1400 }}>
       <Typography variant="h4" component="h1">
         Welcome

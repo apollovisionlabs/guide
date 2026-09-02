@@ -11,20 +11,20 @@ import type { GuideEvent, GuideStorage, Tour } from '../src/types'
 const tour: Tour = {
   id: 'demo',
   steps: [
-    { target: 'one', title: 'Première' },
-    { target: 'two', title: 'Deuxième' },
+    { target: 'one', title: 'First' },
+    { target: 'two', title: 'Second' },
   ],
 }
 
 function StepReadout() {
   const active = useGuideStep()
-  if (!active) return <p>aucune étape</p>
+  if (!active) return <p>no step</p>
   return (
     <div>
       <p>{active.title}</p>
       <p>{`${active.stepIndex + 1}/${active.stepCount}`}</p>
-      <button onClick={active.next}>suivant</button>
-      <button onClick={active.stop}>arrêter</button>
+      <button onClick={active.next}>next</button>
+      <button onClick={active.stop}>stop</button>
     </div>
   )
 }
@@ -33,7 +33,7 @@ function Starter() {
   const { start, status } = useTour('demo')
   return (
     <>
-      <button onClick={() => void start()}>démarrer</button>
+      <button onClick={() => void start()}>start</button>
       <span>{status}</span>
     </>
   )
@@ -42,8 +42,8 @@ function Starter() {
 function Harness(props: Partial<ComponentProps<typeof GuideProvider>> = {}) {
   return (
     <GuideProvider tours={[tour]} {...props}>
-      <button data-guide="one">un</button>
-      <button data-guide="two">deux</button>
+      <button data-guide="one">one</button>
+      <button data-guide="two">two</button>
       <Starter />
       <StepReadout />
     </GuideProvider>
@@ -51,56 +51,56 @@ function Harness(props: Partial<ComponentProps<typeof GuideProvider>> = {}) {
 }
 
 describe('GuideProvider', () => {
-  it('n affiche aucune étape avant le démarrage', () => {
+  it('shows no step before the tour starts', () => {
     render(<Harness />)
-    expect(screen.getByText('aucune étape')).toBeInTheDocument()
+    expect(screen.getByText('no step')).toBeInTheDocument()
   })
 
-  it('démarre le tour et expose la première étape', async () => {
+  it('starts the tour and exposes the first step', async () => {
     const user = userEvent.setup()
     render(<Harness />)
-    await user.click(screen.getByText('démarrer'))
-    expect(await screen.findByText('Première')).toBeInTheDocument()
+    await user.click(screen.getByText('start'))
+    expect(await screen.findByText('First')).toBeInTheDocument()
     expect(screen.getByText('1/2')).toBeInTheDocument()
   })
 
-  it('avance puis termine le tour', async () => {
+  it('moves forward then completes the tour', async () => {
     const user = userEvent.setup()
     render(<Harness />)
-    await user.click(screen.getByText('démarrer'))
-    await screen.findByText('Première')
-    await user.click(screen.getByText('suivant'))
-    expect(await screen.findByText('Deuxième')).toBeInTheDocument()
-    await user.click(screen.getByText('suivant'))
+    await user.click(screen.getByText('start'))
+    await screen.findByText('First')
+    await user.click(screen.getByText('next'))
+    expect(await screen.findByText('Second')).toBeInTheDocument()
+    await user.click(screen.getByText('next'))
     await waitFor(() => expect(screen.getByText('completed')).toBeInTheDocument())
   })
 
-  it('résout l élément cible et son rectangle', async () => {
+  it('resolves the target element and its rectangle', async () => {
     const user = userEvent.setup()
     function RectReadout() {
       const active = useGuideStep()
-      return <span data-testid="resolved">{active?.element?.textContent ?? 'rien'}</span>
+      return <span data-testid="resolved">{active?.element?.textContent ?? 'none'}</span>
     }
     render(
       <GuideProvider tours={[tour]}>
-        <button data-guide="one">un</button>
+        <button data-guide="one">one</button>
         <Starter />
         <RectReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
-    await waitFor(() => expect(screen.getByTestId('resolved')).toHaveTextContent('un'))
+    await user.click(screen.getByText('start'))
+    await waitFor(() => expect(screen.getByTestId('resolved')).toHaveTextContent('one'))
   })
 
-  it('émet les événements du cycle de vie', async () => {
+  it('emits the lifecycle events', async () => {
     const user = userEvent.setup()
     const events: GuideEvent[] = []
     render(<Harness onEvent={(event) => events.push(event)} />)
-    await user.click(screen.getByText('démarrer'))
-    await screen.findByText('Première')
-    await user.click(screen.getByText('suivant'))
-    await screen.findByText('Deuxième')
-    await user.click(screen.getByText('suivant'))
+    await user.click(screen.getByText('start'))
+    await screen.findByText('First')
+    await user.click(screen.getByText('next'))
+    await screen.findByText('Second')
+    await user.click(screen.getByText('next'))
 
     await waitFor(() =>
       expect(events.map((event) => event.type)).toEqual(
@@ -109,40 +109,40 @@ describe('GuideProvider', () => {
     )
   })
 
-  it('reprend à l étape enregistrée', async () => {
+  it('resumes at the persisted step', async () => {
     const user = userEvent.setup()
     const storage = createMemoryStorage({ demo: { status: 'in-progress', stepIndex: 1 } })
     render(<Harness storage={storage} />)
-    await user.click(screen.getByText('démarrer'))
-    expect(await screen.findByText('Deuxième')).toBeInTheDocument()
+    await user.click(screen.getByText('start'))
+    expect(await screen.findByText('Second')).toBeInTheDocument()
   })
 
-  it('écrit la progression dans la persistance', async () => {
+  it('writes the progress to storage', async () => {
     const user = userEvent.setup()
     const storage = createMemoryStorage()
     render(<Harness storage={storage} />)
-    await user.click(screen.getByText('démarrer'))
-    await screen.findByText('Première')
+    await user.click(screen.getByText('start'))
+    await screen.findByText('First')
     await waitFor(async () =>
       expect(await storage.read('demo')).toEqual({ status: 'in-progress', stepIndex: 0 }),
     )
   })
 
-  it('traduit les clés de texte', async () => {
+  it('translates the text keys', async () => {
     const user = userEvent.setup()
     const translated: Tour = { id: 'demo', steps: [{ target: 'one', titleKey: 'a.title' }] }
     render(
-      <GuideProvider tours={[translated]} translate={(key) => `traduit:${key}`}>
-        <button data-guide="one">un</button>
+      <GuideProvider tours={[translated]} translate={(key) => `translated:${key}`}>
+        <button data-guide="one">one</button>
         <Starter />
         <StepReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
-    expect(await screen.findByText('traduit:a.title')).toBeInTheDocument()
+    await user.click(screen.getByText('start'))
+    expect(await screen.findByText('translated:a.title')).toBeInTheDocument()
   })
 
-  it('navigue quand l étape vit sur une autre route', async () => {
+  it('navigates when the step lives on another route', async () => {
     const user = userEvent.setup()
     const navigate = vi.fn()
     const routed: Tour = { id: 'demo', steps: [{ target: 'one', route: '/other' }] }
@@ -152,11 +152,11 @@ describe('GuideProvider', () => {
         <StepReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/other'))
   })
 
-  it('utilise navigateTo quand la route est paramétrée', async () => {
+  it('uses navigateTo when the route has a parameter', async () => {
     const user = userEvent.setup()
     const navigate = vi.fn()
     const routed: Tour = {
@@ -169,60 +169,60 @@ describe('GuideProvider', () => {
         <StepReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/item/42'))
   })
 
-  it('saute l étape quand la cible manque et que la politique est skip', async () => {
+  it('skips the step when the target is missing and the policy is skip', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     const partial: Tour = {
       id: 'demo',
       steps: [
-        { target: 'absent', title: 'Première' },
-        { target: 'two', title: 'Deuxième' },
+        { target: 'absent', title: 'First' },
+        { target: 'two', title: 'Second' },
       ],
     }
     render(
       <GuideProvider tours={[partial]} onMissingTarget="skip" targetTimeoutMs={500}>
-        <button data-guide="two">deux</button>
+        <button data-guide="two">two</button>
         <Starter />
         <StepReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await act(async () => {
       await vi.advanceTimersByTimeAsync(800)
     })
-    expect(await screen.findByText('Deuxième')).toBeInTheDocument()
+    expect(await screen.findByText('Second')).toBeInTheDocument()
     vi.useRealTimers()
   })
 
-  it('avertit en développement quand une cible attendue sur la page courante manque', async () => {
+  it('warns in development when a target expected on the current page is missing', async () => {
     const user = userEvent.setup()
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const partial: Tour = {
       id: 'demo',
       steps: [
-        { target: 'one', route: '/', title: 'Première' },
-        { target: 'absent', route: '/', title: 'Deuxième' },
+        { target: 'one', route: '/', title: 'First' },
+        { target: 'absent', route: '/', title: 'Second' },
       ],
     }
     render(
       <GuideProvider tours={[partial]} location="/">
-        <button data-guide="one">un</button>
+        <button data-guide="one">one</button>
         <Starter />
         <StepReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await waitFor(() =>
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('absent')),
     )
     warn.mockRestore()
   })
 
-  it('refuse deux tours portant le même identifiant', () => {
+  it('rejects two tours sharing the same id', () => {
     const duplicate: Tour = { id: 'demo', steps: [] }
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect(() =>
@@ -235,10 +235,10 @@ describe('GuideProvider', () => {
     spy.mockRestore()
   })
 
-  it('reprend après expiration quand la cible finit par apparaître (politique wait)', async () => {
+  it('resumes after the timeout when the target eventually appears (wait policy)', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    const late: Tour = { id: 'demo', steps: [{ target: 'late', title: 'Première' }] }
+    const late: Tour = { id: 'demo', steps: [{ target: 'late', title: 'First' }] }
 
     render(
       <GuideProvider tours={[late]} targetTimeoutMs={500}>
@@ -247,7 +247,7 @@ describe('GuideProvider', () => {
       </GuideProvider>,
     )
 
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await act(async () => {
       await vi.advanceTimersByTimeAsync(800)
     })
@@ -255,30 +255,30 @@ describe('GuideProvider', () => {
 
     const host = document.createElement('div')
     document.body.appendChild(host)
-    host.innerHTML = '<button data-guide="late">tard</button>'
+    host.innerHTML = '<button data-guide="late">late</button>'
 
     await waitFor(() => expect(screen.getByText('running')).toBeInTheDocument())
     vi.useRealTimers()
   })
 
-  it('ignore un second démarrage du tour déjà en cours', async () => {
+  it('ignores a second start of the tour already running', async () => {
     const user = userEvent.setup()
     render(<Harness />)
-    await user.click(screen.getByText('démarrer'))
-    await screen.findByText('Première')
-    await user.click(screen.getByText('suivant'))
-    await screen.findByText('Deuxième')
-    await user.click(screen.getByText('démarrer'))
-    expect(screen.getByText('Deuxième')).toBeInTheDocument()
+    await user.click(screen.getByText('start'))
+    await screen.findByText('First')
+    await user.click(screen.getByText('next'))
+    await screen.findByText('Second')
+    await user.click(screen.getByText('start'))
+    expect(screen.getByText('Second')).toBeInTheDocument()
   })
 
-  it('ne navigue qu une fois quand la position ne change pas entre les rendus', async () => {
+  it('navigates only once when the location does not change between renders', async () => {
     const user = userEvent.setup()
     const navigate = vi.fn()
     const routed: Tour = { id: 'demo', steps: [{ target: 'one', route: '/other' }] }
 
     function Wrapper({ tick }: { tick: number }) {
-      // navigate recree a chaque rendu, comme le ferait une fonction flechee en ligne.
+      // navigate is recreated on every render, as an inline arrow function would be.
       const inlineNavigate = (path: string) => navigate(path)
       return (
         <GuideProvider tours={[routed]} location="/" navigate={inlineNavigate}>
@@ -290,7 +290,7 @@ describe('GuideProvider', () => {
     }
 
     const { rerender } = render(<Wrapper tick={0} />)
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/other'))
 
     rerender(<Wrapper tick={1} />)
@@ -299,16 +299,16 @@ describe('GuideProvider', () => {
     expect(navigate).toHaveBeenCalledTimes(1)
   })
 
-  it('applique la politique quand la route d une étape ne correspond jamais', async () => {
+  it('applies the policy when a step route never matches', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    // Le motif de route ne correspond a rien et navigate ne deplace rien : sans delai arme,
-    // le tour resterait en cours, invisible et sans issue.
+    // The route pattern matches nothing and navigate moves nothing: without an armed timer the
+    // tour would stay running, invisible and with no way out.
     const unreachable: Tour = {
       id: 'demo',
       steps: [
-        { target: 'one', route: '/jamais', title: 'Première' },
-        { target: 'two', title: 'Deuxième' },
+        { target: 'one', route: '/never', title: 'First' },
+        { target: 'two', title: 'Second' },
       ],
     }
     render(
@@ -319,25 +319,25 @@ describe('GuideProvider', () => {
         onMissingTarget="skip"
         targetTimeoutMs={500}
       >
-        <button data-guide="two">deux</button>
+        <button data-guide="two">two</button>
         <Starter />
         <StepReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await act(async () => {
       await vi.advanceTimersByTimeAsync(800)
     })
-    expect(await screen.findByText('Deuxième')).toBeInTheDocument()
+    expect(await screen.findByText('Second')).toBeInTheDocument()
     vi.useRealTimers()
   })
 
-  it('arrête le tour quand la route ne correspond jamais et que la politique est error', async () => {
+  it('stops the tour when the route never matches and the policy is error', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     const unreachable: Tour = {
       id: 'demo',
-      steps: [{ target: 'one', route: '/jamais', title: 'Première' }],
+      steps: [{ target: 'one', route: '/never', title: 'First' }],
     }
     render(
       <GuideProvider
@@ -351,15 +351,15 @@ describe('GuideProvider', () => {
         <StepReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await act(async () => {
       await vi.advanceTimersByTimeAsync(800)
     })
-    expect(await screen.findByText('aucune étape')).toBeInTheDocument()
+    expect(await screen.findByText('no step')).toBeInTheDocument()
     vi.useRealTimers()
   })
 
-  it('renavigue quand le même tour est redémarré sur la même étape', async () => {
+  it('navigates again when the same tour is restarted on the same step', async () => {
     const user = userEvent.setup()
     const navigate = vi.fn()
     const routed: Tour = { id: 'demo', steps: [{ target: 'one', route: '/other' }] }
@@ -369,40 +369,40 @@ describe('GuideProvider', () => {
         <StepReadout />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await waitFor(() => expect(navigate).toHaveBeenCalledTimes(1))
 
-    await user.click(screen.getByText('arrêter'))
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('stop'))
+    await user.click(screen.getByText('start'))
     await waitFor(() => expect(navigate).toHaveBeenCalledTimes(2))
   })
 
-  it('rend le focus à l élément qui a lancé le tour', async () => {
+  it('restores focus to the element that started the tour', async () => {
     const user = userEvent.setup()
     render(<Harness />)
-    const origin = screen.getByText('démarrer')
+    const origin = screen.getByText('start')
     await user.click(origin)
-    await screen.findByText('Première')
+    await screen.findByText('First')
 
-    // Le popover deplacerait le focus ; on simule ce deplacement puis on arrête le tour.
-    const elsewhere = screen.getByText('un')
+    // The popover would move focus, so we simulate that move and then stop the tour.
+    const elsewhere = screen.getByText('one')
     act(() => elsewhere.focus())
     expect(elsewhere).toHaveFocus()
 
-    await user.click(screen.getByText('arrêter'))
+    await user.click(screen.getByText('stop'))
     await waitFor(() => expect(origin).toHaveFocus())
   })
 
-  it('démarre quand même quand la persistance échoue à la lecture', async () => {
+  it('starts anyway when storage fails on read', async () => {
     const user = userEvent.setup()
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const failing: GuideStorage = {
-      read: () => Promise.reject(new Error('hors ligne')),
-      write: () => Promise.reject(new Error('hors ligne')),
+      read: () => Promise.reject(new Error('offline')),
+      write: () => Promise.reject(new Error('offline')),
     }
     render(<Harness storage={failing} />)
-    await user.click(screen.getByText('démarrer'))
-    expect(await screen.findByText('Première')).toBeInTheDocument()
+    await user.click(screen.getByText('start'))
+    expect(await screen.findByText('First')).toBeInTheDocument()
     await waitFor(() =>
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('[guide]'), expect.anything()),
     )
@@ -410,12 +410,12 @@ describe('GuideProvider', () => {
     warn.mockRestore()
   })
 
-  it('refuse de démarrer un tour sans étape', async () => {
+  it('refuses to start a tour with no steps', async () => {
     const user = userEvent.setup()
-    const empty: Tour = { id: 'vide', steps: [] }
+    const empty: Tour = { id: 'empty', steps: [] }
     let failure: unknown = null
     function EmptyStarter() {
-      const { start } = useTour('vide')
+      const { start } = useTour('empty')
       return (
         <button
           onClick={() => {
@@ -424,7 +424,7 @@ describe('GuideProvider', () => {
             })
           }}
         >
-          démarrer
+          start
         </button>
       )
     }
@@ -433,7 +433,7 @@ describe('GuideProvider', () => {
         <EmptyStarter />
       </GuideProvider>,
     )
-    await user.click(screen.getByText('démarrer'))
+    await user.click(screen.getByText('start'))
     await waitFor(() => expect(failure).toBeInstanceOf(Error))
     expect((failure as Error).message).toMatch(/\[guide\] tour has no steps/)
   })

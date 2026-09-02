@@ -5,9 +5,8 @@ import userEvent from '@testing-library/user-event'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { StepPopover } from '../src/StepPopover'
 
-// L'ondulation de ButtonBase declenche des mises a jour asynchrones que jsdom signale en
-// avertissement act(). On la desactive pour les tests uniquement, le rendu de production
-// gardant le comportement MUI par defaut.
+// The ButtonBase ripple triggers asynchronous updates that jsdom reports as an act() warning.
+// It is disabled for the tests only; the production rendering keeps the MUI default behaviour.
 const testTheme = createTheme({
   components: { MuiButtonBase: { defaultProps: { disableRipple: true } } },
 })
@@ -18,14 +17,14 @@ function renderPopover(ui: ReactElement) {
 
 function setup(overrides: Partial<ComponentProps<typeof StepPopover>> = {}) {
   const anchor = document.createElement('button')
-  anchor.textContent = 'ancre'
+  anchor.textContent = 'anchor'
   document.body.appendChild(anchor)
 
   const props = {
     anchorEl: anchor,
     open: true,
-    title: 'Titre',
-    body: 'Corps',
+    title: 'Title',
+    body: 'Body',
     stepIndex: 1,
     stepCount: 3,
     isFirst: false,
@@ -40,44 +39,44 @@ function setup(overrides: Partial<ComponentProps<typeof StepPopover>> = {}) {
 }
 
 describe('StepPopover', () => {
-  it('affiche le titre, le corps et la progression', () => {
+  it('shows the title, the body and the progress', () => {
     setup()
-    expect(screen.getByText('Titre')).toBeInTheDocument()
-    expect(screen.getByText('Corps')).toBeInTheDocument()
+    expect(screen.getByText('Title')).toBeInTheDocument()
+    expect(screen.getByText('Body')).toBeInTheDocument()
     expect(screen.getByText('2 / 3')).toBeInTheDocument()
   })
 
-  it('est une boîte de dialogue nommée par son titre', () => {
+  it('is a dialog named by its title', () => {
     setup()
     const dialog = screen.getByRole('dialog')
-    expect(dialog).toHaveAccessibleName('Titre')
+    expect(dialog).toHaveAccessibleName('Title')
   })
 
-  it('appelle onNext au clic sur suivant', async () => {
+  it('calls onNext when the next button is clicked', async () => {
     const user = userEvent.setup()
     const props = setup()
     await user.click(screen.getByRole('button', { name: 'Next' }))
     expect(props.onNext).toHaveBeenCalledOnce()
   })
 
-  it('remplace suivant par terminer à la dernière étape', () => {
+  it('replaces next with finish on the last step', () => {
     setup({ isLast: true })
     expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument()
   })
 
-  it('masque le bouton précédent à la première étape', () => {
+  it('hides the back button on the first step', () => {
     setup({ isFirst: true, stepIndex: 0 })
     expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
   })
 
-  it('ferme avec la touche Échap', async () => {
+  it('closes on the Escape key', async () => {
     const user = userEvent.setup()
     const props = setup()
     await user.keyboard('{Escape}')
     expect(props.onStop).toHaveBeenCalledOnce()
   })
 
-  it('navigue avec les flèches', async () => {
+  it('navigates with the arrow keys', async () => {
     const user = userEvent.setup()
     const props = setup()
     await user.keyboard('{ArrowRight}')
@@ -86,29 +85,29 @@ describe('StepPopover', () => {
     expect(props.onPrevious).toHaveBeenCalledOnce()
   })
 
-  it('accepte des libellés personnalisés', () => {
+  it('accepts custom labels', () => {
     setup({ labels: { next: 'Suivant', close: 'Fermer' } })
     expect(screen.getByRole('button', { name: 'Suivant' })).toBeInTheDocument()
   })
 
-  it('ne rend rien quand il est fermé', () => {
+  it('renders nothing when closed', () => {
     setup({ open: false })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('relie l élément mis en avant à la description du popover', () => {
+  it('links the highlighted element to the popover description', () => {
     const highlighted = document.createElement('button')
-    highlighted.textContent = 'cible mise en avant'
+    highlighted.textContent = 'highlighted target'
     document.body.appendChild(highlighted)
 
     setup({ describeElement: highlighted })
 
     const describedBy = highlighted.getAttribute('aria-describedby')
     expect(describedBy).toBeTruthy()
-    expect(document.getElementById(describedBy!)).toHaveTextContent('Corps')
+    expect(document.getElementById(describedBy!)).toHaveTextContent('Body')
   })
 
-  it('retire la description quand le popover disparaît', () => {
+  it('removes the description when the popover unmounts', () => {
     const highlighted = document.createElement('button')
     document.body.appendChild(highlighted)
 
@@ -119,8 +118,8 @@ describe('StepPopover', () => {
       <StepPopover
         anchorEl={anchor}
         open
-        title="Titre"
-        body="Corps"
+        title="Title"
+        body="Body"
         stepIndex={0}
         stepCount={1}
         isFirst
@@ -136,7 +135,7 @@ describe('StepPopover', () => {
     expect(highlighted).not.toHaveAttribute('aria-describedby')
   })
 
-  it('ignore les flèches et Échap quand le focus est dans un champ de saisie', async () => {
+  it('ignores the arrow keys and Escape while focus is in a text input', async () => {
     const user = userEvent.setup()
     const props = setup()
 
@@ -155,7 +154,7 @@ describe('StepPopover', () => {
     expect(props.onStop).not.toHaveBeenCalled()
   })
 
-  it('porte aria-modal par défaut, et ne le porte pas quand modal est false', () => {
+  it('carries aria-modal by default, and not when modal is false', () => {
     setup()
     expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true')
 
@@ -164,7 +163,7 @@ describe('StepPopover', () => {
     expect(dialogs[dialogs.length - 1]).not.toHaveAttribute('aria-modal')
   })
 
-  it('ne déplace pas le focus dans le popover quand modal est false', () => {
+  it('does not move focus into the popover when modal is false', () => {
     const previouslyFocused = document.createElement('button')
     document.body.appendChild(previouslyFocused)
     previouslyFocused.focus()
@@ -173,9 +172,9 @@ describe('StepPopover', () => {
 
     expect(document.activeElement).toBe(previouslyFocused)
   })
-  it('donne le focus au conteneur du popover, pas au bouton de fermeture', () => {
+  it('gives focus to the popover container, not to the close button', () => {
     setup()
-    // Entrée reflexe apres une fleche ne doit pas fermer le tour.
+    // A reflex Enter after an arrow key must not stop the tour.
     expect(screen.getByRole('dialog')).toHaveFocus()
   })
 })

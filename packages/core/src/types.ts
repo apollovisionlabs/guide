@@ -10,20 +10,20 @@ export type MissingTargetPolicy = 'skip' | 'wait' | 'error'
 export type Placement = 'top' | 'bottom' | 'left' | 'right'
 
 export interface Step {
-  /** Clé logique portée par l'attribut data-guide sur l'élément visé. */
+  /** Logical key carried by the data-guide attribute on the targeted element. */
   target: string
-  /** Motif de route sur lequel l'étape est valide. Accepte :param et *. */
+  /** Route pattern on which the step is valid. Accepts :param and *. */
   route?: string
-  /** Chemin concret vers lequel naviguer. Défaut : route si elle est littérale. */
+  /** Concrete path to navigate to. Defaults to route when route is literal. */
   navigateTo?: string
   placement?: Placement
-  /** Laisse l'utilisateur interagir avec la page pendant l'étape. */
+  /** Lets the user interact with the page during the step. */
   interactive?: boolean
   title?: string
   titleKey?: string
   body?: string
   bodyKey?: string
-  /** Surcharge la politique globale pour cette étape. */
+  /** Overrides the global policy for this step. */
   onMissingTarget?: MissingTargetPolicy
 }
 

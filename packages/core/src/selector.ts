@@ -1,6 +1,6 @@
-// Construction du sélecteur de cible, partagée par la résolution à l'exécution et par la
-// validation de développement : une cible contenant un guillemet doit être échappée des deux
-// côtés, sans quoi la validation lève une SyntaxError là où la résolution fonctionne.
+// Target selector construction, shared by runtime resolution and by development-time
+// validation: a target containing a quote must be escaped on both paths, otherwise validation
+// throws a SyntaxError where resolution works.
 export function escapeAttributeValue(value: string): string {
   if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
     return CSS.escape(value)

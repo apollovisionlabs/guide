@@ -13,18 +13,18 @@ const tour: Tour = {
 }
 
 describe('findMissingTargets', () => {
-  it('ne signale que les cibles attendues sur la page courante', () => {
+  it('reports only the targets expected on the current page', () => {
     document.body.innerHTML = '<button data-guide="present"></button>'
     expect(findMissingTargets(tour, '/')).toEqual(['absent', 'no-route'])
   })
 
-  it('ne signale rien quand tout est présent', () => {
+  it('reports nothing when everything is present', () => {
     document.body.innerHTML =
       '<button data-guide="present"></button><button data-guide="absent"></button><button data-guide="no-route"></button>'
     expect(findMissingTargets(tour, '/')).toEqual([])
   })
 
-  it('vérifie toutes les étapes quand aucune position n est fournie', () => {
+  it('checks every step when no location is provided', () => {
     document.body.innerHTML = ''
     expect(findMissingTargets(tour, undefined)).toEqual([
       'present',
@@ -33,7 +33,7 @@ describe('findMissingTargets', () => {
       'no-route',
     ])
   })
-  it('échappe les cibles contenant un guillemet au lieu de lever', () => {
+  it('escapes targets containing a quote instead of throwing', () => {
     document.body.innerHTML = ''
     const quoted: Tour = { id: 'demo', steps: [{ target: 'a"b' }] }
     expect(() => findMissingTargets(quoted, undefined)).not.toThrow()

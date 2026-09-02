@@ -13,8 +13,8 @@ export interface GuideTourProps {
 }
 
 /**
- * Échappatoire clavier pendant l'attente d'une cible : le popover n'est pas monté, donc son
- * propre gestionnaire d'Échap non plus, et le tour serait à la fois invisible et sans issue.
+ * Keyboard escape hatch while a target is awaited: the popover is not mounted, so neither is its
+ * own Escape handler, and the tour would be both invisible and impossible to quit.
  */
 function EscapeToStop({ onStop }: { onStop: () => void }) {
   useEffect(() => {
@@ -38,8 +38,8 @@ export function GuideTour({ zIndex, padding, radius, labels }: GuideTourProps = 
 
   if (!mounted || !active) return null
 
-  // Attente silencieuse : rien ne s'affiche tant que la cible n'est pas résolue, mais le tour
-  // reste quittable au clavier.
+  // Silent wait: nothing is drawn until the target resolves, but the tour stays quittable from
+  // the keyboard.
   if (!active.element) return <EscapeToStop onStop={active.stop} />
 
   return (

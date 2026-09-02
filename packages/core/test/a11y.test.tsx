@@ -11,52 +11,52 @@ function Trapped() {
   useFocusTrap(node, true)
   return (
     <div ref={ref}>
-      <button>premier</button>
+      <button>first</button>
       <button>second</button>
     </div>
   )
 }
 
 describe('useFocusTrap', () => {
-  it('donne le focus au premier élément focalisable', async () => {
+  it('gives focus to the first focusable element', async () => {
     render(<Trapped />)
-    expect(await screen.findByText('premier')).toHaveFocus()
+    expect(await screen.findByText('first')).toHaveFocus()
   })
 
-  it('boucle du dernier vers le premier avec Tab', async () => {
+  it('wraps from the last element back to the first with Tab', async () => {
     const user = userEvent.setup()
     render(<Trapped />)
-    await screen.findByText('premier')
+    await screen.findByText('first')
     await user.tab()
     expect(screen.getByText('second')).toHaveFocus()
     await user.tab()
-    expect(screen.getByText('premier')).toHaveFocus()
+    expect(screen.getByText('first')).toHaveFocus()
   })
 
-  it('rend le focus à l élément d origine', async () => {
+  it('restores focus to the element that had it', async () => {
     const outside = document.createElement('button')
     document.body.appendChild(outside)
     outside.focus()
 
     const view = render(<Trapped />)
-    await screen.findByText('premier')
+    await screen.findByText('first')
     view.unmount()
     expect(document.activeElement).toBe(outside)
   })
 })
 
 describe('useAnnouncer', () => {
-  it('écrit dans une région dynamique polie', () => {
+  it('writes into a polite live region', () => {
     const { result } = renderHook(() => useAnnouncer())
-    result.current('étape 2 sur 3')
+    result.current('step 2 of 3')
     const region = document.querySelector('[data-guide-announcer]')
     expect(region).toHaveAttribute('aria-live', 'polite')
-    expect(region).toHaveTextContent('étape 2 sur 3')
+    expect(region).toHaveTextContent('step 2 of 3')
   })
 })
 
 describe('usePrefersReducedMotion', () => {
-  it('suit la requête média', () => {
+  it('follows the media query', () => {
     vi.spyOn(window, 'matchMedia').mockImplementation(
       (query: string) =>
         ({

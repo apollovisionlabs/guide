@@ -1,28 +1,28 @@
 import { expect, test } from '@playwright/test'
 
-test('le parcours clavier complet fonctionne', async ({ page }) => {
+test('the full keyboard walkthrough works', async ({ page }) => {
   await page.goto('/')
   await page.getByTestId('start-tour').click()
 
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible()
 
-  // Le focus entre dans la boîte de dialogue, sur le conteneur lui-même : le piège à focus
-  // vise le Paper et non le bouton de fermeture.
+  // Focus enters the dialog on the container itself: the focus trap aims at the Paper, not at
+  // the close button.
   await expect(dialog).toBeFocused()
 
-  // Les flèches font avancer et reculer.
+  // The arrow keys move forward and back.
   await page.keyboard.press('ArrowRight')
   await expect(dialog).toContainText('Create a project')
   await page.keyboard.press('ArrowLeft')
   await expect(dialog).toContainText('Your projects live here')
 
-  // Échap ferme le tour.
+  // Escape stops the tour.
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
 })
 
-test('le tour est annoncé dans une région dynamique', async ({ page }) => {
+test('the tour is announced in a live region', async ({ page }) => {
   await page.goto('/')
   await page.getByTestId('start-tour').click()
   const announcer = page.locator('[data-guide-announcer]')
@@ -33,7 +33,7 @@ test('le tour est annoncé dans une région dynamique', async ({ page }) => {
   await expect(announcer).toHaveText('2 / 3')
 })
 
-test('les deux thèmes rendent le tour lisible', async ({ page }) => {
+test('both themes render the tour legibly', async ({ page }) => {
   await page.goto('/')
   await page.getByTestId('start-tour').click()
   await expect(page.getByRole('dialog')).toHaveScreenshot('tour-light.png')

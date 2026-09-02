@@ -3,14 +3,14 @@ import { act, render, renderHook, waitFor } from '@testing-library/react'
 import { useTargetElement } from '../src/useTargetElement'
 
 function Anchor({ id }: { id: string }) {
-  return <button data-guide={id}>cible</button>
+  return <button data-guide={id}>target</button>
 }
 
 describe('useTargetElement', () => {
   beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }))
   afterEach(() => vi.useRealTimers())
 
-  it('résout une cible déjà présente', async () => {
+  it('resolves a target that is already present', async () => {
     render(<Anchor id="create" />)
     const { result } = renderHook(() => useTargetElement('create'))
     await waitFor(() => expect(result.current.element).not.toBeNull())
@@ -18,12 +18,12 @@ describe('useTargetElement', () => {
     expect(result.current.timedOut).toBe(false)
   })
 
-  it('ne résout rien quand la cible est nulle', () => {
+  it('resolves nothing when the target is null', () => {
     const { result } = renderHook(() => useTargetElement(null))
     expect(result.current.element).toBeNull()
   })
 
-  it('attend l apparition tardive de la cible', async () => {
+  it('waits for a target that appears late', async () => {
     const { result } = renderHook(() => useTargetElement('late'))
     expect(result.current.element).toBeNull()
 
@@ -35,7 +35,7 @@ describe('useTargetElement', () => {
     view.unmount()
   })
 
-  it('signale le dépassement du délai', async () => {
+  it('reports the timeout being exceeded', async () => {
     const { result } = renderHook(() => useTargetElement('never', { timeoutMs: 1000 }))
     await act(async () => {
       vi.advanceTimersByTime(1200)
@@ -44,13 +44,13 @@ describe('useTargetElement', () => {
     expect(result.current.element).toBeNull()
   })
 
-  it('échappe les guillemets dans la clé de cible', async () => {
+  it('escapes quotes in the target key', async () => {
     render(<Anchor id={'a"b'} />)
     const { result } = renderHook(() => useTargetElement('a"b'))
     await waitFor(() => expect(result.current.element).not.toBeNull())
   })
 
-  it('reprend après le délai quand la cible apparaît plus tard', async () => {
+  it('recovers after the timeout when the target appears later', async () => {
     const { result } = renderHook(() => useTargetElement('delayed', { timeoutMs: 1000 }))
     await act(async () => {
       vi.advanceTimersByTime(1200)

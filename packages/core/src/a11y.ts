@@ -5,8 +5,8 @@ const FOCUSABLE =
 
 export interface UseFocusTrapOptions {
   /**
-   * Élément qui reçoit le focus à l'entrée. 'first' prend le premier focalisable ; 'container'
-   * prend le conteneur lui-même, qui doit alors porter tabIndex={-1}. Défaut : 'first'.
+   * Element that receives focus on entry. 'first' takes the first focusable element; 'container'
+   * takes the container itself, which must then carry tabIndex={-1}. Defaults to 'first'.
    */
   initialFocus?: 'first' | 'container'
 }
@@ -22,12 +22,12 @@ export function useFocusTrap(
     if (!container || !active) return
 
     const previouslyFocused = document.activeElement as HTMLElement | null
-    // Pas de filtre de visibilité : le sélecteur exclut déjà les éléments désactivés et hors
-    // ordre de tabulation, et le popover monte ou démonte ses contrôles plutôt que de les masquer.
+    // No visibility filter: the selector already excludes disabled elements and elements out of
+    // the tab order, and the popover mounts or unmounts its controls rather than hiding them.
     const focusable = () => Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE))
 
-    // 'container' évite de poser le focus sur un bouton actionnable : une touche Entrée
-    // réflexe après une flèche ne doit pas déclencher la fermeture du tour.
+    // 'container' avoids putting focus on an actionable button: a reflex Enter after an arrow
+    // key must not close the tour.
     const first = initialFocus === 'container' ? undefined : focusable()[0]
     if (first) first.focus()
     else container.focus()

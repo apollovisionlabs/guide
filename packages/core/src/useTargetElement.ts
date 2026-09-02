@@ -53,8 +53,8 @@ export function useTargetElement(
     observer.observe(document.body, { childList: true, subtree: true, attributes: true })
 
     timer = setTimeout(() => {
-      // Ne pas deconnecter : la politique wait doit pouvoir reprendre si la cible
-      // apparait plus tard. Le rappel de l'observateur et le nettoyage s'en chargent.
+      // Do not disconnect: the wait policy must be able to resume if the target appears later.
+      // The observer callback and the cleanup take care of disconnecting.
       setState({ target, element: null, timedOut: true })
     }, timeoutMs)
 
@@ -64,8 +64,8 @@ export function useTargetElement(
     }
   }, [target, timeoutMs, attribute])
 
-  // N'exposer l'etat que s'il concerne la cible demandee : sinon l'appelant lirait celui
-  // de l'etape precedente jusqu'a l'execution de l'effet, et sauterait deux fois.
+  // Only expose the state when it matches the requested target: otherwise the caller would read
+  // the previous step's state until the effect runs, and would skip twice.
   const current = state.target === target ? state : EMPTY
   return { element: current.element, timedOut: current.timedOut }
 }
