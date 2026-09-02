@@ -4,6 +4,9 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Recorded that versioning runs locally rather than through a pull request opened by
+  `changesets/action`: the organisation does not allow GitHub Actions to create pull requests.
+  Corrected the release workflow description in `INFRA.md` accordingly.
 - Published `@apollovisionlabs/guide-core@0.1.0` and `@apollovisionlabs/guide-mui@0.1.0` by hand,
   the bootstrap that trusted publishing cannot do. Corrected `INFRA.md` and `SECURITY.md`,
   which said the packages had never reached a registry, and recorded what was verified against

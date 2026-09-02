@@ -104,9 +104,15 @@ Everything below is what *exists*, not what is planned.
   each `CHANGELOG.md`.
 - **A release workflow exists**: `.github/workflows/release.yml`, triggered by a push to `main`.
   It reinstalls, typechecks, tests, builds and runs the end to end suite, then hands over to
-  `changesets/action`. With pending changesets that action opens or updates a version pull request
-  and publishes nothing. With none, it publishes every package whose version is not yet on the
-  registry. A `concurrency` group keeps two releases from racing on the version commit.
+  `changesets/action`, which publishes every package whose version is not yet on the registry. A
+  `concurrency` group keeps two releases from racing.
+- **Versioning happens locally, not in a pull request opened by the workflow.** The
+  `apollovisionlabs` organisation does not allow GitHub Actions to create pull requests, so the
+  action's version step cannot run. Bump with `pnpm changeset version` on a branch, review the
+  changed manifests and changelogs like any other diff, and merge. The workflow then publishes what
+  the registry lacks. The action keeps its `version` argument so that the standard flow resumes by
+  itself if the organisation setting is ever relaxed, and pushing a pending changeset to `main`
+  would fail the release step rather than publish anything unexpected.
 - **Authentication is npm trusted publishing, not a stored token.** The job asks for
   `id-token: write`, GitHub mints an OIDC token, and npm exchanges it for a short lived
   credential. No long lived npm token exists in the repository secrets.
