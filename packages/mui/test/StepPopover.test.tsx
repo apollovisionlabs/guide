@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { StepPopover } from '../src/StepPopover'
@@ -134,5 +134,43 @@ describe('StepPopover', () => {
     expect(highlighted).toHaveAttribute('aria-describedby')
     view.unmount()
     expect(highlighted).not.toHaveAttribute('aria-describedby')
+  })
+
+  it('ignore les flèches et Échap quand le focus est dans un champ de saisie', async () => {
+    const user = userEvent.setup()
+    const props = setup()
+
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    act(() => {
+      input.focus()
+    })
+
+    await user.keyboard('{ArrowRight}')
+    await user.keyboard('{ArrowLeft}')
+    await user.keyboard('{Escape}')
+
+    expect(props.onNext).not.toHaveBeenCalled()
+    expect(props.onPrevious).not.toHaveBeenCalled()
+    expect(props.onStop).not.toHaveBeenCalled()
+  })
+
+  it('porte aria-modal par défaut, et ne le porte pas quand modal est false', () => {
+    setup()
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true')
+
+    setup({ modal: false })
+    const dialogs = screen.getAllByRole('dialog')
+    expect(dialogs[dialogs.length - 1]).not.toHaveAttribute('aria-modal')
+  })
+
+  it('ne déplace pas le focus dans le popover quand modal est false', () => {
+    const previouslyFocused = document.createElement('button')
+    document.body.appendChild(previouslyFocused)
+    previouslyFocused.focus()
+
+    setup({ modal: false })
+
+    expect(document.activeElement).toBe(previouslyFocused)
   })
 })

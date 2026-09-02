@@ -24,6 +24,12 @@ const DEFAULT_LABELS: StepPopoverLabels = {
   close: 'Close',
 }
 
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  if (target.isContentEditable) return true
+  return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT'
+}
+
 export interface StepPopoverProps {
   anchorEl: HTMLElement | null
   open: boolean
@@ -37,6 +43,8 @@ export interface StepPopoverProps {
   zIndex?: number
   /** Élément mis en avant, qui reçoit une description accessible reliée au corps. */
   describeElement?: HTMLElement | null
+  /** Une étape non modale laisse l'utilisateur atteindre la page ; défaut : true. */
+  modal?: boolean
   labels?: Partial<StepPopoverLabels>
   onNext: () => void
   onPrevious: () => void
@@ -55,6 +63,7 @@ export function StepPopover({
   placement = 'bottom',
   zIndex,
   describeElement,
+  modal = true,
   labels,
   onNext,
   onPrevious,
@@ -66,19 +75,20 @@ export function StepPopover({
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const text = { ...DEFAULT_LABELS, ...labels }
 
-  useFocusTrap(container, open)
+  useFocusTrap(container, open && modal)
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return
       if (event.key === 'Escape') {
         event.preventDefault()
         onStop()
       } else if (event.key === 'ArrowRight') {
         event.preventDefault()
         onNext()
-      } else if (event.key === 'ArrowLeft' && !isFirst) {
+      } else if (event.key === 'ArrowLeft') {
         event.preventDefault()
-        onPrevious()
+        if (!isFirst) onPrevious()
       }
     },
     [onStop, onNext, onPrevious, isFirst],
@@ -113,6 +123,7 @@ export function StepPopover({
         role="dialog"
         aria-labelledby={titleId}
         aria-describedby={bodyId}
+        {...(modal ? { 'aria-modal': 'true' as const } : {})}
         tabIndex={-1}
         sx={{ maxWidth: 340, p: 2, borderRadius: 2 }}
       >
