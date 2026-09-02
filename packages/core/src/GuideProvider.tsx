@@ -133,6 +133,10 @@ export function GuideProvider({
 
   const start = useCallback(
     async (tourId: string, options?: { from?: number; resume?: boolean }) => {
+      // Reentrance : un second appel pendant que ce meme tour tourne relirait la
+      // persistance et pourrait faire reculer la progression. Changer de tour reste permis.
+      if (state.tourId === tourId && state.status === 'running') return
+
       const target = toursById.get(tourId)
       if (!target) throw new Error(`[guide] unknown tour: ${tourId}`)
 
@@ -154,21 +158,34 @@ export function GuideProvider({
       dispatch({ type: 'START', tourId, stepIndex })
       emit({ type: 'tour:start', tourId, stepIndex })
     },
-    [toursById, storage, location, emit],
+    [toursById, storage, location, emit, state.tourId, state.status],
   )
 
   // Navigation déléguée : l'étape vit ailleurs, on demande le déplacement.
+  // La destination déjà demandée pour l'étape courante est conservée dans une ref : sans
+  // ça, si la route ne correspond jamais, cet effet rappellerait navigate a chaque rendu.
+  const navigationRef = useRef<{ step: Step | null; destination: string | null }>({
+    step: null,
+    destination: null,
+  })
+
   useEffect(() => {
     if (!isActive || !step || routeMatches) return
+
+    if (navigationRef.current.step !== step) {
+      navigationRef.current = { step, destination: null }
+    }
 
     const destination =
       step.navigateTo ?? (step.route && isLiteralRoute(step.route) ? step.route : null)
 
     if (!destination) return
+    if (navigationRef.current.destination === destination) return
     if (!navigate) {
       console.warn('[guide] a step declares a route but no navigate function was provided')
       return
     }
+    navigationRef.current.destination = destination
     navigate(destination)
   }, [isActive, step, routeMatches, navigate])
 

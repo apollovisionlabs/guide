@@ -234,4 +234,68 @@ describe('GuideProvider', () => {
     ).toThrow(/duplicate tour id/)
     spy.mockRestore()
   })
+
+  it('reprend après expiration quand la cible finit par apparaître (politique wait)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const late: Tour = { id: 'demo', steps: [{ target: 'late', title: 'Première' }] }
+
+    render(
+      <GuideProvider tours={[late]} targetTimeoutMs={500}>
+        <Starter />
+        <StepReadout />
+      </GuideProvider>,
+    )
+
+    await user.click(screen.getByText('démarrer'))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800)
+    })
+    expect(await screen.findByText('paused')).toBeInTheDocument()
+
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    host.innerHTML = '<button data-guide="late">tard</button>'
+
+    await waitFor(() => expect(screen.getByText('running')).toBeInTheDocument())
+    vi.useRealTimers()
+  })
+
+  it('ignore un second démarrage du tour déjà en cours', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(screen.getByText('démarrer'))
+    await screen.findByText('Première')
+    await user.click(screen.getByText('suivant'))
+    await screen.findByText('Deuxième')
+    await user.click(screen.getByText('démarrer'))
+    expect(screen.getByText('Deuxième')).toBeInTheDocument()
+  })
+
+  it('ne navigue qu une fois quand la position ne change pas entre les rendus', async () => {
+    const user = userEvent.setup()
+    const navigate = vi.fn()
+    const routed: Tour = { id: 'demo', steps: [{ target: 'one', route: '/other' }] }
+
+    function Wrapper({ tick }: { tick: number }) {
+      // navigate recree a chaque rendu, comme le ferait une fonction flechee en ligne.
+      const inlineNavigate = (path: string) => navigate(path)
+      return (
+        <GuideProvider tours={[routed]} location="/" navigate={inlineNavigate}>
+          <Starter />
+          <StepReadout />
+          <span>{tick}</span>
+        </GuideProvider>
+      )
+    }
+
+    const { rerender } = render(<Wrapper tick={0} />)
+    await user.click(screen.getByText('démarrer'))
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/other'))
+
+    rerender(<Wrapper tick={1} />)
+    rerender(<Wrapper tick={2} />)
+
+    expect(navigate).toHaveBeenCalledTimes(1)
+  })
 })
