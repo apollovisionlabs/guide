@@ -1,15 +1,3 @@
----
-type: Guide
-title: guide
-description: Public API reference for the headless React product-tour engine and its MUI rendering layer.
-tags: [readme, api, react, onboarding, tour]
-status: stable
-generated:
-  by: claude-opus-5
-  at: 2026-09-02T14:46:46Z
-  directed_by: human:remy dème
----
-
 # guide
 
 `guide` is a headless React library for building in-app product tours. `@guide/core` owns the

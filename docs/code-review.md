@@ -52,8 +52,10 @@ generated:
 - **Visual baselines.** A screenshot diff in `e2e/a11y.spec.ts-snapshots/` is not self-evidently a
   regression: the baselines are `darwin`-specific and their pixel content was never independently
   verified. Look at the diff before accepting or re-recording.
-- **README parity.** Three copies exist — root, `packages/core`, `packages/mui`. They are
-  identical and must stay so.
+- **README parity.** Three copies exist — root, `packages/core`, `packages/mui`. Their prose is
+  identical and must stay so. Only the root copy carries OKF frontmatter, because the other two are
+  published to npm ([ADR 0010](adr/0010-shipped-package-readmes-exempt-from-frontmatter.md)), so
+  compare them below that block.
 
 ## Scoring
 

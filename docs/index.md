@@ -14,7 +14,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 | Document | What it covers |
 | --- | --- |
-| [README.md](../README.md) | The public API reference — every prop, event and option a consumer uses. Also the npm package front page. |
+| [README.md](../README.md) | The public API reference — every prop, event and option a consumer uses. Copied verbatim into each package and published to npm; the two copies carry no frontmatter, per [ADR 0010](adr/0010-shipped-package-readmes-exempt-from-frontmatter.md). |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Package layering, target resolution, cross-page navigation, spotlight geometry, accessibility, known seams. |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Prerequisites, commands, branch and commit conventions, language policy, licence discipline. |
 | [INFRA.md](../INFRA.md) | Build, continuous integration and its ordering, tests, and the exact state of the release path. |
@@ -32,7 +32,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 ## Decisions
 
-[adr/index.md](adr/index.md) — nine records, `0001` to `0009`, plus [adr/template.md](adr/template.md).
+[adr/index.md](adr/index.md) — ten records, `0001` to `0010`, plus [adr/template.md](adr/template.md).
 
 - [0001](adr/0001-headless-core-and-rendering-layer.md) Split a headless core from the rendering layer
 - [0002](adr/0002-logical-targets-via-data-attribute.md) Resolve targets by logical key, never by CSS selector
@@ -43,6 +43,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 - [0007](adr/0007-pluggable-persistence-no-network.md) Persistence is an interface, and the packages make no network calls
 - [0008](adr/0008-accessibility-in-the-core.md) Accessibility lives in the core, and interactive steps are non-modal
 - [0009](adr/0009-typecheck-core-through-sources.md) Typecheck the MUI package against the core's sources
+- [0010](adr/0010-shipped-package-readmes-exempt-from-frontmatter.md) Exempt the shipped package READMEs from the OKF frontmatter rule
 
 ## Plans
 
