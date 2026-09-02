@@ -24,14 +24,14 @@ Run from the repository root. All four are verified to pass on the current tree.
 | Command | What it does |
 | --- | --- |
 | `pnpm typecheck` | `tsc --noEmit` in `packages/core` and `packages/mui`. |
-| `pnpm test` | Vitest, jsdom environment: 69 tests in `@guide/core`, 27 in `@guide/mui`. |
+| `pnpm test` | Vitest, jsdom environment: 69 tests in `@apollovisionlabs/guide-core`, 27 in `@apollovisionlabs/guide-mui`. |
 | `pnpm build` | tsup in both packages: ESM, CJS, declarations, sourcemaps. |
 | `pnpm test:e2e` | Playwright, Chromium only: 7 scenarios in `e2e/`. |
 | `pnpm --filter demo dev` | The demo app on `http://localhost:5173`. |
 
 `pnpm test:e2e` starts the demo itself through Playwright's `webServer`
 (`playwright.config.ts`), reusing an already-running server outside CI. **Run `pnpm build`
-first**: the demo resolves `@guide/core` and `@guide/mui` through their `dist` output, so an
+first**: the demo resolves `@apollovisionlabs/guide-core` and `@apollovisionlabs/guide-mui` through their `dist` output, so an
 end-to-end run against a stale or absent build tests the wrong code. The CI workflow orders the
 steps for exactly that reason. See [INFRA.md](INFRA.md).
 
@@ -47,8 +47,10 @@ Two gaps in local coverage, stated as facts:
 Branch off `main`. Observed names are `<kind>/<slug>`, kebab-case: `feat/tour-v1`,
 `docs/okf-doc-map`.
 
-The repository currently has **no git remote**. Branches and commits stay local, and there is no
-pull request flow to follow yet; when a remote is added this section needs updating.
+The repository has a git remote. It lives at `https://github.com/apollovisionlabs/guide`, and
+`origin` still uses `github.com/LogHosp/guide`, the path it had before the transfer, which GitHub
+redirects. No pull request process is documented yet: this section needs updating once one is
+agreed.
 
 ## Commits
 

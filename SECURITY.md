@@ -14,14 +14,13 @@ generated:
 
 ## Reporting a vulnerability
 
-**Placeholder: this section is not yet operational.** The repository has no git remote, so GitHub
-private vulnerability reporting cannot be enabled or checked, and no security contact address has
-been set. Until a remote exists and either private reporting is turned on or a contact is chosen,
-report privately to the repository owner through whatever channel you already have with them, and
-do **not** open a public issue.
+**Placeholder: no reporting channel is active.** GitHub private vulnerability reporting has not
+been verified as enabled on `https://github.com/apollovisionlabs/guide`, and no security contact
+address has been set. Until one of the two exists, report privately to the repository owner
+through whatever channel you already have with them, and do **not** open a public issue.
 
-Whoever adds the remote must replace this paragraph with the real reporting channel. Treat it as
-an open task, not as a documented process.
+Whoever turns on private reporting or chooses a contact address must replace this paragraph with
+the real reporting channel. Treat it as an open task, not as a documented process.
 
 ## Supported versions
 

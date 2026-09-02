@@ -20,7 +20,7 @@ application. "Infrastructure" means the build, continuous integration, and the r
 pnpm workspaces (`pnpm-workspace.yaml`: `packages/*`, `apps/*`). The root `package.json` is
 private and only holds scripts and shared dev dependencies: React, Vitest, Testing Library, jsdom,
 tsup, TypeScript, Playwright and the Changesets CLI are all hoisted there. Each package keeps only
-what is genuinely its own (`@mui/material` and Emotion as dev dependencies of `@guide/mui`, to
+what is genuinely its own (`@mui/material` and Emotion as dev dependencies of `@apollovisionlabs/guide-mui`, to
 satisfy its own peers during tests).
 
 `tsconfig.base.json` is the shared compiler configuration: `strict`,
@@ -42,16 +42,16 @@ Both packages build with tsup (`packages/*/tsup.config.ts`), from a single entry
   [ADR 0005](docs/adr/0005-disable-treeshake-to-keep-use-client.md). Consumers are not penalised:
   both packages declare `"sideEffects": false`, so a consumer's own bundler still eliminates dead
   code.
-- **Externals**: React and ReactDOM for the core; those plus `@guide/core`, `@mui/material` and
+- **Externals**: React and ReactDOM for the core; those plus `@apollovisionlabs/guide-core`, `@mui/material` and
   both Emotion packages for the MUI layer. Nothing peer-declared is inlined.
 
 ## Typecheck wiring
 
-`packages/mui/tsconfig.json` maps `@guide/core` to `../core/src/index.ts` and includes
+`packages/mui/tsconfig.json` maps `@apollovisionlabs/guide-core` to `../core/src/index.ts` and includes
 `../core/src/globals.d.ts`, and `packages/mui/vitest.config.ts` aliases the same path. The repo
 therefore typechecks and tests from sources, with no build step required first. Two consequences,
 documented in [ADR 0009](docs/adr/0009-typecheck-core-through-sources.md): a type error introduced
-in the core is reported as a `@guide/mui` failure, and the **emitted declaration files are never
+in the core is reported as a `@apollovisionlabs/guide-mui` failure, and the **emitted declaration files are never
 validated** by `pnpm typecheck`.
 
 ## Continuous integration
@@ -70,21 +70,21 @@ pnpm exec playwright install --with-deps chromium
 pnpm test:e2e
 ```
 
-**The order is load-bearing.** `apps/demo` imports `@guide/core` and `@guide/mui` as workspace
+**The order is load-bearing.** `apps/demo` imports `@apollovisionlabs/guide-core` and `@apollovisionlabs/guide-mui` as workspace
 dependencies resolved through their `dist` output, and `pnpm test:e2e` boots that demo. Moving
 `pnpm build` after the end-to-end step would run Playwright against a missing or stale bundle.
 On failure the `playwright-report` directory is uploaded as an artifact.
 
 ### `mui9`
 
-Installs `@mui/material@9` into `@guide/mui` and runs only that package's typecheck. This is what
+Installs `@mui/material@9` into `@apollovisionlabs/guide-mui` and runs only that package's typecheck. This is what
 makes the advertised `"@mui/material": "^7 || ^9"` peer range an actually verified claim rather
 than an aspiration: MUI 7 is exercised by the unit tests and the demo, MUI 9 by this job.
 
 ## Tests
 
 - **Unit**: Vitest with the jsdom environment and `globals: true`, one config per package, each
-  with its own `test/setup.ts`. 69 tests in `@guide/core`, 27 in `@guide/mui`.
+  with its own `test/setup.ts`. 69 tests in `@apollovisionlabs/guide-core`, 27 in `@apollovisionlabs/guide-mui`.
 - **End-to-end**: Playwright (`playwright.config.ts`), a single `chromium` project against
   `http://localhost:5173`, `trace: 'on-first-retry'`. 7 scenarios: four in `e2e/tour.spec.ts`
   (cross-page traversal, resume after interruption, spotlight tracking on scroll, interactive
@@ -104,14 +104,16 @@ Everything below is what *exists*, not what is planned.
   each `CHANGELOG.md`.
 - **Not configured**: there is **no release workflow**. `.github/workflows/` contains `ci.yml`
   only.
-- **No git remote.** `git remote -v` is empty. The `repository` URL in the manifests is a declared
-  intention, not a configured origin. Nothing has been pushed.
+- **A git remote exists.** `origin` points at `github.com/LogHosp/guide`, the path the repository
+  had before the transfer, which GitHub redirects to
+  `https://github.com/apollovisionlabs/guide`. The `repository` URL in the manifests names the
+  destination.
 - **Never executed for real**: publishing has only ever been exercised as a dry run.
   `changeset version` and `changeset publish` have never run against a registry.
-- **The `@guide` npm scope is unproven.** The dry run succeeded, but whether the organisation is
-  claimable is unknown. The fallbacks considered, in order, are `@guidekit` then `@useguide`
-  (`docs/superpowers/specs/2026-09-02-guide-onboarding-design.md`, §4). Neither the repository name
-  nor the public API changes if a fallback is used.
+- **The packages sit in the `@apollovisionlabs` scope**, which the organisation already owns:
+  `@apollovisionlabs/guide-core` and `@apollovisionlabs/guide-mui`. The unclaimed `@guide` scope
+  and its fallbacks were abandoned, see
+  [ADR 0012](docs/adr/0012-publish-under-the-apollovisionlabs-scope.md).
 
 ## Demo application
 
