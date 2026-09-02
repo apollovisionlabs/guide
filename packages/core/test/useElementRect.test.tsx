@@ -53,7 +53,9 @@ describe('useElementRect', () => {
     expect(result.current).toBe(first)
   })
 
-  it('mesure le nouvel élément sans image intermédiaire au changement de cible', () => {
+  // Le fait que la mesure ait lieu avant la peinture n'est pas observable sous jsdom,
+  // car act() vide les effets de mise en page et les effets passifs indifféremment : ce test garantit la valeur obtenue, pas l'ordre.
+  it('suit le rectangle quand l élément change pour un autre élément non nul', () => {
     const first = anchorWithRect({ top: 10, left: 20, width: 100, height: 40 })
     const second = anchorWithRect({ top: 200, left: 5, width: 60, height: 30 })
     const { result, rerender } = renderHook(
