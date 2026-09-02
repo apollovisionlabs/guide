@@ -17,3 +17,4 @@ sequentially, zero-padded.
 | [0008](0008-accessibility-in-the-core.md) | Accessibility lives in the core, and interactive steps are non-modal | stable |
 | [0009](0009-typecheck-core-through-sources.md) | Typecheck the MUI package against the core's sources | stable |
 | [0010](0010-shipped-package-readmes-exempt-from-frontmatter.md) | Exempt the shipped package READMEs from the OKF frontmatter rule | stable |
+| [0011](0011-move-to-apollo-vision-labs.md) | Move to the Apollo Vision Labs organisation | stable |

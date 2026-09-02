@@ -4,6 +4,14 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Moved the repository from the LogHosp organisation to apollovisionlabs and brought it into line
+  with the Apollo Vision Labs conventions. Set the MIT copyright holder to `Apollo Vision Labs` in
+  the three `LICENSE` files, pointed both package `repository` fields and `INFRA.md` at
+  `github.com/apollovisionlabs/guide.git`, and reworded the `quality_score.md` frontmatter.
+  Removed every em dash and en dash from the prose, translated the comments and test names to
+  English, and updated the language and commit sections of `CONTRIBUTING.md`. Recorded as
+  [ADR 0011](adr/0011-move-to-apollo-vision-labs.md). The two documents under
+  `docs/superpowers/` and the existing git history were left untouched on purpose.
 - Installed the LogHosp OKF documentation map (OKF v0.2) on branch `docs/okf-doc-map`. Created the
   root guides `ARCHITECTURE.md`, `CONTRIBUTING.md`, `INFRA.md` and `SECURITY.md`; slimmed the three
   `README.md` copies to the public API plus links, moving the licence discipline into

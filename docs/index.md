@@ -32,7 +32,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 ## Decisions
 
-[adr/index.md](adr/index.md) lists ten records, `0001` to `0010`, plus [adr/template.md](adr/template.md).
+[adr/index.md](adr/index.md) lists eleven records, `0001` to `0011`, plus [adr/template.md](adr/template.md).
 
 - [0001](adr/0001-headless-core-and-rendering-layer.md) Split a headless core from the rendering layer
 - [0002](adr/0002-logical-targets-via-data-attribute.md) Resolve targets by logical key, never by CSS selector
@@ -44,6 +44,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 - [0008](adr/0008-accessibility-in-the-core.md) Accessibility lives in the core, and interactive steps are non-modal
 - [0009](adr/0009-typecheck-core-through-sources.md) Typecheck the MUI package against the core's sources
 - [0010](adr/0010-shipped-package-readmes-exempt-from-frontmatter.md) Exempt the shipped package READMEs from the OKF frontmatter rule
+- [0011](adr/0011-move-to-apollo-vision-labs.md) Move to the Apollo Vision Labs organisation
 
 ## Plans
 
