@@ -14,7 +14,7 @@ generated:
 # Changesets configuration schema
 
 The schema `.changeset/config.json` declares through its `$schema` field. Useful when changing the
-release configuration — the current settings are `changelog: "@changesets/cli/changelog"`,
+release configuration. The current settings are `changelog: "@changesets/cli/changelog"`,
 `commit: false`, `access: "public"`, `baseBranch: "main"`,
 `updateInternalDependencies: "patch"`.
 

@@ -16,7 +16,7 @@ generated:
 
 This repository has no persistence layer of its own, no schema and no migration directory. Nothing
 here creates a table or an index, so the usual index discipline does not apply. What the packages
-persist, they persist through the consumer-supplied `GuideStorage` interface — two async methods
+persist, they persist through the consumer-supplied `GuideStorage` interface, two async methods
 writing a tour id, a step index and a status. See [security.md](security.md).
 
 "Migration" in this repository therefore means one of three things: a dependency major, a
@@ -31,7 +31,7 @@ supported-peer change, or a public API change.
 - **Peers express the supported range**, and a range is only advertised once something verifies it.
   `@guide/mui` declares `"@mui/material": "^7 || ^9"`, and the `mui9` job in
   `.github/workflows/ci.yml` installs MUI 9 and typechecks against it. Widening a peer range without
-  adding the matching verification is not acceptable — see
+  adding the matching verification is not acceptable. See
   [ADR 0006](adr/0006-support-two-mui-majors.md).
 - **React** is peer-pinned to `^19` in both packages. Supporting another major means deciding what
   to do about the hooks the core relies on, and would be an ADR.
@@ -65,6 +65,6 @@ process exists.
 
 ## Consumer-facing migrations
 
-If a change alters how a consumer declares a tour — the shape of `Step`, the meaning of a policy,
-the `data-guide` attribute name — write the migration note in the changeset and update all three
+If a change alters how a consumer declares a tour (the shape of `Step`, the meaning of a policy,
+the `data-guide` attribute name), write the migration note in the changeset and update all three
 README copies in the same commit.

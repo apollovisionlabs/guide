@@ -15,7 +15,7 @@ generated:
 ## Context
 
 A useful product tour crosses pages. Doing that from inside the library would mean importing a
-router — and every consumer using a different one, or a different major of the same one, would be
+router, and every consumer using a different one, or a different major of the same one, would be
 excluded.
 
 ## Decision
@@ -24,7 +24,7 @@ excluded.
 pathname, and `navigate`, a `(path: string) => void` the consumer supplies. A step declares `route`
 (a pattern) and optionally `navigateTo` (a concrete path); when `location` does not match `route`,
 the provider calls `navigate`. Pattern matching is a 40-line function,
-`packages/core/src/matchRoute.ts`, supporting `:param` segments and a `*` wildcard — not a router.
+`packages/core/src/matchRoute.ts`, supporting `:param` segments and a `*` wildcard. It is not a router.
 
 `apps/demo/src/App.tsx` wires React Router's `useNavigate` and `useLocation` into those two props,
 demonstrating the intended integration without the packages depending on React Router.

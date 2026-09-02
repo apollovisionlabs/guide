@@ -16,17 +16,17 @@ generated:
 
 Focus management, screen-reader announcements and motion preferences look like rendering concerns,
 so the obvious place for them is the MUI package. But putting them there means the next rendering
-layer starts from zero on accessibility — the part of a tour most likely to be got wrong.
+layer starts from zero on accessibility, the part of a tour most likely to be got wrong.
 
 ## Decision
 
 `packages/core/src/a11y.ts` owns three primitives, exported from `@guide/core`:
 
-- `useFocusTrap(container, active, { initialFocus })` — cycles Tab within the container and
+- `useFocusTrap(container, active, { initialFocus })` cycles Tab within the container and
   restores the previously focused element on teardown.
-- `useAnnouncer()` — a single visually hidden `[data-guide-announcer]` node with
+- `useAnnouncer()` exposes a single visually hidden `[data-guide-announcer]` node with
   `aria-live="polite"`, into which the provider writes `"<n> / <total>"` for every shown step.
-- `usePrefersReducedMotion()` — the media query, subscribed and unsubscribed.
+- `usePrefersReducedMotion()` subscribes to the media query and unsubscribes on teardown.
 
 The provider additionally restores focus to the element that had it when the tour started, because
 the popover unmounts and remounts on each step and its own trap cannot own that origin.

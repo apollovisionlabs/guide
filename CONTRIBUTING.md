@@ -33,7 +33,7 @@ Run from the repository root. All four are verified to pass on the current tree.
 (`playwright.config.ts`), reusing an already-running server outside CI. **Run `pnpm build`
 first**: the demo resolves `@guide/core` and `@guide/mui` through their `dist` output, so an
 end-to-end run against a stale or absent build tests the wrong code. The CI workflow orders the
-steps for exactly that reason — see [INFRA.md](INFRA.md).
+steps for exactly that reason. See [INFRA.md](INFRA.md).
 
 Two gaps in local coverage, stated as facts:
 
@@ -66,16 +66,16 @@ Scopes in use: `core`, `mui`, `demo`. `docs`, `test` and `chore` are used unscop
 
 ## Language policy
 
-The repository is bilingual on purpose, and inconsistently so — this is the current state, not a
+The repository is bilingual on purpose, and inconsistently so. This is the current state, not a
 target:
 
-- **English**: everything a stranger reads — the READMEs, the demo's page copy, the popover's
+- **English**: everything a stranger reads, namely the READMEs, the demo's page copy, the popover's
   default button labels, the public type documentation.
 - **French**: source comments and test names (`test('le tour traverse trois pages et se termine')`).
 
 Match the file you are editing rather than converting it.
 
-## Licence discipline — not optional
+## Licence discipline, not optional
 
 This package is MIT and must stay MIT-clean.
 

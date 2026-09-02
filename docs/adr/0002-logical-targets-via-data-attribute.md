@@ -34,7 +34,7 @@ the documented and default contract.
 - A tour survives restyling and re-nesting; it breaks only when the marked element is removed,
   which is a meaningful signal.
 - Tours are plain serialisable objects, which keeps them storable and shareable.
-- The application must place the attributes, which is visible in its markup — accepted, and
+- The application must place the attributes, which is visible in its markup. That is accepted, and
   arguably a feature, since a reader can see which elements a tour depends on.
 - Sharing one selector builder is a correctness requirement, not tidiness: a divergence would let a
   key containing a quote resolve at runtime while throwing a `SyntaxError` during validation. That

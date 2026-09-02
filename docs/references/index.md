@@ -8,7 +8,7 @@ repository, so each entry can be re-verified. Add one with [template.md](templat
 | [OKF specification](okf-spec.md) | The documentation format this bundle conforms to. |
 | [MUI](mui.md) | The component library `@guide/mui` renders with. |
 | [Changesets configuration schema](changesets.md) | Schema behind `.changeset/config.json`. |
-| [driver.js](driver-js.md) | MIT prior art — the spotlight approach. |
+| [driver.js](driver-js.md) | MIT prior art: the spotlight approach. |
 | [react-joyride](react-joyride.md) | MIT prior art. |
 | [reactour](reactour.md) | MIT prior art. |
 

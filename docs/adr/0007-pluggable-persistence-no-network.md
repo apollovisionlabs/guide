@@ -15,8 +15,8 @@ generated:
 ## Context
 
 A tour that restarts from step one after a page reload is worse than no tour. But where progress
-belongs — memory, `localStorage`, a user profile on the consumer's own server — is the consumer's
-decision, and one with privacy implications the library cannot make on their behalf.
+belongs, whether in memory, in `localStorage`, or in a user profile on the consumer's own server, is
+the consumer's decision, and one with privacy implications the library cannot make on their behalf.
 
 ## Decision
 

@@ -12,15 +12,15 @@ generated:
 
 # Architecture
 
-This document describes the internals. For the public API — every prop, every event, every
-option a consumer passes — see [README.md](README.md); it is not repeated here.
+This document describes the internals. For the public API (every prop, every event, every
+option a consumer passes), see [README.md](README.md); it is not repeated here.
 
 ## Repository layout
 
 ```
-packages/core/     @guide/core — state machine, DOM resolution, a11y, persistence. No UI dependency.
-packages/mui/      @guide/mui  — MUI rendering of what the core exposes.
-apps/demo/         demo        — private three-page Vite app, also the Playwright fixture.
+packages/core/     @guide/core:  state machine, DOM resolution, a11y, persistence. No UI dependency.
+packages/mui/      @guide/mui:   MUI rendering of what the core exposes.
+apps/demo/         demo:         private three-page Vite app, also the Playwright fixture.
 e2e/               Playwright specs run against apps/demo.
 ```
 
@@ -80,7 +80,7 @@ previous step's expiry for a render.
 The consequence is a real constraint on consumers: because the comparison is by object identity,
 tours must be declared as **module constants**, not as inline literals recreated on every render.
 An inline literal produces a new step object each render, the effect restarts, and the timer never
-fires — the missing-target policy would silently never apply. `apps/demo/src/tours.ts` shows the
+fires, so the missing-target policy would silently never apply. `apps/demo/src/tours.ts` shows the
 documented pattern.
 
 ## Cross-page tours without a router dependency
@@ -102,7 +102,7 @@ viewport: one full-size rectangle filled with a themed overlay colour, masked by
 rectangle over the target's rectangle plus padding.
 
 The rectangle comes from `packages/core/src/useElementRect.ts`, which measures in a
-`useLayoutEffect` (falling back to `useEffect` outside the browser) — measuring in a plain effect
+`useLayoutEffect` (falling back to `useEffect` outside the browser). Measuring in a plain effect
 would let one frame through with the spotlight still on the previous step's element. It re-measures
 on `ResizeObserver` callbacks, on capture-phase `scroll`, and on `resize`, and returns the previous
 object when the rectangle is unchanged so consumers do not re-render needlessly.
@@ -115,18 +115,18 @@ step sets `pointer-events: none` on the whole overlay instead.
 
 `packages/core/src/a11y.ts` owns three primitives, so an alternative renderer inherits them:
 
-- `useFocusTrap(container, active, { initialFocus })` — cycles Tab and Shift+Tab inside the
+- `useFocusTrap(container, active, { initialFocus })` cycles Tab and Shift+Tab inside the
   container and restores the previously focused element on teardown. `initialFocus: 'container'`
   is used by the popover so a reflex Enter after an arrow key does not hit the close button.
-- `useAnnouncer()` — writes into a single visually hidden `[data-guide-announcer]` node with
+- `useAnnouncer()` writes into a single visually hidden `[data-guide-announcer]` node with
   `aria-live="polite"`; the provider announces `"<n> / <total>"` on every shown step.
-- `usePrefersReducedMotion()` — subscribes to the media query; the spotlight drops its transition.
+- `usePrefersReducedMotion()` subscribes to the media query; the spotlight drops its transition.
 
 The provider also restores focus to whatever was focused when the tour started: the popover
 unmounts and remounts on every step, so its own trap cannot own that origin.
 
 A step marked `interactive: true` is rendered **non-modal** on purpose (`modal={!interactive}` in
-`GuideTour.tsx`): no focus trap, no `aria-modal`, a click-through overlay — otherwise the user
+`GuideTour.tsx`): no focus trap, no `aria-modal`, a click-through overlay. Otherwise the user
 could not reach the element the step tells them to click.
 
 ## Persistence

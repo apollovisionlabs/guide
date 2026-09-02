@@ -18,7 +18,7 @@ application. "Infrastructure" means the build, continuous integration, and the r
 ## Workspace
 
 pnpm workspaces (`pnpm-workspace.yaml`: `packages/*`, `apps/*`). The root `package.json` is
-private and only holds scripts and shared dev dependencies — React, Vitest, Testing Library, jsdom,
+private and only holds scripts and shared dev dependencies: React, Vitest, Testing Library, jsdom,
 tsup, TypeScript, Playwright and the Changesets CLI are all hoisted there. Each package keeps only
 what is genuinely its own (`@mui/material` and Emotion as dev dependencies of `@guide/mui`, to
 satisfy its own peers during tests).
@@ -91,10 +91,10 @@ than an aspiration: MUI 7 is exercised by the unit tests and the demo, MUI 9 by 
   step), three in `e2e/a11y.spec.ts` (full keyboard path, live-region announcements, both themes).
 - **Visual baselines**: `e2e/a11y.spec.ts-snapshots/tour-light-chromium-darwin.png` and
   `tour-dark-chromium-darwin.png`. They are platform-specific (`darwin`) and their pixel content
-  has never been independently verified — they pin whatever was rendered when they were recorded.
+  has never been independently verified. They pin whatever was rendered when they were recorded.
   Treat a mismatch as a signal to look at the diff, not as proof of a regression.
 
-## Release path — exact state
+## Release path, exact state
 
 Everything below is what *exists*, not what is planned.
 
@@ -116,5 +116,5 @@ Everything below is what *exists*, not what is planned.
 ## Demo application
 
 `apps/demo` is a Vite 7 + React 19 + React Router 7 single-page app served on port 5173
-(`vite --port 5173`). It is private, never published, and doubles as the Playwright fixture — so a
+(`vite --port 5173`). It is private, never published, and doubles as the Playwright fixture, so a
 change to its markup or its `data-guide` attributes can break the end-to-end suite.

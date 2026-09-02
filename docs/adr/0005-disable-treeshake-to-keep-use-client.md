@@ -24,7 +24,7 @@ is recorded as a comment in `packages/core/tsup.config.ts` and `packages/mui/tsu
 ## Decision
 
 `treeshake: false` in both tsup configs. Both packages instead declare `"sideEffects": false` in
-their manifests, which gives consumers dead-code elimination in their own bundler — where it
+their manifests, which gives consumers dead-code elimination in their own bundler, where it
 belongs.
 
 ## Consequences

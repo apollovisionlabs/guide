@@ -1,7 +1,7 @@
 # Architecture decision records
 
 Structural decisions with evidence in the code. Write a new one only for a structural or
-architectural decision — a new pattern or boundary, a significant dependency, an irreversible
+architectural decision: a new pattern or boundary, a significant dependency, an irreversible
 choice. Routine features and bug fixes get no ADR. Use [template.md](template.md); number
 sequentially, zero-padded.
 

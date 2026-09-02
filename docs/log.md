@@ -9,7 +9,7 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
   `README.md` copies to the public API plus links, moving the licence discipline into
   `CONTRIBUTING.md` and the prior-art URLs into `docs/references/`.
 - Created the bundle: playbooks `security.md`, `code-quality.md`, `code-review.md`, `migrations.md`
-  and `quality_score.md`; nine ADRs (`0001`–`0009`); the plans, regressions and references
+  and `quality_score.md`; nine ADRs (`0001` to `0009`); the plans, regressions and references
   sub-bundles with their templates; six references including the OKF specification.
 - Wired the Documentation Map contract into new `AGENTS.md` and `CLAUDE.md` files.
 - Removed the OKF frontmatter from `packages/core/README.md` and `packages/mui/README.md`: both are

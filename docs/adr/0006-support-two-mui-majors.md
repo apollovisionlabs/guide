@@ -34,6 +34,6 @@ new bound.**
   runtime or visual differences between the two majors. That limit is accepted and stated.
 - The `mui9` job is independent of `verify`, so a MUI 9 break is visible without blocking the rest
   of the signal.
-- Keeping the MUI surface small — `Box`, `Button`, `IconButton`, `Paper`, `Popper`, `Typography`,
-  `alpha`, `useTheme` — is what makes spanning two majors realistic. Reaching for a component that
+- Keeping the MUI surface small (`Box`, `Button`, `IconButton`, `Paper`, `Popper`, `Typography`,
+  `alpha`, `useTheme`) is what makes spanning two majors realistic. Reaching for a component that
   differs between them reopens this decision.

@@ -37,7 +37,7 @@ promise, not a refactor.
 6. **Selectors are built, never concatenated blind.** `packages/core/src/selector.ts` escapes the
    target key with `CSS.escape` (with a manual fallback) before interpolating it into
    `[data-guide="…"]`. Both runtime resolution and development validation must keep using that one
-   builder — a divergence would make a key valid on one path and a `SyntaxError` on the other.
+   builder. A divergence would make a key valid on one path and a `SyntaxError` on the other.
 7. **DOM mutation of consumer elements is minimal and reversed.** The popover sets
    `aria-describedby` on the highlighted element and removes it on cleanup; the announcer appends
    one visually hidden node. Nothing else in the consumer's tree is written to.

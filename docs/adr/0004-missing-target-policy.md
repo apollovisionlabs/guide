@@ -25,8 +25,8 @@ connections; waiting forever leaves the tour invisible and unquittable.
 `targetTimeoutMs`, default 5000. On expiry it reports `timedOut` **without disconnecting the
 observer**, so a late arrival can still be picked up.
 
-The provider then applies a policy — `skip`, `wait` or `error`, with `wait` as the default,
-overridable per step through `Step.onMissingTarget` — and emits `target:missing`. `wait` pauses;
+The provider then applies a policy (`skip`, `wait` or `error`, with `wait` as the default,
+overridable per step through `Step.onMissingTarget`) and emits `target:missing`. `wait` pauses;
 an effect resumes the tour automatically when the element appears.
 
 A second timer covers the case where a step's `route` never matches, so no target is ever

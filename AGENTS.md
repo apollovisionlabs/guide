@@ -12,7 +12,7 @@ that doubles as the Playwright fixture, and `e2e/` is the end-to-end suite.
   `dist`.
 - Commit messages are in French, conventional-commit style (`feat(core):`, `fix(mui):`, `test:`,
   `chore:`, `docs:`). Branches are `<kind>/<slug>`. The repository has no git remote.
-- Never open the source of Intro.js or Shepherd.js — they are AGPL or commercial and would
+- Never open the source of Intro.js or Shepherd.js: they are AGPL or commercial and would
   contaminate this MIT package. driver.js, react-joyride and reactour are MIT and may be read.
 
 ## Documentation Map

@@ -15,7 +15,7 @@ generated:
 
 MIT-licensed tour library whose spotlight-and-popover approach inspired this one. Its popover is
 vanilla DOM, which is why it could not simply be themed with MUI. Being MIT, its source **may** be
-read and reused with attribution — unlike Intro.js and Shepherd.js, which must never be opened
+read and reused with attribution, unlike Intro.js and Shepherd.js, which must never be opened
 (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 
 **Where it is defined**: cited in the "Prior art" section of the README.

@@ -14,8 +14,8 @@ generated:
 
 ## Context
 
-The LogHosp OKF convention requires YAML frontmatter — `type`, `title`, `description`, `tags`,
-`status`, `generated` — on every non-reserved markdown file in the repository. Applying it
+The LogHosp OKF convention requires YAML frontmatter (`type`, `title`, `description`, `tags`,
+`status`, `generated`) on every non-reserved markdown file in the repository. Applying it
 literally puts that block at the top of all three `README.md` copies: the root one, and one in
 each package.
 
@@ -51,6 +51,6 @@ surface wins.
 ## Alternative rejected
 
 Deleting `packages/core/README.md` and `packages/mui/README.md` and keeping only the root one.
-That would satisfy the rule with no exemption, but both npm package pages would then be empty —
-npm renders nothing when a package ships no README — which is a far worse outcome for a library
-whose whole point is to be adopted by strangers.
+That would satisfy the rule with no exemption, but both npm package pages would then be empty,
+because npm renders nothing when a package ships no README. That is a far worse outcome for a
+library whose whole point is to be adopted by strangers.

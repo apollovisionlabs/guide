@@ -15,7 +15,7 @@ generated:
 ## Context
 
 `@guide/mui` imports `@guide/core`. Resolving that through the published `exports` field means the
-core must be built before the MUI package can be typechecked or tested — a build step inside every
+core must be built before the MUI package can be typechecked or tested. That is a build step inside every
 edit loop, and a continuous integration ordering constraint on the cheapest jobs.
 
 ## Decision

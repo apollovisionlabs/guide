@@ -40,7 +40,7 @@ generated:
   listener in this codebase is cleaned up. A missing cleanup usually shows as a test that only
   fails when run with others.
 - **Measuring after paint.** `useElementRect` measures in a layout effect on purpose. Moving that
-  to `useEffect` makes the spotlight lag one frame behind a step change — a defect no unit test
+  to `useEffect` makes the spotlight lag one frame behind a step change, a defect no unit test
   currently catches.
 - **The public surface is wider than it looks.** `Spotlight` and `StepPopover` are exported with
   their full prop interfaces, so changing either prop object is a breaking change even though
@@ -52,7 +52,7 @@ generated:
 - **Visual baselines.** A screenshot diff in `e2e/a11y.spec.ts-snapshots/` is not self-evidently a
   regression: the baselines are `darwin`-specific and their pixel content was never independently
   verified. Look at the diff before accepting or re-recording.
-- **README parity.** Three copies exist — root, `packages/core`, `packages/mui`. Their prose is
+- **README parity.** Three copies exist: root, `packages/core`, `packages/mui`. Their prose is
   identical and must stay so. Only the root copy carries OKF frontmatter, because the other two are
   published to npm ([ADR 0010](adr/0010-shipped-package-readmes-exempt-from-frontmatter.md)), so
   compare them below that block.

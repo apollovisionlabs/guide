@@ -25,7 +25,7 @@ Emotion. Nothing under `packages/core/src` imports MUI, Emotion, or a router.
 
 ## Decision
 
-All decisions live in `@guide/core` and are exposed as hooks — `useTour`, `useGuideStep` — over a
+All decisions live in `@guide/core` and are exposed as hooks (`useTour`, `useGuideStep`) over a
 `GuideProvider`. A rendering package consumes those hooks and adds no behaviour of its own beyond
 presentation and the keyboard affordances tied to its own markup.
 

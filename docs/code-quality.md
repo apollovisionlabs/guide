@@ -13,7 +13,7 @@ generated:
 # Code quality playbook
 
 No linter and no formatter are configured. Every rule below is enforced by review, and every one
-of them is observed in the current sources — none is aspirational.
+of them is observed in the current sources. None is aspirational.
 
 ## TypeScript
 
@@ -65,7 +65,7 @@ Comments and test names are written in **French**; everything a stranger reads i
 - A new behaviour needs a test at the lowest level that can express it: pure logic in
   `tourMachine.test.ts` or `matchRoute.test.ts`, DOM behaviour in a hook test, cross-page or
   keyboard behaviour end to end.
-- Tests assert what is guaranteed and no more — `useElementRect.test.tsx` deliberately bounds its
+- Tests assert what is guaranteed and no more. `useElementRect.test.tsx` deliberately bounds its
   claims about the rectangle rather than pinning jsdom's arbitrary zeros.
 - Do not fix an `act` warning by silencing it; the existing tests fix the cause.
 

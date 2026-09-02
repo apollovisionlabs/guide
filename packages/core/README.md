@@ -3,7 +3,7 @@
 `guide` is a headless React library for building in-app product tours. `@guide/core` owns the
 state machine, target resolution, routing, persistence and accessibility concerns, and exposes
 them as hooks with no rendering opinion. `@guide/mui` consumes those hooks to render a tour with
-[MUI](https://mui.com) components — a spotlight overlay and a popover — so you get a complete tour
+[MUI](https://mui.com) components (a spotlight overlay and a popover), so you get a complete tour
 out of the box, or you can render your own UI on top of `@guide/core` directly.
 
 This repository includes a runnable demo. From the repo root, run `pnpm --filter demo dev` and
@@ -70,13 +70,13 @@ missing-target policy below from ever firing.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `tours` | `Tour[]` | — | The tours available to `start()`. Tour ids must be unique. |
-| `children` | `ReactNode` | — | Your application. |
-| `navigate` | `(path: string) => void` | — | Called when a step declares a page it needs. Required for multi-page tours. |
-| `location` | `string` | — | The current pathname, used to decide whether a step's target should be on screen. Required for multi-page tours. |
-| `storage` | `GuideStorage` | — | Persists tour progress. See "Persistence". |
-| `translate` | `(key: string) => string` | — | Resolves `titleKey` / `bodyKey` on steps. See "Translations". |
-| `onEvent` | `(event: GuideEvent) => void` | — | Called for every lifecycle event. See "Events". |
+| `tours` | `Tour[]` | none | The tours available to `start()`. Tour ids must be unique. |
+| `children` | `ReactNode` | none | Your application. |
+| `navigate` | `(path: string) => void` | none | Called when a step declares a page it needs. Required for multi-page tours. |
+| `location` | `string` | none | The current pathname, used to decide whether a step's target should be on screen. Required for multi-page tours. |
+| `storage` | `GuideStorage` | none | Persists tour progress. See "Persistence". |
+| `translate` | `(key: string) => string` | none | Resolves `titleKey` / `bodyKey` on steps. See "Translations". |
+| `onEvent` | `(event: GuideEvent) => void` | none | Called for every lifecycle event. See "Events". |
 | `onMissingTarget` | `'skip' \| 'wait' \| 'error'` | `'wait'` | Default policy when a step's target never appears. Overridable per step. |
 | `targetTimeoutMs` | `number` | `5000` | How long to wait for a target before applying the missing-target policy. |
 
@@ -90,7 +90,7 @@ A step can declare the route it belongs to and, when it isn't the current one, w
   route: '/projects',
   navigateTo: '/projects',
   title: 'Create a project',
-  body: 'This step lives on another page — you were moved here automatically.',
+  body: 'This step lives on another page, and you were moved here automatically.',
 }
 ```
 
@@ -135,8 +135,8 @@ function createServerStorage(): GuideStorage {
 }
 ```
 
-Pass it as the `storage` prop. The provider reads on `start()` — unless an explicit `from` step
-index is passed, or `resume: false` is passed — and writes whenever a running tour advances or
+Pass it as the `storage` prop. The provider reads on `start()` (unless an explicit `from` step
+index is passed, or `resume: false` is passed) and writes whenever a running tour advances or
 completes.
 
 ## Translations
@@ -149,7 +149,7 @@ to resolve to real strings.
 
 The popover's own chrome is the one exception: `@guide/mui` ships English default labels
 (`Next`, `Back`, `Finish`, `Close`), so the buttons read correctly out of the box. Every one of
-them is overridable through the `labels` prop on `GuideTour` — pass the labels in your language
+them is overridable through the `labels` prop on `GuideTour`: pass the labels in your language
 and nothing English remains:
 
 ```tsx
@@ -173,11 +173,11 @@ and nothing English remains:
 - The current step position is announced through a visually-hidden `aria-live="polite"` region,
   so screen reader users hear "2 / 4" as the tour advances.
 - The step popover traps keyboard focus and is exposed as `role="dialog"` with
-  `aria-labelledby` / `aria-describedby` — except for a step marked `interactive: true`, which
+  `aria-labelledby` / `aria-describedby`, except for a step marked `interactive: true`, which
   deliberately does **not** trap focus, so the user can tab or click past the popover to reach the
   element they're asked to interact with.
-- `Escape` stops the tour, `ArrowRight` advances, `ArrowLeft` goes back — all ignored while focus
-  is in a text input, so typing isn't hijacked.
+- `Escape` stops the tour, `ArrowRight` advances, `ArrowLeft` goes back. All three are ignored
+  while focus is in a text input, so typing isn't hijacked.
 - The highlighted element receives `aria-describedby`, pointing at the step's body text.
 - The spotlight respects `prefers-reduced-motion` and disables its transition when set.
 
@@ -185,7 +185,7 @@ and nothing English remains:
 
 Each step is checked against its `target` (matched by a `data-guide` attribute) for up to
 `targetTimeoutMs` (default 5 seconds, per-provider). If the target never appears, the step's own
-`onMissingTarget` — or the provider's `onMissingTarget`, which defaults to `'wait'` — decides what
+`onMissingTarget` (or the provider's `onMissingTarget`, which defaults to `'wait'`) decides what
 happens: `'skip'` moves to the next step, `'error'` stops the tour, and `'wait'` (the default)
 pauses and resumes automatically if the target appears later, for instance after a slow async
 render.
@@ -211,12 +211,12 @@ reused with a different design system. Contributors must also read the licence d
 
 This file is the public API reference. Everything else lives in the repository:
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — how the packages are layered and how the mechanisms work.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — prerequisites, commands, conventions, licence discipline.
-- [`INFRA.md`](INFRA.md) — build, continuous integration, and the state of the release path.
-- [`SECURITY.md`](SECURITY.md) — reporting, supported versions, what the packages touch.
-- [`docs/index.md`](docs/index.md) — the full documentation map: playbooks, decisions, references.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): how the packages are layered and how the mechanisms work.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): prerequisites, commands, conventions, licence discipline.
+- [`INFRA.md`](INFRA.md): build, continuous integration, and the state of the release path.
+- [`SECURITY.md`](SECURITY.md): reporting, supported versions, what the packages touch.
+- [`docs/index.md`](docs/index.md): the full documentation map: playbooks, decisions, references.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
