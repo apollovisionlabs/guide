@@ -59,7 +59,8 @@ export function useTargetElement(
     observer.observe(document.body, { childList: true, subtree: true, attributes: true })
 
     timer = setTimeout(() => {
-      observer.disconnect()
+      // Ne pas deconnecter : la politique wait doit pouvoir reprendre si la cible
+      // apparait plus tard. Le rappel de l'observateur et le nettoyage s'en chargent.
       setState({ target, element: null, timedOut: true })
     }, timeoutMs)
 

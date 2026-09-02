@@ -49,4 +49,21 @@ describe('useTargetElement', () => {
     const { result } = renderHook(() => useTargetElement('a"b'))
     await waitFor(() => expect(result.current.element).not.toBeNull())
   })
+
+  it('reprend après le délai quand la cible apparaît plus tard', async () => {
+    const { result } = renderHook(() => useTargetElement('delayed', { timeoutMs: 1000 }))
+    await act(async () => {
+      vi.advanceTimersByTime(1200)
+    })
+    expect(result.current.timedOut).toBe(true)
+    expect(result.current.element).toBeNull()
+
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const view = render(<Anchor id="delayed" />, { container: host })
+
+    await waitFor(() => expect(result.current.element).not.toBeNull())
+    expect(result.current.timedOut).toBe(false)
+    view.unmount()
+  })
 })
