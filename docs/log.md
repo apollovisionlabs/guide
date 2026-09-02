@@ -4,6 +4,12 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Added [adoption.md](adoption.md), the integration playbook: the ordered sequence from installing
+  the two packages to a multi-page tour, then the choices that follow (missing-target policy,
+  persistence and why browser storage is wrong on a shared workstation, text and labels,
+  interactive steps and the non-modal consequence, what to verify). Closes with the three traps a
+  first integration hits and with what the library does not do. It links to the API reference in
+  `README.md` rather than restating it, and is listed in [index.md](index.md).
 - Released `0.1.1` through the workflow, which is the first version published without a human
   touching the registry. Both packages carry a signed provenance attestation, verified on the
   registry rather than taken from the publish output. `INFRA.md` now states provenance as

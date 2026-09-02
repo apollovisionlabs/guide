@@ -24,6 +24,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 | Document | When to read it |
 | --- | --- |
+| [adoption.md](adoption.md) | Integrating the packages into an application: the ordered sequence, the choices, the first-integration traps. |
 | [security.md](security.md) | Any change to storage, the DOM, dependencies, or network behaviour. |
 | [code-quality.md](code-quality.md) | Writing code: TypeScript settings, style, comments, test expectations. |
 | [code-review.md](code-review.md) | Reviewing a change; includes the traps specific to this codebase. |
