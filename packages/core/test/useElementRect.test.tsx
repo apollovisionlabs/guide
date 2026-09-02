@@ -52,4 +52,18 @@ describe('useElementRect', () => {
     })
     expect(result.current).toBe(first)
   })
+
+  it('mesure le nouvel élément sans image intermédiaire au changement de cible', () => {
+    const first = anchorWithRect({ top: 10, left: 20, width: 100, height: 40 })
+    const second = anchorWithRect({ top: 200, left: 5, width: 60, height: 30 })
+    const { result, rerender } = renderHook(
+      ({ element }) => useElementRect(element),
+      { initialProps: { element: first as HTMLElement | null } },
+    )
+    expect(result.current).toEqual({ top: 10, left: 20, width: 100, height: 40 })
+
+    rerender({ element: second })
+
+    expect(result.current).toEqual({ top: 200, left: 5, width: 60, height: 30 })
+  })
 })
