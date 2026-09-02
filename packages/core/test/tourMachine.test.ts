@@ -49,4 +49,18 @@ describe('tourReducer', () => {
   it('ignore une action de progression quand aucun tour ne tourne', () => {
     expect(tourReducer(initialTourState, { type: 'NEXT', stepCount: 3 })).toBe(initialTourState)
   })
+
+  it('avancer depuis un tour en pause reprend le tour', () => {
+    const started = tourReducer(initialTourState, { type: 'START', tourId: 'a', stepIndex: 0 })
+    const paused = tourReducer(started, { type: 'PAUSE' })
+    const state = tourReducer(paused, { type: 'NEXT', stepCount: 3 })
+    expect(state).toEqual({ tourId: 'a', stepIndex: 1, status: 'running' })
+  })
+
+  it('reculer depuis un tour en pause reprend le tour', () => {
+    const started = tourReducer(initialTourState, { type: 'START', tourId: 'a', stepIndex: 1 })
+    const paused = tourReducer(started, { type: 'PAUSE' })
+    const state = tourReducer(paused, { type: 'PREVIOUS' })
+    expect(state).toEqual({ tourId: 'a', stepIndex: 0, status: 'running' })
+  })
 })

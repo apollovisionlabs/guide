@@ -25,6 +25,7 @@ export function tourReducer(state: TourState, action: TourAction): TourState {
     case 'START':
       return { tourId: action.tourId, stepIndex: action.stepIndex, status: 'running' }
 
+    // Navigating away from a paused tour resumes it: next() and previous() are public API, and calling them is an explicit request to move on.
     case 'NEXT': {
       if (state.status !== 'running' && state.status !== 'paused') return state
       const isLast = state.stepIndex >= action.stepCount - 1
