@@ -6,7 +6,7 @@ import { GuideProvider } from '../src/GuideProvider'
 import { useTour } from '../src/useTour'
 import { useGuideStep } from '../src/useGuideStep'
 import { createMemoryStorage } from '../src/storage'
-import type { GuideEvent, Tour } from '../src/types'
+import type { GuideEvent, GuideStorage, Tour } from '../src/types'
 
 const tour: Tour = {
   id: 'demo',
@@ -297,5 +297,144 @@ describe('GuideProvider', () => {
     rerender(<Wrapper tick={2} />)
 
     expect(navigate).toHaveBeenCalledTimes(1)
+  })
+
+  it('applique la politique quand la route d une étape ne correspond jamais', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    // Le motif de route ne correspond a rien et navigate ne deplace rien : sans delai arme,
+    // le tour resterait en cours, invisible et sans issue.
+    const unreachable: Tour = {
+      id: 'demo',
+      steps: [
+        { target: 'one', route: '/jamais', title: 'Première' },
+        { target: 'two', title: 'Deuxième' },
+      ],
+    }
+    render(
+      <GuideProvider
+        tours={[unreachable]}
+        location="/"
+        navigate={() => {}}
+        onMissingTarget="skip"
+        targetTimeoutMs={500}
+      >
+        <button data-guide="two">deux</button>
+        <Starter />
+        <StepReadout />
+      </GuideProvider>,
+    )
+    await user.click(screen.getByText('démarrer'))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800)
+    })
+    expect(await screen.findByText('Deuxième')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('arrête le tour quand la route ne correspond jamais et que la politique est error', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const unreachable: Tour = {
+      id: 'demo',
+      steps: [{ target: 'one', route: '/jamais', title: 'Première' }],
+    }
+    render(
+      <GuideProvider
+        tours={[unreachable]}
+        location="/"
+        navigate={() => {}}
+        onMissingTarget="error"
+        targetTimeoutMs={500}
+      >
+        <Starter />
+        <StepReadout />
+      </GuideProvider>,
+    )
+    await user.click(screen.getByText('démarrer'))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800)
+    })
+    expect(await screen.findByText('aucune étape')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('renavigue quand le même tour est redémarré sur la même étape', async () => {
+    const user = userEvent.setup()
+    const navigate = vi.fn()
+    const routed: Tour = { id: 'demo', steps: [{ target: 'one', route: '/other' }] }
+    render(
+      <GuideProvider tours={[routed]} location="/" navigate={navigate}>
+        <Starter />
+        <StepReadout />
+      </GuideProvider>,
+    )
+    await user.click(screen.getByText('démarrer'))
+    await waitFor(() => expect(navigate).toHaveBeenCalledTimes(1))
+
+    await user.click(screen.getByText('arrêter'))
+    await user.click(screen.getByText('démarrer'))
+    await waitFor(() => expect(navigate).toHaveBeenCalledTimes(2))
+  })
+
+  it('rend le focus à l élément qui a lancé le tour', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    const origin = screen.getByText('démarrer')
+    await user.click(origin)
+    await screen.findByText('Première')
+
+    // Le popover deplacerait le focus ; on simule ce deplacement puis on arrête le tour.
+    const elsewhere = screen.getByText('un')
+    act(() => elsewhere.focus())
+    expect(elsewhere).toHaveFocus()
+
+    await user.click(screen.getByText('arrêter'))
+    await waitFor(() => expect(origin).toHaveFocus())
+  })
+
+  it('démarre quand même quand la persistance échoue à la lecture', async () => {
+    const user = userEvent.setup()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const failing: GuideStorage = {
+      read: () => Promise.reject(new Error('hors ligne')),
+      write: () => Promise.reject(new Error('hors ligne')),
+    }
+    render(<Harness storage={failing} />)
+    await user.click(screen.getByText('démarrer'))
+    expect(await screen.findByText('Première')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('[guide]'), expect.anything()),
+    )
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
+  })
+
+  it('refuse de démarrer un tour sans étape', async () => {
+    const user = userEvent.setup()
+    const empty: Tour = { id: 'vide', steps: [] }
+    let failure: unknown = null
+    function EmptyStarter() {
+      const { start } = useTour('vide')
+      return (
+        <button
+          onClick={() => {
+            start().catch((error: unknown) => {
+              failure = error
+            })
+          }}
+        >
+          démarrer
+        </button>
+      )
+    }
+    render(
+      <GuideProvider tours={[empty]}>
+        <EmptyStarter />
+      </GuideProvider>,
+    )
+    await user.click(screen.getByText('démarrer'))
+    await waitFor(() => expect(failure).toBeInstanceOf(Error))
+    expect((failure as Error).message).toMatch(/\[guide\] tour has no steps/)
   })
 })

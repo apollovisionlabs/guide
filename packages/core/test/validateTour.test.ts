@@ -33,4 +33,10 @@ describe('findMissingTargets', () => {
       'no-route',
     ])
   })
+  it('échappe les cibles contenant un guillemet au lieu de lever', () => {
+    document.body.innerHTML = ''
+    const quoted: Tour = { id: 'demo', steps: [{ target: 'a"b' }] }
+    expect(() => findMissingTargets(quoted, undefined)).not.toThrow()
+    expect(findMissingTargets(quoted, undefined)).toEqual(['a"b'])
+  })
 })

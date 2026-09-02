@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react'
+import { targetSelector } from './selector'
 
 const DEFAULT_TIMEOUT_MS = 5000
-
-function escapeAttributeValue(value: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
-    return CSS.escape(value)
-  }
-  return value.replace(/["\\]/g, '\\$&')
-}
 
 export interface UseTargetElementOptions {
   timeoutMs?: number
@@ -35,7 +29,7 @@ export function useTargetElement(
       return
     }
 
-    const selector = `[${attribute}="${escapeAttributeValue(target)}"]`
+    const selector = targetSelector(target, attribute)
     const find = () => document.querySelector<HTMLElement>(selector)
 
     const found = find()

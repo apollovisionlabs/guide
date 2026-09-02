@@ -1,5 +1,6 @@
 import type { Tour } from './types'
 import { matchRoute } from './matchRoute'
+import { targetSelector } from './selector'
 
 export function findMissingTargets(
   tour: Tour,
@@ -11,5 +12,5 @@ export function findMissingTargets(
   return tour.steps
     .filter((step) => !step.route || location === undefined || matchRoute(step.route, location))
     .map((step) => step.target)
-    .filter((target) => !document.querySelector(`[${attribute}="${target}"]`))
+    .filter((target) => !document.querySelector(targetSelector(target, attribute)))
 }

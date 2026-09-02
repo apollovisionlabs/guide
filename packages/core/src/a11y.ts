@@ -3,7 +3,21 @@ import { useCallback, useEffect, useState } from 'react'
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-export function useFocusTrap(container: HTMLElement | null, active: boolean): void {
+export interface UseFocusTrapOptions {
+  /**
+   * Élément qui reçoit le focus à l'entrée. 'first' prend le premier focalisable ; 'container'
+   * prend le conteneur lui-même, qui doit alors porter tabIndex={-1}. Défaut : 'first'.
+   */
+  initialFocus?: 'first' | 'container'
+}
+
+export function useFocusTrap(
+  container: HTMLElement | null,
+  active: boolean,
+  options: UseFocusTrapOptions = {},
+): void {
+  const { initialFocus = 'first' } = options
+
   useEffect(() => {
     if (!container || !active) return
 
@@ -12,7 +26,9 @@ export function useFocusTrap(container: HTMLElement | null, active: boolean): vo
     // ordre de tabulation, et le popover monte ou démonte ses contrôles plutôt que de les masquer.
     const focusable = () => Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE))
 
-    const first = focusable()[0]
+    // 'container' évite de poser le focus sur un bouton actionnable : une touche Entrée
+    // réflexe après une flèche ne doit pas déclencher la fermeture du tour.
+    const first = initialFocus === 'container' ? undefined : focusable()[0]
     if (first) first.focus()
     else container.focus()
 
@@ -39,7 +55,7 @@ export function useFocusTrap(container: HTMLElement | null, active: boolean): vo
       document.removeEventListener('keydown', onKeyDown, true)
       previouslyFocused?.focus?.()
     }
-  }, [container, active])
+  }, [container, active, initialFocus])
 }
 
 function announcerNode(): HTMLElement {
