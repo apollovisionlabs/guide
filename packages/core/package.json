@@ -16,7 +16,7 @@
     }
   },
   "publishConfig": { "access": "public" },
-  "repository": { "type": "git", "url": "git+https://github.com/loghosp/guide.git" },
+  "repository": { "type": "git", "url": "git+https://github.com/apollovisionlabs/guide.git" },
   "keywords": ["react", "onboarding", "product-tour", "walkthrough", "mui", "accessibility"],
   "scripts": {
     "build": "tsup",

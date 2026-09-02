@@ -1,7 +1,7 @@
 ---
 type: Playbook
 title: Quality score grid
-description: Weighted 0-5 scoring grid for evaluating significant changes; shared structure across LogHosp repos for comparable scores.
+description: Weighted 0-5 scoring grid for evaluating significant changes; the structure is shared across repos so scores stay comparable and must not diverge.
 tags: [quality, scoring, review, convention]
 status: stable
 generated:

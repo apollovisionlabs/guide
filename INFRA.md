@@ -100,7 +100,7 @@ Everything below is what *exists*, not what is planned.
 
 - **Configured**: Changesets (`.changeset/config.json`), `access: public` and
   `publishConfig.access: "public"` on both packages, `files: ["dist", "README.md", "LICENSE"]`,
-  a `repository` field pointing at `https://github.com/loghosp/guide.git`, and a `0.1.0` entry in
+  a `repository` field pointing at `https://github.com/apollovisionlabs/guide.git`, and a `0.1.0` entry in
   each `CHANGELOG.md`.
 - **Not configured**: there is **no release workflow**. `.github/workflows/` contains `ci.yml`
   only.
