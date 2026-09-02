@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps } from 'react'
 import { GuideProvider } from '../src/GuideProvider'
@@ -191,7 +191,9 @@ describe('GuideProvider', () => {
       </GuideProvider>,
     )
     await user.click(screen.getByText('démarrer'))
-    await vi.advanceTimersByTimeAsync(800)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800)
+    })
     expect(await screen.findByText('Deuxième')).toBeInTheDocument()
     vi.useRealTimers()
   })
