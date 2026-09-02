@@ -4,6 +4,14 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Renamed the two published packages to `@apollovisionlabs/guide-core` and
+  `@apollovisionlabs/guide-mui`. The unclaimed `@guide` scope was abandoned because nothing proved
+  it claimable, while the organisation already owns `apollovisionlabs`; the `guide` prefix is kept
+  in each name, and the directory names on disk are unchanged. Recorded as
+  [ADR 0012](adr/0012-publish-under-the-apollovisionlabs-scope.md). Corrected the statements in
+  `CONTRIBUTING.md`, `SECURITY.md` and `INFRA.md` that said the repository has no git remote, and
+  reworded the `SECURITY.md` placeholder so it no longer rests on the absent remote. The two
+  documents under `docs/superpowers/` keep the old package names.
 - Moved the repository from the LogHosp organisation to apollovisionlabs and brought it into line
   with the Apollo Vision Labs conventions. Set the MIT copyright holder to `Apollo Vision Labs` in
   the three `LICENSE` files, pointed both package `repository` fields and `INFRA.md` at

@@ -4,8 +4,8 @@ okf_version: "0.2"
 
 # Documentation map
 
-Documentation for `guide`, an MIT-licensed monorepo publishing two React packages: `@guide/core`,
-a headless product-tour engine, and `@guide/mui`, its MUI rendering layer.
+Documentation for `guide`, an MIT-licensed monorepo publishing two React packages: `@apollovisionlabs/guide-core`,
+a headless product-tour engine, and `@apollovisionlabs/guide-mui`, its MUI rendering layer.
 
 Read this file first, then the playbook relevant to your task. Contribution triggers are in
 [AGENTS.md](../AGENTS.md).
@@ -32,7 +32,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 ## Decisions
 
-[adr/index.md](adr/index.md) lists eleven records, `0001` to `0011`, plus [adr/template.md](adr/template.md).
+[adr/index.md](adr/index.md) lists twelve records, `0001` to `0012`, plus [adr/template.md](adr/template.md).
 
 - [0001](adr/0001-headless-core-and-rendering-layer.md) Split a headless core from the rendering layer
 - [0002](adr/0002-logical-targets-via-data-attribute.md) Resolve targets by logical key, never by CSS selector
@@ -45,6 +45,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 - [0009](adr/0009-typecheck-core-through-sources.md) Typecheck the MUI package against the core's sources
 - [0010](adr/0010-shipped-package-readmes-exempt-from-frontmatter.md) Exempt the shipped package READMEs from the OKF frontmatter rule
 - [0011](adr/0011-move-to-apollo-vision-labs.md) Move to the Apollo Vision Labs organisation
+- [0012](adr/0012-publish-under-the-apollovisionlabs-scope.md) Publish under the apollovisionlabs scope
 
 ## Plans
 
