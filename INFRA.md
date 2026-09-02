@@ -102,14 +102,23 @@ Everything below is what *exists*, not what is planned.
   `publishConfig.access: "public"` on both packages, `files: ["dist", "README.md", "LICENSE"]`,
   a `repository` field pointing at `https://github.com/apollovisionlabs/guide.git`, and a `0.1.0` entry in
   each `CHANGELOG.md`.
-- **Not configured**: there is **no release workflow**. `.github/workflows/` contains `ci.yml`
-  only.
-- **A git remote exists.** `origin` points at `github.com/LogHosp/guide`, the path the repository
-  had before the transfer, which GitHub redirects to
-  `https://github.com/apollovisionlabs/guide`. The `repository` URL in the manifests names the
-  destination.
+- **A release workflow exists**: `.github/workflows/release.yml`, triggered by a push to `main`.
+  It reinstalls, typechecks, tests, builds and runs the end to end suite, then hands over to
+  `changesets/action`. With pending changesets that action opens or updates a version pull request
+  and publishes nothing. With none, it publishes every package whose version is not yet on the
+  registry. A `concurrency` group keeps two releases from racing on the version commit.
+- **The workflow needs one secret to do anything**: `NPM_TOKEN`, an npm automation token with
+  publish rights on the `@apollovisionlabs` scope, stored in the repository secrets. Until it
+  exists the publish step fails and nothing reaches the registry, so the secret is the gate on the
+  first release.
+- **A git remote exists.** `origin` points at `https://github.com/apollovisionlabs/guide`, which
+  is also the `repository` URL in both manifests.
 - **Never executed for real**: publishing has only ever been exercised as a dry run.
-  `changeset version` and `changeset publish` have never run against a registry.
+  `changeset version` and `changeset publish` have never run against a registry, so the first
+  successful workflow run will publish `0.1.0` for both packages.
+- **Provenance is not enabled.** pnpm 10.20.0 exposes no provenance option on `pnpm publish`, so
+  turning it on would need a switch to `npm publish` inside the release step and a verification
+  that has not been done.
 - **The packages sit in the `@apollovisionlabs` scope**, which the organisation already owns:
   `@apollovisionlabs/guide-core` and `@apollovisionlabs/guide-mui`. The unclaimed `@guide` scope
   and its fallbacks were abandoned, see

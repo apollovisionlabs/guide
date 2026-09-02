@@ -101,8 +101,9 @@ This package is MIT and must stay MIT-clean.
 
 Version bumps and changelogs go through [Changesets](docs/references/changesets.md)
 (`.changeset/config.json`, `baseBranch: main`, `access: public`). Add a changeset in the same
-commit as a user-visible change to a published package. Release mechanics, and what has and has
-not actually been exercised, are in [INFRA.md](INFRA.md).
+commit as a user-visible change to a published package: a merge to `main` without one publishes
+nothing for that change. Release mechanics, and what has and has not actually been exercised, are
+in [INFRA.md](INFRA.md).
 
 ## Before you commit
 

@@ -1,0 +1,67 @@
+name: release
+
+# Publishing runs only from main, and only after the same checks the ci workflow
+# runs. The job re-runs them rather than trusting a sibling workflow, because two
+# workflows triggered by the same push do not order themselves.
+on:
+  push:
+    branches: [main]
+
+# One release at a time. Two concurrent runs would race on the version commit and
+# on the registry.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Changesets reads the history to work out what changed since the last
+          # release, so a shallow clone is not enough.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          # Writes the .npmrc that pnpm reads, wiring NODE_AUTH_TOKEN to the
+          # registry. Without it the publish step is unauthenticated.
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+      # The demo resolves the packages through dist, so it builds after them, and
+      # the end to end suite is the only proof that a tour works in a browser.
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+
+      # With pending changesets, this opens or updates a version pull request and
+      # publishes nothing. With none, it publishes every package whose version is
+      # not yet on the registry.
+      - uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          publish: pnpm changeset publish
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

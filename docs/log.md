@@ -4,6 +4,12 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Added the release workflow, `.github/workflows/release.yml`. A push to `main` runs the full
+  verification then hands over to `changesets/action`, which opens a version pull request when
+  changesets are pending and publishes what the registry lacks when none are. Recorded as
+  [ADR 0013](adr/0013-publish-from-a-release-workflow.md). Rewrote the release path section of
+  `INFRA.md`, which said no release workflow existed, and noted that the `NPM_TOKEN` secret is
+  the gate on the first publish and that provenance is not enabled.
 - Renamed the two published packages to `@apollovisionlabs/guide-core` and
   `@apollovisionlabs/guide-mui`. The unclaimed `@guide` scope was abandoned because nothing proved
   it claimable, while the organisation already owns `apollovisionlabs`; the `guide` prefix is kept
