@@ -5,7 +5,9 @@ export function Home() {
   const tour = useTour('product')
 
   return (
-    <Stack spacing={3}>
+    // Marge confortable sous la ligne de flottaison : le scénario end-to-end de défilement
+    // dépend d'une page plus haute que la fenêtre.
+    <Stack spacing={3} sx={{ minHeight: 1400 }}>
       <Typography variant="h4" component="h1">
         Welcome
       </Typography>
