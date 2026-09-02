@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { GuideProvider, useTour, type Tour } from '@guide/core'
+import { GuideProvider, useTour, type Tour } from '@apollovisionlabs/guide-core'
 import { GuideTour } from '../src/GuideTour'
 
 // The ButtonBase ripple triggers asynchronous updates that jsdom reports as an act() warning.

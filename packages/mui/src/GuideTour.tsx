@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useGuideStep } from '@guide/core'
+import { useGuideStep } from '@apollovisionlabs/guide-core'
 import { Spotlight } from './Spotlight'
 import { StepPopover, type StepPopoverLabels } from './StepPopover'
 

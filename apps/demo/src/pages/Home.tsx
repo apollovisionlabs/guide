@@ -1,5 +1,5 @@
 import { Button, Stack, Typography } from '@mui/material'
-import { useTour } from '@guide/core'
+import { useTour } from '@apollovisionlabs/guide-core'
 
 export function Home() {
   const tour = useTour('product')

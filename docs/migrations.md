@@ -24,12 +24,12 @@ supported-peer change, or a public API change.
 
 ## Dependency majors
 
-- **Runtime dependencies are avoided.** `@guide/core` has none. `@guide/mui` has exactly one,
-  `@guide/core` itself. Everything else is a peer or a dev dependency. Adding a first real runtime
+- **Runtime dependencies are avoided.** `@apollovisionlabs/guide-core` has none. `@apollovisionlabs/guide-mui` has exactly one,
+  `@apollovisionlabs/guide-core` itself. Everything else is a peer or a dev dependency. Adding a first real runtime
   dependency is an ADR-level decision, and needs a permissive licence
   ([CONTRIBUTING.md](../CONTRIBUTING.md)).
 - **Peers express the supported range**, and a range is only advertised once something verifies it.
-  `@guide/mui` declares `"@mui/material": "^7 || ^9"`, and the `mui9` job in
+  `@apollovisionlabs/guide-mui` declares `"@mui/material": "^7 || ^9"`, and the `mui9` job in
   `.github/workflows/ci.yml` installs MUI 9 and typechecks against it. Widening a peer range without
   adding the matching verification is not acceptable. See
   [ADR 0006](adr/0006-support-two-mui-majors.md).
@@ -56,7 +56,7 @@ Both packages are `0.1.0` and versioned with [Changesets](references/changesets.
   `GuideTour`. Renaming a prop on either is a breaking change.
 - Pre-1.0, a breaking change is a minor bump; say plainly in the changeset what breaks and what
   the replacement is.
-- Removing or renaming an exported type from `@guide/core` breaks `@guide/mui` too; both packages
+- Removing or renaming an exported type from `@apollovisionlabs/guide-core` breaks `@apollovisionlabs/guide-mui` too; both packages
   move together, which is what `updateInternalDependencies: "patch"` handles.
 
 Nothing has been released yet: `changeset version` and `changeset publish` have never run for

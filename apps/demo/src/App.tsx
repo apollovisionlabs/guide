@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
 import { useLocation, useNavigate } from 'react-router'
-import { GuideProvider, createBrowserStorage } from '@guide/core'
-import { GuideTour } from '@guide/mui'
+import { GuideProvider, createBrowserStorage } from '@apollovisionlabs/guide-core'
+import { GuideTour } from '@apollovisionlabs/guide-mui'
 import { productTour } from './tours'
 import { AppRoutes } from './router'
 

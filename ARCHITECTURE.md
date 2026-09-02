@@ -18,8 +18,8 @@ option a consumer passes), see [README.md](README.md); it is not repeated here.
 ## Repository layout
 
 ```
-packages/core/     @guide/core:  state machine, DOM resolution, a11y, persistence. No UI dependency.
-packages/mui/      @guide/mui:   MUI rendering of what the core exposes.
+packages/core/     @apollovisionlabs/guide-core:  state machine, DOM resolution, a11y, persistence. No UI dependency.
+packages/mui/      @apollovisionlabs/guide-mui:   MUI rendering of what the core exposes.
 apps/demo/         demo:         private three-page Vite app, also the Playwright fixture.
 e2e/               Playwright specs run against apps/demo.
 ```
@@ -29,11 +29,11 @@ e2e/               Playwright specs run against apps/demo.
 
 ## The layering rule
 
-`@guide/core` (`packages/core/package.json`) peer-depends on `react` alone. It imports nothing
+`@apollovisionlabs/guide-core` (`packages/core/package.json`) peer-depends on `react` alone. It imports nothing
 from MUI, from Emotion, or from any router. That is the boundary: every decision that could be
-rendered differently by a different design system lives in the core, and `@guide/mui` only draws.
+rendered differently by a different design system lives in the core, and `@apollovisionlabs/guide-mui` only draws.
 
-`@guide/mui` declares `@guide/core` as a real dependency and MUI, Emotion and React as peers.
+`@apollovisionlabs/guide-mui` declares `@apollovisionlabs/guide-core` as a real dependency and MUI, Emotion and React as peers.
 Its whole surface is three components (`packages/mui/src/index.ts`).
 
 ## Data flow of a running tour
@@ -143,7 +143,7 @@ write that throws is swallowed, and the provider warns once per session.
 
 Recorded as facts, not as complaints:
 
-- `@guide/mui` exports `Spotlight` and `StepPopover` together with their full prop interfaces
+- `@apollovisionlabs/guide-mui` exports `Spotlight` and `StepPopover` together with their full prop interfaces
   (`packages/mui/src/index.ts`). That publishes an internal seam as a public contract: changing
   either prop object is a breaking change for consumers, even though `GuideTour` is the intended
   entry point.
@@ -151,9 +151,9 @@ Recorded as facts, not as complaints:
   expose `complete()`, although the design document
   (`docs/superpowers/specs/2026-09-02-guide-onboarding-design.md`, §API) lists it. Completion is
   reachable only by calling `next()` on the last step.
-- `packages/mui/tsconfig.json` maps `@guide/core` to `../core/src/index.ts` and includes
+- `packages/mui/tsconfig.json` maps `@apollovisionlabs/guide-core` to `../core/src/index.ts` and includes
   `../core/src/globals.d.ts`. See [ADR 0009](docs/adr/0009-typecheck-core-through-sources.md) for
-  the two consequences: a core type error is reported as a `@guide/mui` failure, and the emitted
+  the two consequences: a core type error is reported as a `@apollovisionlabs/guide-mui` failure, and the emitted
   `.d.ts` files are never validated by `pnpm typecheck`.
 
 ## Build and packaging

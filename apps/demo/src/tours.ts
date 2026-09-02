@@ -1,4 +1,4 @@
-import type { Tour } from '@guide/core'
+import type { Tour } from '@apollovisionlabs/guide-core'
 
 export const productTour: Tour = {
   id: 'product',

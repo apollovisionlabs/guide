@@ -1,7 +1,7 @@
 ---
 type: ADR
 title: 0001. Split a headless core from the rendering layer
-description: Product-tour logic ships as @guide/core with no UI dependency, and @guide/mui only renders it.
+description: Product-tour logic ships as @apollovisionlabs/guide-core with no UI dependency, and @apollovisionlabs/guide-mui only renders it.
 tags: [adr, architecture]
 status: stable
 generated:
@@ -20,12 +20,12 @@ Existing MIT libraries in this space ship both as one unit, which ties the logic
 style (see [prior art](../references/index.md)).
 
 The repository resolves this as two published packages. `packages/core/package.json` peer-depends
-on `react` alone; `packages/mui/package.json` depends on `@guide/core` and peer-depends on MUI and
+on `react` alone; `packages/mui/package.json` depends on `@apollovisionlabs/guide-core` and peer-depends on MUI and
 Emotion. Nothing under `packages/core/src` imports MUI, Emotion, or a router.
 
 ## Decision
 
-All decisions live in `@guide/core` and are exposed as hooks (`useTour`, `useGuideStep`) over a
+All decisions live in `@apollovisionlabs/guide-core` and are exposed as hooks (`useTour`, `useGuideStep`) over a
 `GuideProvider`. A rendering package consumes those hooks and adds no behaviour of its own beyond
 presentation and the keyboard affordances tied to its own markup.
 

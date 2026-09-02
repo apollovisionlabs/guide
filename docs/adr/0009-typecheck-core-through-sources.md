@@ -1,7 +1,7 @@
 ---
 type: ADR
 title: 0009. Typecheck the MUI package against the core's sources
-description: packages/mui maps @guide/core to the core's source files so the repo typechecks before anything is built.
+description: packages/mui maps @apollovisionlabs/guide-core to the core's source files so the repo typechecks before anything is built.
 tags: [adr, build]
 status: stable
 generated:
@@ -14,13 +14,13 @@ generated:
 
 ## Context
 
-`@guide/mui` imports `@guide/core`. Resolving that through the published `exports` field means the
+`@apollovisionlabs/guide-mui` imports `@apollovisionlabs/guide-core`. Resolving that through the published `exports` field means the
 core must be built before the MUI package can be typechecked or tested. That is a build step inside every
 edit loop, and a continuous integration ordering constraint on the cheapest jobs.
 
 ## Decision
 
-`packages/mui/tsconfig.json` sets `paths` mapping `@guide/core` to `../core/src/index.ts`, and adds
+`packages/mui/tsconfig.json` sets `paths` mapping `@apollovisionlabs/guide-core` to `../core/src/index.ts`, and adds
 `../core/src/globals.d.ts` to `include` so the core's ambient `process.env` declaration is in
 scope. `packages/mui/vitest.config.ts` aliases the same path for the test run.
 
@@ -30,7 +30,7 @@ scope. `packages/mui/vitest.config.ts` aliases the same path for the test run.
 
 Two of these are real limitations and must be understood before trusting a green typecheck:
 
-- **A type error in the core is reported as a `@guide/mui` failure.** The message points at a file
+- **A type error in the core is reported as a `@apollovisionlabs/guide-mui` failure.** The message points at a file
   under `packages/core/src`, but the failing task is the MUI package's. Read the path, not the task
   name.
 - **The emitted declaration files are never validated by `pnpm typecheck`.** It checks sources

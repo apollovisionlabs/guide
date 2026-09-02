@@ -59,10 +59,10 @@ importers:
       '@emotion/styled':
         specifier: ^11.14.0
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react@19.2.8)
-      '@guide/core':
+      '@apollovisionlabs/guide-core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@guide/mui':
+      '@apollovisionlabs/guide-mui':
         specifier: workspace:*
         version: link:../../packages/mui
       '@mui/material':
@@ -97,7 +97,7 @@ importers:
 
   packages/mui:
     dependencies:
-      '@guide/core':
+      '@apollovisionlabs/guide-core':
         specifier: workspace:*
         version: link:../core
       react:

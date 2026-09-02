@@ -3,7 +3,7 @@
 import { useId, type MouseEvent } from 'react'
 import { alpha, useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
-import { usePrefersReducedMotion, type Rect } from '@guide/core'
+import { usePrefersReducedMotion, type Rect } from '@apollovisionlabs/guide-core'
 
 export interface SpotlightProps {
   rect: Rect | null

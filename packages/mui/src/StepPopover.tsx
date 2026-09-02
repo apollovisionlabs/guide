@@ -8,7 +8,7 @@ import Paper from '@mui/material/Paper'
 import Popper from '@mui/material/Popper'
 import Typography from '@mui/material/Typography'
 import { useTheme } from '@mui/material/styles'
-import { useFocusTrap, type Placement } from '@guide/core'
+import { useFocusTrap, type Placement } from '@apollovisionlabs/guide-core'
 
 export interface StepPopoverLabels {
   next: string

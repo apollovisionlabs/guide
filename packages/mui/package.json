@@ -1,5 +1,5 @@
 {
-  "name": "@guide/mui",
+  "name": "@apollovisionlabs/guide-mui",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
@@ -23,7 +23,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": { "@guide/core": "workspace:*" },
+  "dependencies": { "@apollovisionlabs/guide-core": "workspace:*" },
   "peerDependencies": {
     "@emotion/react": "^11",
     "@emotion/styled": "^11",

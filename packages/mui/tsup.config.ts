@@ -11,7 +11,7 @@ export default defineConfig({
   // Disabled to keep the banner, which Next's App Router requires; sideEffects:false in
   // package.json already gives consumers dead-code elimination on their own bundle.
   treeshake: false,
-  external: ['react', 'react-dom', '@guide/core', '@mui/material', '@emotion/react', '@emotion/styled'],
+  external: ['react', 'react-dom', '@apollovisionlabs/guide-core', '@mui/material', '@emotion/react', '@emotion/styled'],
   banner: { js: '"use client";' },
   outExtension: ({ format }) => ({ js: format === 'esm' ? '.mjs' : '.cjs' }),
 })

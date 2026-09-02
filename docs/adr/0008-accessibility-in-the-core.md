@@ -20,7 +20,7 @@ layer starts from zero on accessibility, the part of a tour most likely to be go
 
 ## Decision
 
-`packages/core/src/a11y.ts` owns three primitives, exported from `@guide/core`:
+`packages/core/src/a11y.ts` owns three primitives, exported from `@apollovisionlabs/guide-core`:
 
 - `useFocusTrap(container, active, { initialFocus })` cycles Tab within the container and
   restores the previously focused element on teardown.

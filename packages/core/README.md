@@ -1,10 +1,10 @@
 # guide
 
-`guide` is a headless React library for building in-app product tours. `@guide/core` owns the
+`guide` is a headless React library for building in-app product tours. `@apollovisionlabs/guide-core` owns the
 state machine, target resolution, routing, persistence and accessibility concerns, and exposes
-them as hooks with no rendering opinion. `@guide/mui` consumes those hooks to render a tour with
+them as hooks with no rendering opinion. `@apollovisionlabs/guide-mui` consumes those hooks to render a tour with
 [MUI](https://mui.com) components (a spotlight overlay and a popover), so you get a complete tour
-out of the box, or you can render your own UI on top of `@guide/core` directly.
+out of the box, or you can render your own UI on top of `@apollovisionlabs/guide-core` directly.
 
 This repository includes a runnable demo. From the repo root, run `pnpm --filter demo dev` and
 open `http://localhost:5173` to try a three-page tour end to end.
@@ -12,18 +12,18 @@ open `http://localhost:5173` to try a three-page tour end to end.
 ## Installation
 
 ```bash
-pnpm add @guide/core @guide/mui @mui/material @emotion/react @emotion/styled
+pnpm add @apollovisionlabs/guide-core @apollovisionlabs/guide-mui @mui/material @emotion/react @emotion/styled
 ```
 
-`@guide/mui` depends on `@guide/core`, so both are needed to render the default UI. If you only
-want the state machine and plan to render your own popover and spotlight, `@guide/core` alone is
+`@apollovisionlabs/guide-mui` depends on `@apollovisionlabs/guide-core`, so both are needed to render the default UI. If you only
+want the state machine and plan to render your own popover and spotlight, `@apollovisionlabs/guide-core` alone is
 enough.
 
 ## Minimal example
 
 ```tsx
-import { GuideProvider, type Tour } from '@guide/core'
-import { GuideTour } from '@guide/mui'
+import { GuideProvider, type Tour } from '@apollovisionlabs/guide-core'
+import { GuideTour } from '@apollovisionlabs/guide-mui'
 
 const tour: Tour = {
   id: 'welcome',
@@ -110,12 +110,12 @@ interface GuideStorage {
 }
 ```
 
-`@guide/core` ships `createMemoryStorage()` for tests and `createBrowserStorage(namespace?)` for
+`@apollovisionlabs/guide-core` ships `createMemoryStorage()` for tests and `createBrowserStorage(namespace?)` for
 `localStorage`. Neither talks to a server. An implementation backed by your own API looks like
 this:
 
 ```ts
-import type { GuideStorage, TourProgress } from '@guide/core'
+import type { GuideStorage, TourProgress } from '@apollovisionlabs/guide-core'
 
 function createServerStorage(): GuideStorage {
   return {
@@ -147,7 +147,7 @@ your translation library and the result is displayed. When a key is set without 
 prop, the raw key is shown instead, so wiring `translate` is required for `titleKey` / `bodyKey`
 to resolve to real strings.
 
-The popover's own chrome is the one exception: `@guide/mui` ships English default labels
+The popover's own chrome is the one exception: `@apollovisionlabs/guide-mui` ships English default labels
 (`Next`, `Back`, `Finish`, `Close`), so the buttons read correctly out of the box. Every one of
 them is overridable through the `labels` prop on `GuideTour`: pass the labels in your language
 and nothing English remains:
@@ -195,7 +195,7 @@ render.
 | | Supported |
 | --- | --- |
 | React | 19 |
-| MUI (`@guide/mui` only) | 7, 9 |
+| MUI (`@apollovisionlabs/guide-mui` only) | 7, 9 |
 | Rendering | ESM and CommonJS, with `"use client"` for Next's App Router |
 
 ## Prior art
@@ -203,7 +203,7 @@ render.
 The spotlight-and-popover approach is inspired by [driver.js](https://driverjs.com) (MIT), as are
 [react-joyride](https://github.com/gilbarbara/react-joyride) (MIT) and
 [reactour](https://github.com/elrumordelaluz/reactour) (MIT). `guide` differs from all three mainly
-in splitting the state machine (`@guide/core`) from rendering (`@guide/mui`), so the logic can be
+in splitting the state machine (`@apollovisionlabs/guide-core`) from rendering (`@apollovisionlabs/guide-mui`), so the logic can be
 reused with a different design system. Contributors must also read the licence discipline in
 `CONTRIBUTING.md` before looking at any other tour library.
 

@@ -1,7 +1,7 @@
 # AGENTS
 
-`guide` is an MIT-licensed pnpm monorepo publishing two React packages: `@guide/core`, a headless
-product-tour engine, and `@guide/mui`, its MUI rendering layer. `apps/demo` is a private showcase
+`guide` is an MIT-licensed pnpm monorepo publishing two React packages: `@apollovisionlabs/guide-core`, a headless
+product-tour engine, and `@apollovisionlabs/guide-mui`, its MUI rendering layer. `apps/demo` is a private showcase
 that doubles as the Playwright fixture, and `e2e/` is the end-to-end suite.
 
 ## Before you write code
@@ -21,7 +21,7 @@ that doubles as the Playwright fixture, and `e2e/` is the end-to-end suite.
 
 **Contribute only on these triggers** - most PRs change no documentation; that is the expected default:
 
-- **`docs/adr/`**: write an ADR only for a structural/architectural decision - a new pattern or boundary, a significant dependency, a change to the layering between `@guide/core` and a rendering package, an irreversible choice. Routine features and bug fixes get NO ADR.
+- **`docs/adr/`**: write an ADR only for a structural/architectural decision - a new pattern or boundary, a significant dependency, a change to the layering between `@apollovisionlabs/guide-core` and a rendering package, an irreversible choice. Routine features and bug fixes get NO ADR.
 - **`docs/plans/in-progress/`**: create a plan only for multi-step work spanning several PRs/sessions; move it to `done/` when finished.
 - **`docs/regressions/`**: add an entry only when fixing a regression (previously working behavior that broke), using the template.
 - **Playbooks** (`security.md`, `code-review.md`, `code-quality.md`, `migrations.md`): update only when a rule or invariant changes, or a new one is discovered.

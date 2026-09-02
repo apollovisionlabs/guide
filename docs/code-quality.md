@@ -59,7 +59,7 @@ Comments and test names are written in **French**; everything a stranger reads i
 ## Tests
 
 - Unit tests live in `packages/<pkg>/test/`, named after the unit under test, run by Vitest with
-  the jsdom environment. Current counts: 69 in `@guide/core`, 27 in `@guide/mui`.
+  the jsdom environment. Current counts: 69 in `@apollovisionlabs/guide-core`, 27 in `@apollovisionlabs/guide-mui`.
 - End-to-end scenarios live in `e2e/` and run under Playwright against `apps/demo`. Current count:
   7.
 - A new behaviour needs a test at the lowest level that can express it: pure logic in
