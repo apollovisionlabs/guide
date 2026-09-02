@@ -53,6 +53,15 @@ function Sidebar() {
 
 Start the tour from anywhere under the provider with `useTour('welcome').start()`.
 
+## `GuideTour` props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `labels` | `Partial<{ next, previous, finish, close }>` | `{ next: 'Next', previous: 'Back', finish: 'Finish', close: 'Close' }` | The popover's button labels. Defaults are English; override any subset. See "Translations". |
+| `zIndex` | `number` | `theme.zIndex.modal` | Stacking level of the spotlight; the popover sits one above it. |
+| `padding` | `number` | `8` | Margin, in pixels, between the highlighted element and the edge of the spotlight hole. |
+| `radius` | `number` | `8` | Corner radius, in pixels, of the spotlight hole. |
+
 ## `GuideProvider` props
 
 | Prop | Type | Default | Description |
@@ -128,11 +137,20 @@ completes.
 
 ## Translations
 
-All visible text is supplied by the consumer — `guide` ships no copy of its own, in any language.
-A step can set `title` / `body` directly, or `titleKey` / `bodyKey` plus a `translate` function on
-`GuideProvider`; the key is passed through your translation library and the result is displayed.
-When a key is set without a `translate` prop, the raw key is shown instead, so wiring `translate`
-is required for `titleKey` / `bodyKey` to resolve to real strings.
+Every step's own text is supplied by the consumer. A step can set `title` / `body` directly, or
+`titleKey` / `bodyKey` plus a `translate` function on `GuideProvider`; the key is passed through
+your translation library and the result is displayed. When a key is set without a `translate`
+prop, the raw key is shown instead, so wiring `translate` is required for `titleKey` / `bodyKey`
+to resolve to real strings.
+
+The popover's own chrome is the one exception: `@guide/mui` ships English default labels
+(`Next`, `Back`, `Finish`, `Close`), so the buttons read correctly out of the box. Every one of
+them is overridable through the `labels` prop on `GuideTour` — pass the labels in your language
+and nothing English remains:
+
+```tsx
+<GuideTour labels={{ next: 'Suivant', previous: 'Retour', finish: 'Terminer', close: 'Fermer' }} />
+```
 
 ## Events
 

@@ -173,4 +173,9 @@ describe('StepPopover', () => {
 
     expect(document.activeElement).toBe(previouslyFocused)
   })
+  it('donne le focus au conteneur du popover, pas au bouton de fermeture', () => {
+    setup()
+    // Entrée reflexe apres une fleche ne doit pas fermer le tour.
+    expect(screen.getByRole('dialog')).toHaveFocus()
+  })
 })

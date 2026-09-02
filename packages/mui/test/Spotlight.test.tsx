@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Spotlight } from '../src/Spotlight'
 
@@ -37,5 +37,15 @@ describe('Spotlight', () => {
   it('reste hors de l arbre d accessibilité', () => {
     render(<Spotlight rect={rect} />)
     expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('aria-hidden', 'true')
+  })
+  it('ne ferme pas le tour au clic dans le trou mis en avant', () => {
+    const onDismiss = vi.fn()
+    render(<Spotlight rect={rect} onDismiss={onDismiss} />)
+    // Au centre de la cible : le masque n'arrete pas les clics, c'est le test qui le fait.
+    fireEvent.click(screen.getByTestId('guide-spotlight'), { clientX: 150, clientY: 120 })
+    expect(onDismiss).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByTestId('guide-spotlight'), { clientX: 600, clientY: 400 })
+    expect(onDismiss).toHaveBeenCalledOnce()
   })
 })

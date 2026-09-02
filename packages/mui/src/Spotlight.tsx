@@ -1,6 +1,6 @@
 'use client'
 
-import { useId } from 'react'
+import { useId, type MouseEvent } from 'react'
 import { alpha, useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import { usePrefersReducedMotion, type Rect } from '@guide/core'
@@ -28,6 +28,17 @@ export function Spotlight({
 
   if (!rect) return null
 
+  // Le masque SVG ne découpe que le rendu, pas la zone cliquable : sans ce test, un clic dans
+  // le trou mis en avant fermerait le tour au lieu d'atteindre l'élément désigné.
+  const onClick = (event: MouseEvent) => {
+    const insideHole =
+      event.clientX >= rect.left - padding &&
+      event.clientX <= rect.left + rect.width + padding &&
+      event.clientY >= rect.top - padding &&
+      event.clientY <= rect.top + rect.height + padding
+    if (!insideHole) onDismiss?.()
+  }
+
   const overlay = alpha(theme.palette.common.black, theme.palette.mode === 'dark' ? 0.7 : 0.55)
   const transition = reducedMotion ? 'none' : 'all 200ms ease'
 
@@ -36,7 +47,7 @@ export function Spotlight({
       component="svg"
       data-testid="guide-spotlight"
       aria-hidden="true"
-      onClick={interactive ? undefined : onDismiss}
+      onClick={interactive ? undefined : onClick}
       sx={{
         position: 'fixed',
         inset: 0,

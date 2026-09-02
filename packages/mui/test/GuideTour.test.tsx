@@ -87,4 +87,29 @@ describe('GuideTour', () => {
     const secondDialog = screen.getByRole('dialog')
     expect(secondDialog).not.toHaveAttribute('aria-modal')
   })
+  it('laisse Échap quitter le tour pendant l attente d une cible', async () => {
+    const user = userEvent.setup()
+    const waiting: Tour = { id: 'demo', steps: [{ target: 'absente', title: 'Absente' }] }
+
+    function Status() {
+      const { status } = useTour('demo')
+      return <span data-testid="status">{status}</span>
+    }
+
+    renderTour(
+      <GuideProvider tours={[waiting]}>
+        <Starter />
+        <Status />
+        <GuideTour />
+      </GuideProvider>,
+    )
+
+    await user.click(screen.getByText('démarrer'))
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('running'))
+    // L'attente reste silencieuse : rien ne s'affiche tant que la cible n'est pas resolue.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('idle'))
+  })
 })

@@ -75,7 +75,9 @@ export function StepPopover({
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const text = { ...DEFAULT_LABELS, ...labels }
 
-  useFocusTrap(container, open && modal)
+  // Le focus va sur le Paper, pas sur la fermeture : une touche Entrée réflexe après une
+  // flèche ne doit pas interrompre le tour.
+  useFocusTrap(container, open && modal, { initialFocus: 'container' })
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
