@@ -6,8 +6,8 @@ them as hooks with no rendering opinion. `@guide/mui` consumes those hooks to re
 [MUI](https://mui.com) components — a spotlight overlay and a popover — so you get a complete tour
 out of the box, or you can render your own UI on top of `@guide/core` directly.
 
-<!-- TODO: replace with an animated capture of apps/demo (docs/demo.gif) -->
-![Animated capture of the demo tour](docs/demo.gif)
+This repository includes a runnable demo. From the repo root, run `pnpm --filter demo dev` and
+open `http://localhost:5173` to try a three-page tour end to end.
 
 ## Installation
 
