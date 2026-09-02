@@ -66,6 +66,24 @@ jobs:
       - if: env.RELEASE_ENABLED != 'true'
         run: echo "::warning::RELEASE_ENABLED is not true, so the release step is skipped and nothing is published."
 
+      # actions/setup-node writes `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}`
+      # into the npmrc it points NPM_CONFIG_USERCONFIG at. With no token set, the
+      # client reads that line as "authentication is already configured", never
+      # starts the OIDC exchange, and publishes with empty credentials, which the
+      # registry rejects with a 404. Trusted publishing needs the line gone, while
+      # the registry line the same file carries has to stay.
+      - name: Drop the placeholder auth line so the OIDC exchange runs
+        if: env.RELEASE_ENABLED == 'true'
+        run: |
+          set -eu
+          if [ -n "${NPM_CONFIG_USERCONFIG:-}" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
+            sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+            echo "npmrc after cleanup:"
+            cat "$NPM_CONFIG_USERCONFIG"
+          else
+            echo "::warning::NPM_CONFIG_USERCONFIG is not set, nothing to clean."
+          fi
+
       # With pending changesets, this opens or updates a version pull request and
       # publishes nothing. With none, it publishes every package whose version is
       # not yet on the registry.
