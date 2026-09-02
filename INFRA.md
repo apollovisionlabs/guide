@@ -108,9 +108,9 @@ Everything below is what *exists*, not what is planned.
   and publishes nothing. With none, it publishes every package whose version is not yet on the
   registry. A `concurrency` group keeps two releases from racing on the version commit.
 - **The workflow needs one secret to do anything**: `NPM_TOKEN`, an npm automation token with
-  publish rights on the `@apollovisionlabs` scope, stored in the repository secrets. Until it
-  exists the publish step fails and nothing reaches the registry, so the secret is the gate on the
-  first release.
+  publish rights on the `@apollovisionlabs` scope, stored in the repository secrets. While it is
+  absent the release step is skipped, the run logs a warning and stays green, and nothing reaches
+  the registry. The secret is the gate on the first release.
 - **A git remote exists.** `origin` points at `https://github.com/apollovisionlabs/guide`, which
   is also the `repository` URL in both manifests.
 - **Never executed for real**: publishing has only ever been exercised as a dry run.

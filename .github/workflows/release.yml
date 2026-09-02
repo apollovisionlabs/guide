@@ -20,6 +20,10 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      # Read once here so a step can test for its absence. A secret cannot be
+      # referenced directly from an `if` condition.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,10 +57,16 @@ jobs:
           name: playwright-report
           path: playwright-report
 
+      # Without the token the release step cannot authenticate. Say so and stop
+      # there, rather than leaving a public repository permanently red.
+      - if: env.NPM_TOKEN == ''
+        run: echo "::warning::NPM_TOKEN is not set, so the release step is skipped and nothing is published."
+
       # With pending changesets, this opens or updates a version pull request and
       # publishes nothing. With none, it publishes every package whose version is
       # not yet on the registry.
       - uses: changesets/action@v1
+        if: env.NPM_TOKEN != ''
         with:
           version: pnpm changeset version
           publish: pnpm changeset publish

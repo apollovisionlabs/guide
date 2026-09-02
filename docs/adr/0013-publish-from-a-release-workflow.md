@@ -51,9 +51,11 @@ the `.npmrc` that pnpm reads.
 
 ## Consequences
 
-The secret is the gate on the first release. Until `NPM_TOKEN` exists the publish step fails and
-nothing reaches the registry. Once it exists, the next push to `main` publishes `0.1.0` for both
-packages, because neither version is on the registry and no changesets are pending. That is
+The secret is the gate on the first release. While `NPM_TOKEN` is absent the release step is
+skipped and the run logs a warning instead of failing, so a public repository is not left
+permanently red by a token nobody has added yet, and nothing reaches the registry. Once it exists,
+the next push to `main` publishes `0.1.0` for both packages, because neither version is on the
+registry and no changesets are pending. That is
 intended, and it is stated in `INFRA.md` so it cannot come as a surprise.
 
 A contributor who changes a published package's behaviour must add a changeset in the same commit.
