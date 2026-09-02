@@ -16,14 +16,20 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  # Lets GitHub mint the OIDC token that npm trusted publishing exchanges for a
+  # short lived credential. No long lived npm token is stored anywhere.
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      # Read once here so a step can test for its absence. A secret cannot be
-      # referenced directly from an `if` condition.
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Trusted publishing has to be configured on npmjs.com for each package
+      # before it can work, and that cannot be done until the package exists.
+      # Set the repository variable RELEASE_ENABLED to true once both packages
+      # are published and both have a trusted publisher. Until then the release
+      # step is skipped and this public repository stays green.
+      RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,16 +63,14 @@ jobs:
           name: playwright-report
           path: playwright-report
 
-      # Without the token the release step cannot authenticate. Say so and stop
-      # there, rather than leaving a public repository permanently red.
-      - if: env.NPM_TOKEN == ''
-        run: echo "::warning::NPM_TOKEN is not set, so the release step is skipped and nothing is published."
+      - if: env.RELEASE_ENABLED != 'true'
+        run: echo "::warning::RELEASE_ENABLED is not true, so the release step is skipped and nothing is published."
 
       # With pending changesets, this opens or updates a version pull request and
       # publishes nothing. With none, it publishes every package whose version is
       # not yet on the registry.
       - uses: changesets/action@v1
-        if: env.NPM_TOKEN != ''
+        if: env.RELEASE_ENABLED == 'true'
         with:
           version: pnpm changeset version
           publish: pnpm changeset publish
@@ -74,4 +78,3 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

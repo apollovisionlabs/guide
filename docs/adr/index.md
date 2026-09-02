@@ -19,4 +19,5 @@ sequentially, zero-padded.
 | [0010](0010-shipped-package-readmes-exempt-from-frontmatter.md) | Exempt the shipped package READMEs from the OKF frontmatter rule | stable |
 | [0011](0011-move-to-apollo-vision-labs.md) | Move to the Apollo Vision Labs organisation | stable |
 | [0012](0012-publish-under-the-apollovisionlabs-scope.md) | Publish under the apollovisionlabs scope | stable |
-| [0013](0013-publish-from-a-release-workflow.md) | Publish from a release workflow driven by Changesets | stable |
+| [0013](0013-publish-from-a-release-workflow.md) | Publish from a release workflow driven by Changesets | stable, authentication superseded by 0014 |
+| [0014](0014-authenticate-releases-with-trusted-publishing.md) | Authenticate releases with npm trusted publishing | stable |

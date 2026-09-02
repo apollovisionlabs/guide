@@ -4,6 +4,14 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-02
 
+- Replaced the release workflow's stored `NPM_TOKEN` with npm trusted publishing, after npm
+  advised against long lived tokens for continuous integration. Recorded as
+  [ADR 0014](adr/0014-authenticate-releases-with-trusted-publishing.md), which supersedes the
+  authentication part of [ADR 0013](adr/0013-publish-from-a-release-workflow.md). Rewrote the
+  release path section of `INFRA.md`: the gate is now the `RELEASE_ENABLED` repository
+  variable, the first publish of each package has to be manual because npm cannot attach a
+  trusted publisher to a package that does not exist, and provenance is expected but not yet
+  observed.
 - Added the release workflow, `.github/workflows/release.yml`. A push to `main` runs the full
   verification then hands over to `changesets/action`, which opens a version pull request when
   changesets are pending and publishes what the registry lacks when none are. Recorded as

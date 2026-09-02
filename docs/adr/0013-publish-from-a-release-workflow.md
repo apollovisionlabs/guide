@@ -14,7 +14,9 @@ generated:
 
 ## Status
 
-Stable.
+Stable, except for authentication, which
+[ADR 0014](0014-authenticate-releases-with-trusted-publishing.md) supersedes: the stored
+`NPM_TOKEN` described below was replaced by npm trusted publishing.
 
 ## Context
 

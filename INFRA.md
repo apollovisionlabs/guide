@@ -107,18 +107,29 @@ Everything below is what *exists*, not what is planned.
   `changesets/action`. With pending changesets that action opens or updates a version pull request
   and publishes nothing. With none, it publishes every package whose version is not yet on the
   registry. A `concurrency` group keeps two releases from racing on the version commit.
-- **The workflow needs one secret to do anything**: `NPM_TOKEN`, an npm automation token with
-  publish rights on the `@apollovisionlabs` scope, stored in the repository secrets. While it is
-  absent the release step is skipped, the run logs a warning and stays green, and nothing reaches
-  the registry. The secret is the gate on the first release.
+- **Authentication is npm trusted publishing, not a stored token.** The job asks for
+  `id-token: write`, GitHub mints an OIDC token, and npm exchanges it for a short lived
+  credential. No long lived npm token exists in the repository secrets.
+- **The release step is gated on a repository variable**, `RELEASE_ENABLED`. While it is anything
+  other than `true` the step is skipped, the run logs a warning and stays green, and nothing
+  reaches the registry. The gate exists because trusted publishing must be configured per package
+  on npmjs.com, and a package cannot be configured before it exists.
+- **The first publish of each package cannot use trusted publishing.** npm requires the package to
+  exist before a trusted publisher can be attached to it, so `0.1.0` has to be published once by
+  another route, from a maintainer's machine with their own account. Bootstrapping is a manual,
+  one time act; every later release goes through the workflow.
 - **A git remote exists.** `origin` points at `https://github.com/apollovisionlabs/guide`, which
   is also the `repository` URL in both manifests.
 - **Never executed for real**: publishing has only ever been exercised as a dry run.
   `changeset version` and `changeset publish` have never run against a registry, so the first
   successful workflow run will publish `0.1.0` for both packages.
-- **Provenance is not enabled.** pnpm 10.20.0 exposes no provenance option on `pnpm publish`, so
-  turning it on would need a switch to `npm publish` inside the release step and a verification
-  that has not been done.
+- **Provenance is expected but unverified.** Trusted publishing normally attaches a provenance
+  attestation, and pnpm 10.20.0 exposes no provenance option of its own. Whether an attestation is
+  actually produced through `pnpm changeset publish` must be checked on the npm page of the first
+  package published this way, and this document corrected to say what was observed.
+- **The pnpm major matters.** OIDC publishing is reported working in pnpm 10, which is the version
+  pinned here, and broken in pnpm 11.0.8. Treat a pnpm major upgrade as a change that has to be
+  revalidated against the registry, not as routine maintenance.
 - **The packages sit in the `@apollovisionlabs` scope**, which the organisation already owns:
   `@apollovisionlabs/guide-core` and `@apollovisionlabs/guide-mui`. The unclaimed `@guide` scope
   and its fallbacks were abandoned, see
