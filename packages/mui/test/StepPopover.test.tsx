@@ -1,8 +1,20 @@
-import type { ComponentProps } from 'react'
+import type { ComponentProps, ReactElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { StepPopover } from '../src/StepPopover'
+
+// L'ondulation de ButtonBase declenche des mises a jour asynchrones que jsdom signale en
+// avertissement act(). On la desactive pour les tests uniquement, le rendu de production
+// gardant le comportement MUI par defaut.
+const testTheme = createTheme({
+  components: { MuiButtonBase: { defaultProps: { disableRipple: true } } },
+})
+
+function renderPopover(ui: ReactElement) {
+  return render(<ThemeProvider theme={testTheme}>{ui}</ThemeProvider>)
+}
 
 function setup(overrides: Partial<ComponentProps<typeof StepPopover>> = {}) {
   const anchor = document.createElement('button')
@@ -23,7 +35,7 @@ function setup(overrides: Partial<ComponentProps<typeof StepPopover>> = {}) {
     onStop: vi.fn(),
     ...overrides,
   }
-  render(<StepPopover {...props} />)
+  renderPopover(<StepPopover {...props} />)
   return props
 }
 
@@ -103,7 +115,7 @@ describe('StepPopover', () => {
     const anchor = document.createElement('button')
     document.body.appendChild(anchor)
 
-    const view = render(
+    const view = renderPopover(
       <StepPopover
         anchorEl={anchor}
         open
