@@ -1,3 +1,15 @@
+---
+type: Guide
+title: guide
+description: Public API reference for the headless React product-tour engine and its MUI rendering layer.
+tags: [readme, api, react, onboarding, tour]
+status: stable
+generated:
+  by: claude-opus-5
+  at: 2026-09-02T14:46:46Z
+  directed_by: human:remy dème
+---
+
 # guide
 
 `guide` is a headless React library for building in-app product tours. `@guide/core` owns the
@@ -52,6 +64,10 @@ function Sidebar() {
 ```
 
 Start the tour from anywhere under the provider with `useTour('welcome').start()`.
+
+Declare tours as module constants, as above, rather than as literals built inside a component.
+The provider compares step objects by identity, so a tour rebuilt on every render prevents the
+missing-target policy below from ever firing.
 
 ## `GuideTour` props
 
@@ -196,11 +212,22 @@ render.
 
 ## Prior art
 
-The spotlight-and-popover approach is inspired by [driver.js](https://driverjs.com) (MIT). Other
-libraries worth knowing about in this space: [react-joyride](https://github.com/gilbarbara/react-joyride)
-(MIT) and [reactour](https://github.com/elrumordelaluz/reactour) (MIT). `guide` differs from all
-three mainly in splitting the state machine (`@guide/core`) from rendering (`@guide/mui`), so the
-logic can be reused with a different design system.
+The spotlight-and-popover approach is inspired by [driver.js](https://driverjs.com) (MIT), as are
+[react-joyride](https://github.com/gilbarbara/react-joyride) (MIT) and
+[reactour](https://github.com/elrumordelaluz/reactour) (MIT). `guide` differs from all three mainly
+in splitting the state machine (`@guide/core`) from rendering (`@guide/mui`), so the logic can be
+reused with a different design system. Contributors must also read the licence discipline in
+`CONTRIBUTING.md` before looking at any other tour library.
+
+## Documentation
+
+This file is the public API reference. Everything else lives in the repository:
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — how the packages are layered and how the mechanisms work.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — prerequisites, commands, conventions, licence discipline.
+- [`INFRA.md`](INFRA.md) — build, continuous integration, and the state of the release path.
+- [`SECURITY.md`](SECURITY.md) — reporting, supported versions, what the packages touch.
+- [`docs/index.md`](docs/index.md) — the full documentation map: playbooks, decisions, references.
 
 ## License
 
