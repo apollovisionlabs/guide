@@ -297,6 +297,55 @@ describe('ChecklistProvider', () => {
     warn.mockRestore()
   })
 
+  it('warns and does not reject when an item names a tour the provider does not hold', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const user = userEvent.setup()
+    const unhandled: unknown[] = []
+    const onUnhandledRejection = (reason: unknown) => {
+      unhandled.push(reason)
+    }
+    // process.on/off are not in this package's TS lib shape (no @types/node dependency),
+    // but the real Node process object is present at test runtime.
+    const nodeProcess = process as unknown as {
+      on: (event: 'unhandledRejection', listener: (reason: unknown) => void) => void
+      off: (event: 'unhandledRejection', listener: (reason: unknown) => void) => void
+    }
+    nodeProcess.on('unhandledRejection', onUnhandledRejection)
+
+    const brokenChecklist: Checklist = {
+      id: 'onboarding',
+      items: [{ id: 'tour', title: 'Take the tour', tourId: 'missing' }],
+    }
+
+    render(
+      <GuideProvider tours={[demoTour]}>
+        <button data-guide="one">one</button>
+        <ChecklistProvider checklists={[brokenChecklist]}>
+          <ChecklistReadout />
+        </ChecklistProvider>
+      </GuideProvider>,
+    )
+    await user.click(screen.getByText('activate-tour'))
+    await waitFor(() =>
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('[guide]'),
+        expect.objectContaining({ message: expect.stringContaining('missing') }),
+      ),
+    )
+
+    // Give a real unhandled rejection several ticks to surface: Node reports it only after
+    // the microtask queue that could still attach a handler has drained.
+    for (let tick = 0; tick < 5; tick += 1) {
+      await act(async () => {
+        await Promise.resolve()
+      })
+    }
+
+    nodeProcess.off('unhandledRejection', onUnhandledRejection)
+    expect(unhandled).toHaveLength(0)
+    warn.mockRestore()
+  })
+
   describe('completion by tour', () => {
     const twoStepTour: Tour = {
       id: 'demo',

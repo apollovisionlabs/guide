@@ -89,6 +89,17 @@ export function ChecklistProvider({
     console.warn('[guide] a checklist item needs a GuideProvider to launch a tour')
   }, [])
 
+  // guide.start rejects for a tour id the GuideProvider does not hold (a typo in an item's
+  // tourId being the obvious way to hit this). Without a catch here that rejection is
+  // unhandled: nothing warns and the failure is invisible. Same once-only shape as
+  // warnNoGuide and warnStorageFailure above.
+  const tourStartFailedWarnedRef = useRef(false)
+  const warnTourStartFailure = useCallback((error: unknown) => {
+    if (tourStartFailedWarnedRef.current) return
+    tourStartFailedWarnedRef.current = true
+    console.warn('[guide] starting a tour for a checklist item failed', error)
+  }, [])
+
   const onEventRef = useRef(onEvent)
   onEventRef.current = onEvent
   const emit = useCallback((event: GuideEvent) => onEventRef.current?.(event), [])
@@ -276,7 +287,7 @@ export function ChecklistProvider({
           warnNoGuide()
           return
         }
-        void guide.start(item.tourId)
+        void guide.start(item.tourId).catch(warnTourStartFailure)
         return
       }
 
@@ -291,7 +302,7 @@ export function ChecklistProvider({
 
       toggle(checklistId, itemId)
     },
-    [resolveItem, guide, navigate, toggle, warnNoGuide],
+    [resolveItem, guide, navigate, toggle, warnNoGuide, warnTourStartFailure],
   )
 
   const value = useMemo<ChecklistContextValue>(
