@@ -295,4 +295,145 @@ describe('ChecklistProvider', () => {
     expect(screen.getByText('tour:todo')).toBeInTheDocument()
     warn.mockRestore()
   })
+
+  describe('completion by tour', () => {
+    const twoStepTour: Tour = {
+      id: 'demo',
+      steps: [
+        { target: 'one', title: 'First' },
+        { target: 'two', title: 'Second' },
+      ],
+    }
+
+    const otherChecklist: Checklist = {
+      id: 'other',
+      items: [{ id: 'unrelated', title: 'Not linked to a tour' }],
+    }
+
+    function StepReadout() {
+      const active = useGuideStep()
+      if (!active) return <p>no step</p>
+      return (
+        <div>
+          <p>{active.title}</p>
+          <button onClick={active.next}>next</button>
+        </div>
+      )
+    }
+
+    function OtherChecklistReadout() {
+      const { items } = useChecklist('other')
+      return (
+        <div>
+          {items.map((item) => (
+            <p key={item.id}>{`${item.id}:${item.completed ? 'done' : 'todo'}`}</p>
+          ))}
+        </div>
+      )
+    }
+
+    function TourHarness({
+      checklists = [checklist],
+      onEvent,
+    }: {
+      checklists?: Checklist[]
+      onEvent?: (event: GuideEvent) => void
+    }) {
+      return (
+        <GuideProvider tours={[twoStepTour]}>
+          <button data-guide="one">one</button>
+          <button data-guide="two">two</button>
+          <ChecklistProvider checklists={checklists} onEvent={onEvent}>
+            <ChecklistReadout />
+            {checklists.some((entry) => entry.id === 'other') && <OtherChecklistReadout />}
+          </ChecklistProvider>
+          <StepReadout />
+        </GuideProvider>
+      )
+    }
+
+    it('ticks the item whose tour completes', async () => {
+      const user = userEvent.setup()
+      render(<TourHarness />)
+      await user.click(screen.getByText('activate-tour'))
+      await screen.findByText('First')
+      await user.click(screen.getByText('next'))
+      await screen.findByText('Second')
+      await user.click(screen.getByText('next'))
+      expect(await screen.findByText('tour:done')).toBeInTheDocument()
+    })
+
+    it('ticks it once even when the provider re renders', async () => {
+      const user = userEvent.setup()
+      const events: GuideEvent[] = []
+      render(<TourHarness onEvent={(event) => events.push(event)} />)
+      await user.click(screen.getByText('activate-tour'))
+      await screen.findByText('First')
+      await user.click(screen.getByText('next'))
+      await screen.findByText('Second')
+      await user.click(screen.getByText('next'))
+      await screen.findByText('tour:done')
+
+      // A completed tour keeps re-rendering (focus restoration, step readouts, and so on).
+      // Give any such extra render a moment to run the watcher effect again.
+      await act(async () => {
+        await Promise.resolve()
+      })
+
+      const itemCompleteEvents = events.filter(
+        (event) => event.type === 'checklist:item-complete' && event.itemId === 'tour',
+      )
+      expect(itemCompleteEvents).toHaveLength(1)
+    })
+
+    it('leaves other items alone when an unrelated tour completes', async () => {
+      const user = userEvent.setup()
+      render(<TourHarness checklists={[checklist, otherChecklist]} />)
+      await user.click(screen.getByText('activate-tour'))
+      await screen.findByText('First')
+      await user.click(screen.getByText('next'))
+      await screen.findByText('Second')
+      await user.click(screen.getByText('next'))
+      await screen.findByText('tour:done')
+      expect(screen.getByText('unrelated:todo')).toBeInTheDocument()
+    })
+
+    it('does not re tick an item that was already completed', async () => {
+      const user = userEvent.setup()
+      const storage = createMemoryStorage({
+        'checklist:onboarding': { completed: ['tour'], dismissed: false },
+      })
+      const events: GuideEvent[] = []
+      render(
+        <GuideProvider tours={[twoStepTour]}>
+          <button data-guide="one">one</button>
+          <button data-guide="two">two</button>
+          <ChecklistProvider
+            checklists={[checklist]}
+            storage={storage}
+            onEvent={(event) => events.push(event)}
+          >
+            <ChecklistReadout />
+          </ChecklistProvider>
+          <StepReadout />
+        </GuideProvider>,
+      )
+      await screen.findByText('tour:done')
+
+      // Running the same tour again must not re-tick an item that storage already marks
+      // completed.
+      await user.click(screen.getByText('activate-tour'))
+      await screen.findByText('First')
+      await user.click(screen.getByText('next'))
+      await screen.findByText('Second')
+      await user.click(screen.getByText('next'))
+
+      await act(async () => {
+        await Promise.resolve()
+      })
+
+      const itemCompleteEvents = events.filter((event) => event.type === 'checklist:item-complete')
+      expect(itemCompleteEvents).toHaveLength(0)
+    })
+  })
 })

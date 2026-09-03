@@ -180,6 +180,34 @@ export function ChecklistProvider({
     [resolveItem, progress, writeProgress, emit],
   )
 
+  // Marks every item across every checklist whose tourId matches the finished tour. Delegates to
+  // complete, which is idempotent, so an item already ticked produces no event.
+  const completeItemsForTour = useCallback(
+    (tourId: string) => {
+      for (const candidate of checklists) {
+        for (const item of candidate.items) {
+          if (item.tourId === tourId) complete(candidate.id, item.id)
+        }
+      }
+    },
+    [checklists, complete],
+  )
+
+  // Watches the tour state for a finished run and ticks the matching item once. The guard is
+  // keyed by tourId rather than a plain boolean: leaving the completed state (STOP, or starting
+  // another tour) clears it, so running the same tour again after a reset can tick it again.
+  const handledCompletionRef = useRef<string | null>(null)
+  useEffect(() => {
+    const state = guide?.state
+    if (!state || state.status !== 'completed' || !state.tourId) {
+      handledCompletionRef.current = null
+      return
+    }
+    if (handledCompletionRef.current === state.tourId) return
+    handledCompletionRef.current = state.tourId
+    completeItemsForTour(state.tourId)
+  }, [guide?.state, completeItemsForTour])
+
   const toggle = useCallback(
     (checklistId: string, itemId: string) => {
       const resolved = resolveItem(checklistId, itemId)
