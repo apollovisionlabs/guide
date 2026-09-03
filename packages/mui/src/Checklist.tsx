@@ -32,7 +32,9 @@ export function Checklist({ checklistId, title, onDismiss, onActivate }: Checkli
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+      {/* alignItems goes through sx rather than as a prop: MUI 9 dropped the system props on
+          Stack, and this package supports both 7 and 9. */}
+      <Stack direction="row" spacing={1} sx={{ mb: 1, alignItems: 'center' }}>
         {title && (
           <Typography variant="subtitle1" sx={{ fontWeight: 600, flexGrow: 1 }}>
             {title}
@@ -61,10 +63,14 @@ export function Checklist({ checklistId, title, onDismiss, onActivate }: Checkli
               <Checkbox
                 edge="end"
                 checked={item.completed}
-                inputProps={{
-                  'aria-label': item.completed
-                    ? `Mark ${item.title} as not complete`
-                    : `Mark ${item.title} as complete`,
+                slotProps={{
+                  // slotProps rather than inputProps: MUI 9 removed the latter, and 7 accepts
+                  // both, so this is the spelling that typechecks against either peer.
+                  input: {
+                    'aria-label': item.completed
+                      ? `Mark ${item.title} as not complete`
+                      : `Mark ${item.title} as complete`,
+                  },
                 }}
                 onClick={() => toggle(item.id)}
               />
