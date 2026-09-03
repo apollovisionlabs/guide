@@ -119,4 +119,47 @@ describe('Checklist', () => {
     await user.click(screen.getByRole('button', { name: 'Dismiss' }))
     await waitFor(() => expect(container).toBeEmptyDOMElement())
   })
+
+  it('uses a supplied label in place of the default', async () => {
+    renderChecklist(<Checklist checklistId="demo" labels={{ dismiss: 'Ignorer' }} />)
+    await screen.findByText('First')
+    expect(screen.getByRole('button', { name: 'Ignorer' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the English default for any label a partial override omits', async () => {
+    renderChecklist(<Checklist checklistId="demo" labels={{ dismiss: 'Ignorer' }} />, {
+      storage: storageWithCompleted(['one']),
+    })
+    await screen.findByText('1 of 3')
+    expect(screen.getByRole('checkbox', { name: 'Mark Second as complete' })).toBeInTheDocument()
+  })
+
+  it('passes the completed and total counts to the progress label', async () => {
+    renderChecklist(
+      <Checklist
+        checklistId="demo"
+        labels={{ progress: (completedCount, total) => `progress:${completedCount}/${total}` }}
+      />,
+      { storage: storageWithCompleted(['one']) },
+    )
+    await screen.findByText('progress:1/3')
+  })
+
+  it('passes the item title to the checkbox accessible name labels', async () => {
+    renderChecklist(
+      <Checklist
+        checklistId="demo"
+        labels={{
+          markComplete: (itemTitle) => `complete:${itemTitle}`,
+          markNotComplete: (itemTitle) => `not-complete:${itemTitle}`,
+        }}
+      />,
+      { storage: storageWithCompleted(['one']) },
+    )
+    await waitFor(() =>
+      expect(screen.getByRole('checkbox', { name: 'not-complete:First' })).toBeChecked(),
+    )
+    expect(screen.getByRole('checkbox', { name: 'complete:Second' })).not.toBeChecked()
+  })
 })

@@ -6,12 +6,27 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Fab from '@mui/material/Fab'
 import Popover from '@mui/material/Popover'
 import { useChecklist, type ResolvedChecklistItem } from '@apollovisionlabs/guide-core'
-import { Checklist } from './Checklist'
+import { Checklist, type ChecklistLabels } from './Checklist'
+
+export interface ChecklistLauncherLabels extends ChecklistLabels {
+  fabLabel: (title: string, completedCount: number, total: number) => string
+  dismissed: (title: string) => string
+}
+
+const DEFAULT_LAUNCHER_LABELS: ChecklistLauncherLabels = {
+  dismiss: 'Dismiss',
+  progress: (completedCount, total) => `${completedCount} of ${total}`,
+  markComplete: (itemTitle) => `Mark ${itemTitle} as complete`,
+  markNotComplete: (itemTitle) => `Mark ${itemTitle} as not complete`,
+  fabLabel: (title, completedCount, total) => `${title}, ${completedCount} of ${total} complete`,
+  dismissed: (title) => `${title} dismissed`,
+}
 
 export interface ChecklistLauncherProps {
   checklistId: string
   title?: string
   placement?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  labels?: Partial<ChecklistLauncherLabels>
 }
 
 const CORNER_OFFSET = 24
@@ -44,7 +59,9 @@ export function ChecklistLauncher({
   checklistId,
   title,
   placement = 'bottom-right',
+  labels,
 }: ChecklistLauncherProps) {
+  const text = { ...DEFAULT_LAUNCHER_LABELS, ...labels }
   const { completedCount, total, dismissed } = useChecklist(checklistId)
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
   // Set only when the dismissal happened here, in this session, from inside the popover. A
@@ -80,7 +97,7 @@ export function ChecklistLauncher({
         onBlur={() => setDismissedHere(false)}
         sx={offScreenSx}
       >
-        {`${title ?? 'Checklist'} dismissed`}
+        {text.dismissed(title ?? 'Checklist')}
       </Box>
     )
   }
@@ -90,7 +107,7 @@ export function ChecklistLauncher({
   // aria-valuenow internally, MUI v9 does not, and both are supported peers.
   const progress = total === 0 ? 0 : Math.round((completedCount / total) * 100)
   const dialogLabel = title ?? 'Checklist'
-  const fabLabel = `${dialogLabel}, ${completedCount} of ${total} complete`
+  const fabLabel = text.fabLabel(dialogLabel, completedCount, total)
 
   const close = () => setAnchorEl(null)
   const onDismiss = () => {
@@ -152,7 +169,13 @@ export function ChecklistLauncher({
           },
         }}
       >
-        <Checklist checklistId={checklistId} title={title} onDismiss={onDismiss} onActivate={onActivate} />
+        <Checklist
+          checklistId={checklistId}
+          title={title}
+          onDismiss={onDismiss}
+          onActivate={onActivate}
+          labels={text}
+        />
       </Popover>
     </>
   )

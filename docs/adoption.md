@@ -182,8 +182,10 @@ A step then declares where it lives:
 `route` and `navigateTo` are two different things, and confusing them is the usual first mistake.
 
 - `route` is a **pattern**, used only to answer one question: does the page currently open already
-  satisfy this step? It accepts `:param` segments and a trailing `*` wildcard. `/projects/:id`
-  matches `/projects/42` and `/projects/7`.
+  satisfy this step? It accepts `:param` segments and a `*` wildcard. `/projects/:id` matches
+  `/projects/42` and `/projects/7`. The wildcard is not restricted to the end: `matchRoute` returns
+  true as soon as it reaches a `*`, so `/projects/*` matches everything under `/projects`, and a `*`
+  in the middle matches every path that agrees on the segments before it.
 - `navigateTo` is a **concrete path**, the exact string handed to your `navigate` function. A
   pattern cannot be navigated to, because `:id` is not a real path segment.
 
@@ -227,8 +229,14 @@ tour advances past it after the timeout instead of hanging.
 ## 6. Wire persistence
 
 Without a `storage` prop, nothing is remembered: a reload restarts the tour from step one. Pass an
-implementation of `GuideStorage`, which is two generic async methods, and the provider reads on
-`start()` and writes on every advance and on completion, under the key `tour:<id>`.
+implementation of `GuideStorage`, which is two generic async methods, and the provider writes on
+every advance and on completion, under the key `tour:<id>`.
+
+The read is narrower than the write. `start()` consults storage only when it is given neither a
+`from` index nor `resume: false`, and it resumes only a record whose status is `in-progress`: a
+record left as `completed` starts the tour again from its first step. So a tour started with an
+explicit `from` never reads at all, which is what you want when a checklist item or a button
+deliberately restarts it.
 
 Two implementations ship with the core:
 
