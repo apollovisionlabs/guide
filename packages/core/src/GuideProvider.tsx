@@ -26,6 +26,7 @@ import { useTargetElement } from './useTargetElement'
 import { useElementRect } from './useElementRect'
 import { useAnnouncer } from './a11y'
 import { findMissingTargets } from './validateTour'
+import { isTourProgress } from './storage'
 
 export interface ActiveStep {
   tourId: string
@@ -191,7 +192,8 @@ export function GuideProvider({
         // Storage that fails must not block the tour: we start from the beginning.
         let progress: TourProgress | null = null
         try {
-          progress = await storage.read(tourId)
+          const stored = await storage.read<unknown>(`tour:${tourId}`)
+          progress = isTourProgress(stored) ? stored : null
         } catch (error) {
           warnStorageFailure(error)
         }
@@ -283,7 +285,7 @@ export function GuideProvider({
     if (!status) return
     try {
       void Promise.resolve(
-        storage.write(state.tourId, { status, stepIndex: state.stepIndex }),
+        storage.write(`tour:${state.tourId}`, { status, stepIndex: state.stepIndex }),
       ).catch(warnStorageFailure)
     } catch (error) {
       warnStorageFailure(error)

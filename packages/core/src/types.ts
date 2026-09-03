@@ -40,8 +40,12 @@ export interface TourProgress {
 }
 
 export interface GuideStorage {
-  read(tourId: string): Promise<TourProgress | null>
-  write(tourId: string, progress: TourProgress): Promise<void>
+  /**
+   * Reads a previously written value. The key is namespaced by the caller,
+   * `tour:<id>` or `checklist:<id>`, so one storage serves both.
+   */
+  read<T>(key: string): Promise<T | null>
+  write<T>(key: string, value: T): Promise<void>
 }
 
 export type GuideEvent =

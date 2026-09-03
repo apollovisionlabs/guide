@@ -111,7 +111,7 @@ describe('GuideProvider', () => {
 
   it('resumes at the persisted step', async () => {
     const user = userEvent.setup()
-    const storage = createMemoryStorage({ demo: { status: 'in-progress', stepIndex: 1 } })
+    const storage = createMemoryStorage({ 'tour:demo': { status: 'in-progress', stepIndex: 1 } })
     render(<Harness storage={storage} />)
     await user.click(screen.getByText('start'))
     expect(await screen.findByText('Second')).toBeInTheDocument()
@@ -124,8 +124,28 @@ describe('GuideProvider', () => {
     await user.click(screen.getByText('start'))
     await screen.findByText('First')
     await waitFor(async () =>
-      expect(await storage.read('demo')).toEqual({ status: 'in-progress', stepIndex: 0 }),
+      expect(await storage.read('tour:demo')).toEqual({ status: 'in-progress', stepIndex: 0 }),
     )
+  })
+
+  it('writes tour progress under a namespaced key', async () => {
+    const user = userEvent.setup()
+    const storage = createMemoryStorage()
+    const write = vi.spyOn(storage, 'write')
+    render(<Harness storage={storage} />)
+    await user.click(screen.getByText('start'))
+    await waitFor(() => expect(write).toHaveBeenCalledWith('tour:demo', expect.anything()))
+  })
+
+  it('ignores a stored value that is not tour progress', async () => {
+    const user = userEvent.setup()
+    const storage = createMemoryStorage()
+    await storage.write('tour:demo', { nonsense: true })
+    render(<Harness storage={storage} />)
+    await user.click(screen.getByText('start'))
+    // A corrupted value must not be trusted: the tour starts at the first step.
+    expect(await screen.findByText('First')).toBeInTheDocument()
+    expect(screen.getByText('1/2')).toBeInTheDocument()
   })
 
   it('translates the text keys', async () => {
