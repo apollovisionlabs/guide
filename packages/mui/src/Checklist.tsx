@@ -10,15 +10,17 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import { useChecklist } from '@apollovisionlabs/guide-core'
+import { useChecklist, type ResolvedChecklistItem } from '@apollovisionlabs/guide-core'
 
 export interface ChecklistProps {
   checklistId: string
   title?: string
   onDismiss?: () => void
+  /** Called after an item is activated, with the resolved item that was activated. */
+  onActivate?: (item: ResolvedChecklistItem) => void
 }
 
-export function Checklist({ checklistId, title, onDismiss }: ChecklistProps) {
+export function Checklist({ checklistId, title, onDismiss, onActivate }: ChecklistProps) {
   const { items, completedCount, total, dismissed, activate, toggle, dismiss } =
     useChecklist(checklistId)
 
@@ -68,7 +70,12 @@ export function Checklist({ checklistId, title, onDismiss }: ChecklistProps) {
               />
             }
           >
-            <ListItemButton onClick={() => activate(item.id)}>
+            <ListItemButton
+              onClick={() => {
+                activate(item.id)
+                onActivate?.(item)
+              }}
+            >
               <ListItemText
                 primary={item.title}
                 secondary={item.body}

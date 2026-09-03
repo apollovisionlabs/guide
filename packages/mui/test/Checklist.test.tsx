@@ -93,6 +93,26 @@ describe('Checklist', () => {
     expect(screen.getByRole('checkbox', { name: 'Mark Second as not complete' })).toBeChecked()
   })
 
+  it('calls onActivate with the resolved item after activating', async () => {
+    const user = userEvent.setup()
+    const navigate = vi.fn()
+    const onActivate = vi.fn()
+    renderChecklist(<Checklist checklistId="demo" onActivate={onActivate} />, { navigate })
+    await user.click(screen.getByText('Second'))
+    expect(navigate).toHaveBeenCalledWith('/second')
+    expect(onActivate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'two', title: 'Second', href: '/second' }),
+    )
+  })
+
+  it('still activates normally when no onActivate is passed', async () => {
+    const user = userEvent.setup()
+    const navigate = vi.fn()
+    renderChecklist(<Checklist checklistId="demo" />, { navigate })
+    await user.click(screen.getByText('Second'))
+    expect(navigate).toHaveBeenCalledWith('/second')
+  })
+
   it('renders nothing once dismissed', async () => {
     const user = userEvent.setup()
     const { container } = renderChecklist(<Checklist checklistId="demo" />)

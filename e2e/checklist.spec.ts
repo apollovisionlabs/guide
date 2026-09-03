@@ -12,10 +12,11 @@ test('an item launches the tour, and finishing it ticks the item', async ({ page
   const checklistDialog = page.getByRole('dialog', { name: 'Get started' })
   await checklistDialog.getByText('Take the product tour').click()
 
-  // The checklist popover stays open behind the tour: it is not closed by activating an item.
-  // Scope the tour dialog by excluding the checklist's own aria-label rather than by its
-  // changing step text, which would go stale as the tour advances.
-  const tourDialog = page.locator('[role="dialog"]:not([aria-label="Get started"])')
+  // Launching the tour closes the checklist popover: only one dialog is ever on screen.
+  await expect(checklistDialog).toBeHidden()
+  await expect(page.getByRole('dialog')).toHaveCount(1)
+
+  const tourDialog = page.getByRole('dialog')
   await expect(tourDialog).toContainText('Your projects live here')
   await tourDialog.getByRole('button', { name: 'Next' }).click()
   await expect(page).toHaveURL('/projects')
@@ -26,11 +27,12 @@ test('an item launches the tour, and finishing it ticks the item', async ({ page
   await tourDialog.getByRole('button', { name: 'Finish' }).click()
   await expect(tourDialog).toBeHidden()
 
-  // The checklist popover, still open the whole time, reflects the completion without needing
-  // to be reopened.
-  await expect(checklistDialog.getByText('1 of 3')).toBeVisible()
-  await expect(checklistDialog.getByText('Take the product tour')).toHaveCSS('text-decoration-line', 'line-through')
-  await expect(checklistDialog.getByRole('checkbox', { name: 'Mark Take the product tour as not complete' })).toBeChecked()
+  // Reopen the launcher to see the completion reflected: the checklist popover was closed by
+  // the tour launch, so it is no longer open the way earlier revisions of this test assumed.
+  await page.getByRole('button', { name: /Get started, 1 of 3 complete/ }).click()
+  const reopened = page.getByRole('dialog', { name: 'Get started' })
+  await expect(reopened.getByText('Take the product tour')).toHaveCSS('text-decoration-line', 'line-through')
+  await expect(reopened.getByRole('checkbox', { name: 'Mark Take the product tour as not complete' })).toBeChecked()
 })
 
 test('a ticked item survives a reload', async ({ page }) => {

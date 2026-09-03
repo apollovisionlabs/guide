@@ -5,7 +5,7 @@ import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Fab from '@mui/material/Fab'
 import Popover from '@mui/material/Popover'
-import { useChecklist } from '@apollovisionlabs/guide-core'
+import { useChecklist, type ResolvedChecklistItem } from '@apollovisionlabs/guide-core'
 import { Checklist } from './Checklist'
 
 export interface ChecklistLauncherProps {
@@ -46,6 +46,14 @@ export function ChecklistLauncher({
 
   const close = () => setAnchorEl(null)
   const onFabClick = (event: MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget)
+
+  // Ticking items one after another is the normal way to use the list, so the popover must
+  // stay open for a plain tick. It only closes when the activated item hands off to something
+  // that needs the screen: a tour (which would otherwise be stuck behind an aria-hidden
+  // launcher) or a navigation away from the current page.
+  const onActivate = (item: ResolvedChecklistItem) => {
+    if (item.tourId || item.href) close()
+  }
 
   const fromBottom = placement.startsWith('bottom')
   const fromRight = placement.endsWith('right')
@@ -92,7 +100,7 @@ export function ChecklistLauncher({
           },
         }}
       >
-        <Checklist checklistId={checklistId} title={title} onDismiss={close} />
+        <Checklist checklistId={checklistId} title={title} onDismiss={close} onActivate={onActivate} />
       </Popover>
     </>
   )

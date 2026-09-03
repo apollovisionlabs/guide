@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
@@ -25,6 +25,15 @@ const checklist: ChecklistDefinition = {
   ],
 }
 
+const activationChecklist: ChecklistDefinition = {
+  id: 'demo',
+  items: [
+    { id: 'plain', title: 'Plain item' },
+    { id: 'tour', title: 'Tour item', tourId: 'product' },
+    { id: 'link', title: 'Link item', href: '/somewhere' },
+  ],
+}
+
 function storageWithCompleted(itemIds: string[], dismissed = false): GuideStorage {
   return {
     read: async <T,>(key: string) => {
@@ -35,10 +44,21 @@ function storageWithCompleted(itemIds: string[], dismissed = false): GuideStorag
   }
 }
 
-function renderLauncher(ui: ReactElement, options: { storage?: GuideStorage } = {}) {
+function renderLauncher(
+  ui: ReactElement,
+  options: {
+    storage?: GuideStorage
+    checklists?: ChecklistDefinition[]
+    navigate?: (path: string) => void
+  } = {},
+) {
   return render(
     <ThemeProvider theme={testTheme}>
-      <ChecklistProvider checklists={[checklist]} storage={options.storage}>
+      <ChecklistProvider
+        checklists={options.checklists ?? [checklist]}
+        storage={options.storage}
+        navigate={options.navigate}
+      >
         {ui}
       </ChecklistProvider>
     </ThemeProvider>,
@@ -118,6 +138,53 @@ describe('ChecklistLauncher', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /3 of 3/ })).toBeInTheDocument(),
     )
+  })
+
+  it('closes the popover when the activated item carries a tourId', async () => {
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" title="Get started" />, {
+      checklists: [activationChecklist],
+    })
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+
+    await user.click(screen.getByText('Tour item'))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('closes the popover when the activated item carries an href', async () => {
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" title="Get started" />, {
+      checklists: [activationChecklist],
+      navigate: vi.fn(),
+    })
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+
+    await user.click(screen.getByText('Link item'))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('leaves the popover open when the activated item is a plain tick', async () => {
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" title="Get started" />, {
+      checklists: [activationChecklist],
+    })
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    await screen.findByRole('dialog')
+
+    await user.click(screen.getByText('Plain item'))
+    // Proves the click landed (the item toggled) rather than merely that the dialog element
+    // is still the same reference: if the popover had closed, this checkbox would not be
+    // findable anywhere in the document.
+    await waitFor(() =>
+      expect(
+        screen.getByRole('checkbox', { name: 'Mark Plain item as not complete' }),
+      ).toBeChecked(),
+    )
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
   it('returns focus to the launcher button after the dialog closes', async () => {
