@@ -1,4 +1,5 @@
 export * from './Checklist'
+export * from './ChecklistLauncher'
 export * from './Spotlight'
 export * from './StepPopover'
 export * from './GuideTour'
