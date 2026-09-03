@@ -5,10 +5,13 @@ import userEvent from '@testing-library/user-event'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import {
   ChecklistProvider,
+  GuideProvider,
   type Checklist as ChecklistDefinition,
   type GuideStorage,
+  type Tour,
 } from '@apollovisionlabs/guide-core'
 import { ChecklistLauncher } from '../src/ChecklistLauncher'
+import { GuideTour } from '../src/GuideTour'
 
 // The ButtonBase ripple triggers asynchronous updates that jsdom reports as an act() warning.
 // It is disabled for the tests only; the production rendering keeps the MUI default behaviour.
@@ -196,5 +199,70 @@ describe('ChecklistLauncher', () => {
     await user.keyboard('{Escape}')
     await waitFor(() => expect(launcher).toHaveFocus())
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
+
+
+// A tour whose single step targets an element that is actually present, so GuideTour mounts
+// a real StepPopover instead of silently waiting for a missing target.
+const focusTour: Tour = {
+  id: 'product',
+  steps: [{ target: 'focus-target', title: 'Tour title', body: 'Tour body' }],
+}
+
+const focusChecklist: ChecklistDefinition = {
+  id: 'demo',
+  items: [{ id: 'tour', title: 'Tour item', tourId: 'product' }],
+}
+
+function FocusHarness() {
+  return (
+    <ThemeProvider theme={testTheme}>
+      <GuideProvider tours={[focusTour]}>
+        <ChecklistProvider checklists={[focusChecklist]}>
+          <button data-guide="focus-target">Target</button>
+          <ChecklistLauncher checklistId="demo" title="Get started" />
+          <GuideTour />
+        </ChecklistProvider>
+      </GuideProvider>
+    </ThemeProvider>
+  )
+}
+
+describe('ChecklistLauncher keyboard focus handoff', () => {
+  it('moves focus into the tour dialog, not the checklist or the body, when a tour item is activated from the keyboard', async () => {
+    const user = userEvent.setup()
+    render(<FocusHarness />)
+
+    // Keyboard-only from here: focus the FAB directly (the equivalent of having tabbed to
+    // it), then Enter to open, Tab to the tour item's row, Enter to activate it.
+    screen.getByRole('button', { name: /Get started/ }).focus()
+    await user.keyboard('{Enter}')
+    await screen.findByRole('dialog', { name: 'Get started' })
+
+    let guard = 0
+    while (
+      !(
+        document.activeElement?.matches('[role="button"]') &&
+        document.activeElement.textContent?.includes('Tour item')
+      ) &&
+      guard < 20
+    ) {
+      await user.tab()
+      guard++
+    }
+    expect(document.activeElement?.textContent).toContain('Tour item')
+
+    await user.keyboard('{Enter}')
+
+    // Exactly one dialog on screen, and it is the tour's, not the checklist's: the checklist
+    // popover (aria-label "Get started") is gone, and focus is inside the surviving dialog.
+    await waitFor(() => {
+      const dialogs = screen.getAllByRole('dialog')
+      expect(dialogs).toHaveLength(1)
+      expect(dialogs[0]).not.toHaveAttribute('aria-label', 'Get started')
+      expect(dialogs[0]).toContainElement(document.activeElement as HTMLElement)
+    })
+    expect(document.activeElement).not.toBe(document.body)
   })
 })

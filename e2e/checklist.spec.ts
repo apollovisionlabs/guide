@@ -58,3 +58,40 @@ test('the launcher is reachable and operable from the keyboard', async ({ page }
   await expect(dialog).toBeVisible()
   await expect(dialog).toContainText('Take the product tour')
 })
+
+test('activating a tour item from the keyboard hands focus into the tour dialog', async ({ page }) => {
+  const launcher = page.getByRole('button', { name: /Get started, 0 of 3 complete/ })
+  await launcher.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('dialog', { name: 'Get started' })).toBeVisible()
+
+  // Tab until the "Take the product tour" row itself holds focus.
+  for (let i = 0; i < 20; i++) {
+    const focused = await page.evaluate(() => {
+      const el = document.activeElement
+      return { role: el?.getAttribute('role'), text: el?.textContent ?? '' }
+    })
+    if (focused.role === 'button' && focused.text.includes('Take the product tour')) break
+    await page.keyboard.press('Tab')
+  }
+
+  await page.keyboard.press('Enter')
+
+  // Exactly one dialog remains, it is the tour's (not the checklist's, which carries the
+  // "Get started" label), and focus landed inside it rather than on the launcher or the body.
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toHaveCount(1)
+  await expect(dialog).not.toHaveAttribute('aria-label', 'Get started')
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const dialogEl = document.querySelector('[role="dialog"]')
+        return (
+          dialogEl !== null &&
+          dialogEl.contains(document.activeElement) &&
+          document.activeElement !== document.body
+        )
+      }),
+    )
+    .toBe(true)
+})
