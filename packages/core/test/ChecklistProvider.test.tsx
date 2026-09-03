@@ -8,7 +8,7 @@ import { GuideProvider } from '../src/GuideProvider'
 import { useGuideStep } from '../src/useGuideStep'
 import { useTour } from '../src/useTour'
 import { createMemoryStorage } from '../src/storage'
-import type { Checklist, GuideEvent, Tour } from '../src/types'
+import type { Checklist, GuideEvent, GuideStorage, Tour } from '../src/types'
 
 const checklist: Checklist = {
   id: 'onboarding',
@@ -114,6 +114,64 @@ describe('ChecklistProvider', () => {
     })
     expect(screen.getByText('0/3')).toBeInTheDocument()
     expect(screen.queryByText('1/3')).not.toBeInTheDocument()
+  })
+
+  // A memory storage resolves before the user can do anything, so it can never show what a
+  // server-backed one does: the list is painted and interactive for as long as the read takes.
+  // These two hold the read open across a real user action and release it afterwards.
+  function gatedStorage(stored: unknown) {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const storage: GuideStorage = {
+      read: async <T,>(key: string) => {
+        await gate
+        return (key === 'checklist:onboarding' ? stored : null) as T
+      },
+      write: async () => {},
+    }
+    return { storage, release }
+  }
+
+  it('keeps a tick made while the storage read was still in flight', async () => {
+    const user = userEvent.setup()
+    const { storage, release } = gatedStorage({ completed: ['reports'], dismissed: false })
+    render(<Harness storage={storage} />)
+
+    // The read has not resolved: this is the launcher painting 0 of 3 and the user acting on it.
+    expect(screen.getByText('profile:todo')).toBeInTheDocument()
+    await user.click(screen.getByText('toggle-profile'))
+    expect(screen.getByText('profile:done')).toBeInTheDocument()
+
+    await act(async () => {
+      release()
+      await Promise.resolve()
+    })
+
+    // The stored item lands, and the tick the user could already see survives it.
+    await waitFor(() => expect(screen.getByText('reports:done')).toBeInTheDocument())
+    expect(screen.getByText('profile:done')).toBeInTheDocument()
+    expect(screen.getByText('2/3')).toBeInTheDocument()
+  })
+
+  it('keeps a dismissal made while the storage read was still in flight', async () => {
+    const user = userEvent.setup()
+    const { storage, release } = gatedStorage({ completed: ['reports'], dismissed: false })
+    render(<Harness storage={storage} />)
+
+    await user.click(screen.getByText('dismiss'))
+    expect(screen.getByText('dismissed')).toBeInTheDocument()
+
+    await act(async () => {
+      release()
+      await Promise.resolve()
+    })
+
+    // The stored entry says the list is not dismissed, but that value predates the user
+    // closing it. Restoring it would put the launcher back on screen after they dismissed it.
+    await waitFor(() => expect(screen.getByText('reports:done')).toBeInTheDocument())
+    expect(screen.getByText('dismissed')).toBeInTheDocument()
   })
 
   it('persists a tick', async () => {

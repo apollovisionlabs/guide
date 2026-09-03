@@ -119,7 +119,27 @@ export function ChecklistProvider({
         }
       }
       if (!cancelled && Object.keys(restored).length > 0) {
-        const merged = { ...progressRef.current, ...restored }
+        // A read that was already in flight must never undo something the user did while it
+        // was running. With a server-backed storage the read can take hundreds of
+        // milliseconds, and the list is on screen and interactive for all of it.
+        //
+        // Merging entry by entry rather than replacing them is what makes that true. Every
+        // checklist starts empty at mount, so the only moves available before the read lands
+        // are one-way ones: ticking an item and dismissing the list. Un-ticking cannot happen
+        // yet because nothing is ticked, and reset only restates the state the provider is
+        // already in. So the union of the stored completions with the live ones, dismissed if
+        // either side says so, loses neither half. Replacing the live entry instead erased a
+        // tick the user could see on screen, and the next toggle persisted the erased state.
+        const merged = { ...progressRef.current }
+        for (const [checklistId, stored] of Object.entries(restored)) {
+          const live = merged[checklistId] ?? emptyProgress
+          merged[checklistId] = {
+            completed: live.completed.concat(
+              stored.completed.filter((id) => !live.completed.includes(id)),
+            ),
+            dismissed: live.dismissed || stored.dismissed,
+          }
+        }
         progressRef.current = merged
         setProgress(merged)
       }
