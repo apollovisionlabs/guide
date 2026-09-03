@@ -1,13 +1,12 @@
 'use client'
 
-import type { MouseEvent } from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
 import LinearProgress from '@mui/material/LinearProgress'
 import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
-import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
@@ -53,26 +52,32 @@ export function Checklist({ checklistId, title, onDismiss }: ChecklistProps) {
       <LinearProgress variant="determinate" value={progress} sx={{ mb: 1 }} />
       <List disablePadding>
         {items.map((item) => (
-          <ListItemButton key={item.id} onClick={() => activate(item.id)}>
-            <ListItemIcon>
+          <ListItem
+            key={item.id}
+            disablePadding
+            secondaryAction={
               <Checkbox
-                edge="start"
+                edge="end"
                 checked={item.completed}
-                inputProps={{ 'aria-label': item.title }}
-                onClick={(event: MouseEvent<HTMLElement>) => {
-                  event.stopPropagation()
-                  toggle(item.id)
+                inputProps={{
+                  'aria-label': item.completed
+                    ? `Mark ${item.title} as not complete`
+                    : `Mark ${item.title} as complete`,
+                }}
+                onClick={() => toggle(item.id)}
+              />
+            }
+          >
+            <ListItemButton onClick={() => activate(item.id)}>
+              <ListItemText
+                primary={item.title}
+                secondary={item.body}
+                slotProps={{
+                  primary: { sx: { textDecoration: item.completed ? 'line-through' : 'none' } },
                 }}
               />
-            </ListItemIcon>
-            <ListItemText
-              primary={item.title}
-              secondary={item.body}
-              slotProps={{
-                primary: { sx: { textDecoration: item.completed ? 'line-through' : 'none' } },
-              }}
-            />
-          </ListItemButton>
+            </ListItemButton>
+          </ListItem>
         ))}
       </List>
     </Box>

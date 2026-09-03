@@ -63,9 +63,17 @@ describe('Checklist', () => {
     renderChecklist(<Checklist checklistId="demo" />, {
       storage: storageWithCompleted(['one']),
     })
-    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'First' })).toBeChecked())
-    expect(screen.getByRole('checkbox', { name: 'Second' })).not.toBeChecked()
-    expect(screen.getByRole('checkbox', { name: 'Third' })).not.toBeChecked()
+    await waitFor(() =>
+      expect(screen.getByRole('checkbox', { name: 'Mark First as not complete' })).toBeChecked(),
+    )
+    expect(screen.getByRole('checkbox', { name: 'Mark Second as complete' })).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Mark Third as complete' })).not.toBeChecked()
+  })
+
+  it('does not nest the checkbox inside an element with role button', async () => {
+    const { container } = renderChecklist(<Checklist checklistId="demo" />)
+    await screen.findByText('First')
+    expect(container.querySelector('[role="button"] input[type="checkbox"]')).toBeNull()
   })
 
   it('activates the item when the row is clicked', async () => {
@@ -80,9 +88,9 @@ describe('Checklist', () => {
     const user = userEvent.setup()
     const navigate = vi.fn()
     renderChecklist(<Checklist checklistId="demo" />, { navigate })
-    await user.click(screen.getByRole('checkbox', { name: 'Second' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Mark Second as complete' }))
     expect(navigate).not.toHaveBeenCalled()
-    expect(screen.getByRole('checkbox', { name: 'Second' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Mark Second as not complete' })).toBeChecked()
   })
 
   it('renders nothing once dismissed', async () => {
