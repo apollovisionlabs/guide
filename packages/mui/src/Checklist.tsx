@@ -12,17 +12,33 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useChecklist, type ResolvedChecklistItem } from '@apollovisionlabs/guide-core'
 
+export interface ChecklistLabels {
+  dismiss: string
+  progress: (completedCount: number, total: number) => string
+  markComplete: (itemTitle: string) => string
+  markNotComplete: (itemTitle: string) => string
+}
+
+const DEFAULT_LABELS: ChecklistLabels = {
+  dismiss: 'Dismiss',
+  progress: (completedCount, total) => `${completedCount} of ${total}`,
+  markComplete: (itemTitle) => `Mark ${itemTitle} as complete`,
+  markNotComplete: (itemTitle) => `Mark ${itemTitle} as not complete`,
+}
+
 export interface ChecklistProps {
   checklistId: string
   title?: string
   onDismiss?: () => void
   /** Called after an item is activated, with the resolved item that was activated. */
   onActivate?: (item: ResolvedChecklistItem) => void
+  labels?: Partial<ChecklistLabels>
 }
 
-export function Checklist({ checklistId, title, onDismiss, onActivate }: ChecklistProps) {
+export function Checklist({ checklistId, title, onDismiss, onActivate, labels }: ChecklistProps) {
   const { items, completedCount, total, dismissed, activate, toggle, dismiss } =
     useChecklist(checklistId)
+  const text = { ...DEFAULT_LABELS, ...labels }
 
   if (dismissed) return null
 
@@ -41,7 +57,7 @@ export function Checklist({ checklistId, title, onDismiss, onActivate }: Checkli
           </Typography>
         )}
         <Typography variant="caption" color="text.secondary" sx={{ flexGrow: title ? 0 : 1 }}>
-          {`${completedCount} of ${total}`}
+          {text.progress(completedCount, total)}
         </Typography>
         <Button
           size="small"
@@ -50,7 +66,7 @@ export function Checklist({ checklistId, title, onDismiss, onActivate }: Checkli
             onDismiss?.()
           }}
         >
-          Dismiss
+          {text.dismiss}
         </Button>
       </Stack>
       <LinearProgress variant="determinate" value={progress} sx={{ mb: 1 }} />
@@ -68,8 +84,8 @@ export function Checklist({ checklistId, title, onDismiss, onActivate }: Checkli
                   // both, so this is the spelling that typechecks against either peer.
                   input: {
                     'aria-label': item.completed
-                      ? `Mark ${item.title} as not complete`
-                      : `Mark ${item.title} as complete`,
+                      ? text.markNotComplete(item.title)
+                      : text.markComplete(item.title),
                   },
                 }}
                 onClick={() => toggle(item.id)}

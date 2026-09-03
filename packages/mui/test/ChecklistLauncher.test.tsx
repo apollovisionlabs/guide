@@ -273,6 +273,48 @@ describe('ChecklistLauncher', () => {
     expect(elsewhere).toHaveFocus()
   })
 
+  it('passes the fab label the title and both counts', async () => {
+    renderLauncher(
+      <ChecklistLauncher
+        checklistId="demo"
+        title="Get started"
+        labels={{
+          fabLabel: (title, completedCount, total) => `fab:${title}:${completedCount}/${total}`,
+        }}
+      />,
+      { storage: storageWithCompleted(['one']) },
+    )
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'fab:Get started:1/3' })).toBeInTheDocument(),
+    )
+  })
+
+  it('passes the dismissed label the title', async () => {
+    const user = userEvent.setup()
+    renderLauncher(
+      <ChecklistLauncher
+        checklistId="demo"
+        title="Get started"
+        labels={{ dismissed: (title) => `bye:${title}` }}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    await screen.findByRole('dialog')
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+    await screen.findByText('bye:Get started')
+  })
+
+  it('passes its own labels through to the checklist inside the popover', async () => {
+    const user = userEvent.setup()
+    renderLauncher(
+      <ChecklistLauncher checklistId="demo" title="Get started" labels={{ dismiss: 'Ignorer' }} />,
+    )
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    await screen.findByRole('dialog')
+    expect(screen.getByRole('button', { name: 'Ignorer' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).not.toBeInTheDocument()
+  })
+
   it('returns focus to the launcher button after the dialog closes', async () => {
     const user = userEvent.setup()
     renderLauncher(<ChecklistLauncher checklistId="demo" />)
