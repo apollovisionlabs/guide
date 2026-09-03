@@ -19,6 +19,19 @@ const FAB_SIZE = 56
 const RING_SIZE = 64
 const RING_OFFSET = -((RING_SIZE - FAB_SIZE) / 2)
 
+// Off-screen but still rendered, so it can hold focus and be read out. Not `display: none`
+// and not `visibility: hidden`, neither of which can be focused.
+const offScreenSx = {
+  position: 'fixed' as const,
+  width: 1,
+  height: 1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap' as const,
+  bottom: 0,
+  left: 0,
+}
+
 function cornerSx(placement: NonNullable<ChecklistLauncherProps['placement']>) {
   return {
     position: 'fixed' as const,
@@ -34,8 +47,35 @@ export function ChecklistLauncher({
 }: ChecklistLauncherProps) {
   const { completedCount, total, dismissed } = useChecklist(checklistId)
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
+  // Set only when the dismissal happened here, in this session, from inside the popover. A
+  // checklist that storage already reports as dismissed never sets it, so a returning user
+  // gets nothing at all.
+  const [dismissedHere, setDismissedHere] = useState(false)
 
-  if (dismissed) return null
+  if (dismissed) {
+    // Dismissing from inside the popover unmounts the Fab and the Popover in the same
+    // commit, so MUI has no anchor left to restore focus to and a keyboard user is dropped
+    // on document.body: no focus ring, no announcement, and the next Tab restarts at the top
+    // of the page. The component is right to disappear, which is the whole point of a
+    // dismissal, so the fix is not to keep the launcher on screen but to give focus a
+    // deliberate destination at the place the launcher just left. This confirms the
+    // dismissal, then removes itself the moment focus moves on, so nothing outlives the
+    // announcement.
+    if (!dismissedHere) return null
+    return (
+      <Box
+        role="status"
+        tabIndex={-1}
+        ref={(node: HTMLDivElement | null) => {
+          node?.focus()
+        }}
+        onBlur={() => setDismissedHere(false)}
+        sx={offScreenSx}
+      >
+        {`${title ?? 'Checklist'} dismissed`}
+      </Box>
+    )
+  }
 
   const open = Boolean(anchorEl)
   // Rounded explicitly for the same cross version reason as Checklist.tsx: MUI v7 rounds
@@ -45,6 +85,10 @@ export function ChecklistLauncher({
   const fabLabel = `${dialogLabel}, ${completedCount} of ${total} complete`
 
   const close = () => setAnchorEl(null)
+  const onDismiss = () => {
+    close()
+    setDismissedHere(true)
+  }
   const onFabClick = (event: MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget)
 
   // Ticking items one after another is the normal way to use the list, so the popover must
@@ -100,7 +144,7 @@ export function ChecklistLauncher({
           },
         }}
       >
-        <Checklist checklistId={checklistId} title={title} onDismiss={close} onActivate={onActivate} />
+        <Checklist checklistId={checklistId} title={title} onDismiss={onDismiss} onActivate={onActivate} />
       </Popover>
     </>
   )

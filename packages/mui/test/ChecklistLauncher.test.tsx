@@ -190,6 +190,37 @@ describe('ChecklistLauncher', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
+  it('leaves focus somewhere deliberate when the checklist is dismissed from the popover', async () => {
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" title="Get started" />)
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    await screen.findByRole('dialog')
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    // The Fab and the Popover unmount in the same commit, so MUI has no anchor left to
+    // restore focus to and a keyboard user would otherwise be dropped on document.body.
+    expect(document.activeElement).not.toBe(document.body)
+    const status = screen.getByRole('status')
+    expect(status).toHaveFocus()
+    expect(status).toHaveTextContent('Get started dismissed')
+    // The launcher itself is gone: this confirms the dismissal, it does not replace it.
+    expect(screen.queryByRole('button', { name: /Get started/ })).not.toBeInTheDocument()
+  })
+
+  it('drops the dismissal confirmation once focus moves on', async () => {
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" title="Get started" />)
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    await screen.findByRole('dialog')
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+    await screen.findByRole('status')
+
+    await user.tab()
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+  })
+
   it('returns focus to the launcher button after the dialog closes', async () => {
     const user = userEvent.setup()
     renderLauncher(<ChecklistLauncher checklistId="demo" />)
