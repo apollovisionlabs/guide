@@ -6,6 +6,7 @@ import { ChecklistProvider } from '../src/ChecklistProvider'
 import { useChecklist } from '../src/useChecklist'
 import { GuideProvider } from '../src/GuideProvider'
 import { useGuideStep } from '../src/useGuideStep'
+import { useTour } from '../src/useTour'
 import { createMemoryStorage } from '../src/storage'
 import type { Checklist, GuideEvent, Tour } from '../src/types'
 
@@ -434,6 +435,60 @@ describe('ChecklistProvider', () => {
 
       const itemCompleteEvents = events.filter((event) => event.type === 'checklist:item-complete')
       expect(itemCompleteEvents).toHaveLength(0)
+    })
+
+    const sameTourChecklist: Checklist = {
+      id: 'both',
+      items: [
+        { id: 'a', title: 'First half', tourId: 'demo' },
+        { id: 'b', title: 'Second half', tourId: 'demo' },
+      ],
+    }
+
+    function SameTourReadout() {
+      const { items } = useChecklist('both')
+      return (
+        <div>
+          {items.map((item) => (
+            <p key={item.id}>{`${item.id}:${item.completed ? 'done' : 'todo'}`}</p>
+          ))}
+        </div>
+      )
+    }
+
+    function Starter() {
+      const { start } = useTour('demo')
+      return <button onClick={() => void start()}>start</button>
+    }
+
+    it('ticks every item sharing a tourId when it completes', async () => {
+      const user = userEvent.setup()
+      const events: GuideEvent[] = []
+      render(
+        <GuideProvider tours={[twoStepTour]}>
+          <button data-guide="one">one</button>
+          <button data-guide="two">two</button>
+          <ChecklistProvider
+            checklists={[sameTourChecklist]}
+            onEvent={(event) => events.push(event)}
+          >
+            <SameTourReadout />
+          </ChecklistProvider>
+          <Starter />
+          <StepReadout />
+        </GuideProvider>,
+      )
+      await user.click(screen.getByText('start'))
+      await screen.findByText('First')
+      await user.click(screen.getByText('next'))
+      await screen.findByText('Second')
+      await user.click(screen.getByText('next'))
+
+      expect(await screen.findByText('a:done')).toBeInTheDocument()
+      expect(screen.getByText('b:done')).toBeInTheDocument()
+
+      const itemCompleteEvents = events.filter((event) => event.type === 'checklist:item-complete')
+      expect(itemCompleteEvents).toHaveLength(2)
     })
   })
 })

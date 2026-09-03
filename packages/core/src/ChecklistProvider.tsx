@@ -64,6 +64,15 @@ export function ChecklistProvider({
     return initial
   })
 
+  // Synchronous mirror of `progress`, used by complete/toggle/dismiss/reset to read the current
+  // state instead of the render-time `progress` closure. Two of those calls can happen back to
+  // back in the same tick with no render in between (completeItemsForTour ticking two items that
+  // share a tourId is the case that surfaced this): reading the stale closure would make the
+  // second call compute its next value from a snapshot that does not include the first call's
+  // write, silently dropping it. progressRef is updated synchronously by applyProgress below, so
+  // consecutive calls compose correctly.
+  const progressRef = useRef(progress)
+
   const guide = useContext(GuideContext)
 
   const storageWarnedRef = useRef(false)
@@ -99,7 +108,9 @@ export function ChecklistProvider({
         }
       }
       if (!cancelled && Object.keys(restored).length > 0) {
-        setProgress((current) => ({ ...current, ...restored }))
+        const merged = { ...progressRef.current, ...restored }
+        progressRef.current = merged
+        setProgress(merged)
       }
     })()
     return () => {
@@ -109,9 +120,16 @@ export function ChecklistProvider({
     // watched, so a later change to it does not trigger a re-read of persisted progress.
   }, [storage])
 
-  const writeProgress = useCallback(
+  // Applies one checklist's next progress. Reads and writes go through progressRef, not a
+  // setProgress updater function, so this composes correctly across synchronous calls (see
+  // progressRef above) without ever putting decision logic or emit calls inside a React updater:
+  // Strict Mode invokes updater functions passed to setState twice to catch impurities, and an
+  // emit inside one would double-fire.
+  const applyProgress = useCallback(
     (checklistId: string, next: ChecklistProgress) => {
-      setProgress((current) => ({ ...current, [checklistId]: next }))
+      const merged = { ...progressRef.current, [checklistId]: next }
+      progressRef.current = merged
+      setProgress(merged)
       if (!storage) return
       try {
         void Promise.resolve(storage.write(`checklist:${checklistId}`, next)).catch(
@@ -161,7 +179,7 @@ export function ChecklistProvider({
       if (!resolved) return
       const { checklist } = resolved
 
-      const current = progress[checklistId] ?? emptyProgress
+      const current = progressRef.current[checklistId] ?? emptyProgress
       if (current.completed.includes(itemId)) return
 
       const wasComplete =
@@ -169,7 +187,7 @@ export function ChecklistProvider({
         checklist.items.every((candidate) => current.completed.includes(candidate.id))
 
       const nextCompleted = [...current.completed, itemId]
-      writeProgress(checklistId, { ...current, completed: nextCompleted })
+      applyProgress(checklistId, { ...current, completed: nextCompleted })
       emit({ type: 'checklist:item-complete', checklistId, itemId })
 
       const isNowComplete =
@@ -177,7 +195,7 @@ export function ChecklistProvider({
         checklist.items.every((candidate) => nextCompleted.includes(candidate.id))
       if (isNowComplete && !wasComplete) emit({ type: 'checklist:complete', checklistId })
     },
-    [resolveItem, progress, writeProgress, emit],
+    [resolveItem, applyProgress, emit],
   )
 
   // Marks every item across every checklist whose tourId matches the finished tour. Delegates to
@@ -213,34 +231,34 @@ export function ChecklistProvider({
       const resolved = resolveItem(checklistId, itemId)
       if (!resolved) return
 
-      const current = progress[checklistId] ?? emptyProgress
+      const current = progressRef.current[checklistId] ?? emptyProgress
       if (current.completed.includes(itemId)) {
         const nextCompleted = current.completed.filter((id) => id !== itemId)
-        writeProgress(checklistId, { ...current, completed: nextCompleted })
+        applyProgress(checklistId, { ...current, completed: nextCompleted })
         return
       }
 
       complete(checklistId, itemId)
     },
-    [resolveItem, progress, writeProgress, complete],
+    [resolveItem, applyProgress, complete],
   )
 
   const dismiss = useCallback(
     (checklistId: string) => {
       if (!resolveChecklist(checklistId)) return
-      const current = progress[checklistId] ?? emptyProgress
-      writeProgress(checklistId, { ...current, dismissed: true })
+      const current = progressRef.current[checklistId] ?? emptyProgress
+      applyProgress(checklistId, { ...current, dismissed: true })
       emit({ type: 'checklist:dismiss', checklistId })
     },
-    [resolveChecklist, progress, writeProgress, emit],
+    [resolveChecklist, applyProgress, emit],
   )
 
   const reset = useCallback(
     (checklistId: string) => {
       if (!resolveChecklist(checklistId)) return
-      writeProgress(checklistId, { completed: [], dismissed: false })
+      applyProgress(checklistId, { completed: [], dismissed: false })
     },
-    [resolveChecklist, writeProgress],
+    [resolveChecklist, applyProgress],
   )
 
   const activate = useCallback(
