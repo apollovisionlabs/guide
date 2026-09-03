@@ -140,7 +140,9 @@ describe('GuideProvider', () => {
   it('ignores a stored value that is not tour progress', async () => {
     const user = userEvent.setup()
     const storage = createMemoryStorage()
-    await storage.write('tour:demo', { nonsense: true })
+    // A shape the old ad-hoc check would have accepted: the status is right and
+    // only stepIndex is wrong, so this fails without isTourProgress.
+    await storage.write('tour:demo', { status: 'in-progress', stepIndex: 'not-a-number' })
     render(<Harness storage={storage} />)
     await user.click(screen.getByText('start'))
     // A corrupted value must not be trusted: the tour starts at the first step.
