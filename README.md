@@ -257,7 +257,9 @@ function App() {
 }
 ```
 
-An item with neither `tourId` nor `href` is completed by a manual tick only. An item with `tourId`
+An item with an `href`, or with neither `tourId` nor `href`, is completed by a manual tick only:
+activating an `href` item navigates and stops there, since arriving on a page is not evidence that
+anyone did anything on it. An item with `tourId`
 is completed automatically when that tour is finished (`next()` called on its last step); it can
 also be ticked by hand before that. Completion is idempotent: ticking an already-complete item, or
 finishing a tour whose item is already ticked, does nothing and emits no event.

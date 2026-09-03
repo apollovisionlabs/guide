@@ -5,8 +5,8 @@
 
 Add a first-steps checklist alongside the tour: `ChecklistProvider`, `useChecklist`, and, in
 `@apollovisionlabs/guide-mui`, `Checklist` and `ChecklistLauncher`. An item is completed by
-finishing its linked tour, by navigating to its `href`, or by a manual tick; completion is
-idempotent, and progress persists and can be dismissed.
+finishing its linked tour or by a manual tick; an `href` item navigates without completing itself.
+Completion is idempotent, and progress persists and can be dismissed.
 
 This widens `GuideStorage` to make room for it, and both changes are breaking:
 

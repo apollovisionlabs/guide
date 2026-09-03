@@ -362,7 +362,8 @@ Use `createMemoryStorage()` in tests so runs do not leak progress into each othe
 ## 10. Add a checklist (optional)
 
 A checklist is a separate feature from the tour: a fixed list of items, completed by finishing a
-linked tour, by navigating to an `href`, or by a manual tick. Nest `ChecklistProvider` inside
+linked tour or by a manual tick. An `href` item navigates and nothing more; arriving on a page is
+not evidence that anyone did anything there, so only the user's own tick closes it. Nest `ChecklistProvider` inside
 `GuideProvider`, the way `apps/demo/src/App.tsx` does, so items with a `tourId` can start it:
 
 ```tsx
@@ -414,14 +415,17 @@ overlay is still there over the hole. A click inside the hole is ignored rather 
 dismissal, which is why the button seems inert rather than closing the tour. A click outside the
 hole stops the tour. If a step asks for a click, mark it interactive.
 
-**A checklist item's `tourId` naming no tour on the `GuideProvider`.** `activate(itemId)` calls
-`guide.start(item.tourId)` without awaiting or catching it (`packages/core/src/ChecklistProvider.tsx`).
-When the id doesn't match any tour in the `tours` prop, `start()` rejects with
-`[guide] unknown tour: <id>`, and since nothing at the call site attaches a `.catch`, that surfaces
-only as an unhandled promise rejection: no `onEvent`, no `console.warn`, no change on screen. The
-item just does not launch anything, and in production, where nobody is watching the browser
-console for unhandled rejections, this is silent. Keep checklist `tourId` values and `Tour.id`
-values in the same module, or covered by the same test, so a typo in either fails loudly instead.
+**A checklist item's `tourId` naming no tour on the `GuideProvider`.** `start()` rejects with
+`[guide] unknown tour: <id>`, and `activate(itemId)` catches it and warns once with
+`[guide] starting a tour for a checklist item failed` (`packages/core/src/ChecklistProvider.tsx`).
+Nothing else happens: no `onEvent`, no change on screen, and the item does not tick. So the
+failure is visible in a development console and invisible everywhere else, since a warning is
+all it is. Keep checklist `tourId` values and `Tour.id` values in the same module, or covered by
+the same test, so a typo in either fails loudly instead of costing a user their first tour.
+
+The warning fires once per provider, not once per click. That is deliberate, and it matches how
+the missing `navigate` and the failing storage behave, but it does mean a second broken item
+after the first one warns is silent.
 
 ## What this library does not do
 
