@@ -133,12 +133,18 @@ export function ChecklistProvider({
         // milliseconds, and the list is on screen and interactive for all of it.
         //
         // Merging entry by entry rather than replacing them is what makes that true. Every
-        // checklist starts empty at mount, so the only moves available before the read lands
-        // are one-way ones: ticking an item and dismissing the list. Un-ticking cannot happen
-        // yet because nothing is ticked, and reset only restates the state the provider is
-        // already in. So the union of the stored completions with the live ones, dismissed if
-        // either side says so, loses neither half. Replacing the live entry instead erased a
-        // tick the user could see on screen, and the next toggle persisted the erased state.
+        // checklist starts empty at mount, so the moves a user makes before the read lands are
+        // one-way in practice: ticking an item and dismissing the list. The union of the stored
+        // completions with the live ones, dismissed if either side says so, keeps both. Replacing
+        // the live entry instead erased a tick the user could see on screen, and the next toggle
+        // persisted the erased state.
+        //
+        // The union cannot subtract, so the two moves that do subtract lose against a read still
+        // in flight: unticking an item the stored value has ticked, and reset. Both come back
+        // when the read lands. That window is bounded by one read at mount and it is strictly
+        // better than the replace it replaced, which lost these too and lost ticks besides. If a
+        // deliberate clearing ever has to survive the window, it needs to be sequenced against
+        // the read rather than merged with it.
         const merged = { ...progressRef.current }
         for (const [checklistId, stored] of Object.entries(restored)) {
           const live = merged[checklistId] ?? emptyProgress

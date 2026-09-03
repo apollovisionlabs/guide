@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type MouseEvent } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Fab from '@mui/material/Fab'
@@ -52,6 +52,13 @@ export function ChecklistLauncher({
   // gets nothing at all.
   const [dismissedHere, setDismissedHere] = useState(false)
 
+  // Cleared when the checklist comes back, through reset or through a host that undismisses it.
+  // Without this the flag outlives the dismissal it described, and a later dismissal from
+  // anywhere else would drag focus out of whatever the user was typing in.
+  useEffect(() => {
+    if (!dismissed) setDismissedHere(false)
+  }, [dismissed])
+
   if (dismissed) {
     // Dismissing from inside the popover unmounts the Fab and the Popover in the same
     // commit, so MUI has no anchor left to restore focus to and a keyboard user is dropped
@@ -64,7 +71,8 @@ export function ChecklistLauncher({
     if (!dismissedHere) return null
     return (
       <Box
-        role="status"
+        // Deliberately not a live region. Focusing it is what announces it, and a polite live
+        // region inserted and focused in the same commit is read twice by several screen readers.
         tabIndex={-1}
         ref={(node: HTMLDivElement | null) => {
           node?.focus()

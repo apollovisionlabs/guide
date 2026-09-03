@@ -1,11 +1,12 @@
 import type { ReactElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import {
   ChecklistProvider,
   GuideProvider,
+  useChecklist,
   type Checklist as ChecklistDefinition,
   type GuideStorage,
   type Tour,
@@ -202,9 +203,11 @@ describe('ChecklistLauncher', () => {
     // The Fab and the Popover unmount in the same commit, so MUI has no anchor left to
     // restore focus to and a keyboard user would otherwise be dropped on document.body.
     expect(document.activeElement).not.toBe(document.body)
-    const status = screen.getByRole('status')
-    expect(status).toHaveFocus()
-    expect(status).toHaveTextContent('Get started dismissed')
+    // Queried by its text rather than by a role: the confirmation is deliberately not a live
+    // region, because being focused is what announces it and a live region focused in the same
+    // commit is read twice by several screen readers.
+    const confirmation = screen.getByText('Get started dismissed')
+    expect(confirmation).toHaveFocus()
     // The launcher itself is gone: this confirms the dismissal, it does not replace it.
     expect(screen.queryByRole('button', { name: /Get started/ })).not.toBeInTheDocument()
   })
@@ -215,10 +218,59 @@ describe('ChecklistLauncher', () => {
     await user.click(screen.getByRole('button', { name: /Get started/ }))
     await screen.findByRole('dialog')
     await user.click(screen.getByRole('button', { name: 'Dismiss' }))
-    await screen.findByRole('status')
+    await screen.findByText('Get started dismissed')
 
     await user.tab()
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.queryByText('Get started dismissed')).not.toBeInTheDocument(),
+    )
+  })
+
+  it('does not steal focus on a later dismissal once the checklist came back', async () => {
+    const user = userEvent.setup()
+    // The host drives reset and dismiss itself, without a click, the way a hotkey, a timer or a
+    // server push would. That matters: going through a button would move focus, and the blur
+    // handler would clear the flag as a side effect, hiding the bug this test exists for.
+    let host: { reset: () => void; dismiss: () => void } | null = null
+    function Harness() {
+      const { reset, dismiss } = useChecklist('demo')
+      host = { reset, dismiss }
+      return (
+        <>
+          <ChecklistLauncher checklistId="demo" title="Get started" />
+          <input aria-label="elsewhere" />
+        </>
+      )
+    }
+    renderLauncher(<Harness />)
+
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    await screen.findByRole('dialog')
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+    const confirmation = await screen.findByText('Get started dismissed')
+    expect(confirmation).toHaveFocus()
+
+    // The checklist comes back while the confirmation still holds focus. Removing a focused
+    // node fires no blur, so nothing clears the flag on the way out.
+    await act(async () => {
+      host!.reset()
+    })
+    await screen.findByRole('button', { name: /Get started/ })
+
+    const elsewhere = screen.getByRole('textbox', { name: 'elsewhere' })
+    await user.click(elsewhere)
+    expect(elsewhere).toHaveFocus()
+
+    // A later dismissal this launcher did not host must leave no confirmation, and must not
+    // pull the user out of what they were typing in.
+    await act(async () => {
+      host!.dismiss()
+    })
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /Get started/ })).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByText('Get started dismissed')).not.toBeInTheDocument()
+    expect(elsewhere).toHaveFocus()
   })
 
   it('returns focus to the launcher button after the dialog closes', async () => {
