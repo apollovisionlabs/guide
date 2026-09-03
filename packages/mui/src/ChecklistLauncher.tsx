@@ -52,13 +52,17 @@ export function ChecklistLauncher({
 
   return (
     <>
-      <Box sx={{ ...cornerSx(placement), zIndex: (theme) => theme.zIndex.tooltip }}>
+      <Box
+        data-testid="checklist-launcher-anchor"
+        sx={{ ...cornerSx(placement), zIndex: (theme) => theme.zIndex.speedDial }}
+      >
         <Box sx={{ position: 'relative', display: 'inline-flex' }}>
           <CircularProgress
             variant="determinate"
             value={progress}
             size={RING_SIZE}
             thickness={3}
+            aria-hidden="true"
             sx={{ position: 'absolute', top: RING_OFFSET, left: RING_OFFSET, pointerEvents: 'none' }}
           />
           <Fab color="primary" size="medium" aria-label={fabLabel} onClick={onFabClick}>

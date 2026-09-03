@@ -73,8 +73,32 @@ describe('ChecklistLauncher', () => {
       storage: storageWithCompleted(['one']),
     })
     await waitFor(() =>
-      expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33'),
+      expect(screen.getByRole('progressbar', { hidden: true })).toHaveAttribute(
+        'aria-valuenow',
+        '33',
+      ),
     )
+  })
+
+  it('keeps the progress ring decorative to screen readers', async () => {
+    renderLauncher(<ChecklistLauncher checklistId="demo" />, {
+      storage: storageWithCompleted(['one']),
+    })
+    await screen.findByRole('button', { name: /1 of 3/ })
+    // Default role queries respect aria-hidden: none should surface here, since the ring
+    // only repeats what the Fab's own accessible name already says.
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    // The ring itself must still be the only role="progressbar" element in the closed state.
+    expect(screen.getAllByRole('progressbar', { hidden: true })).toHaveLength(1)
+  })
+
+  it('paints below the tour overlay rather than above it', async () => {
+    renderLauncher(<ChecklistLauncher checklistId="demo" />)
+    const anchor = await screen.findByTestId('checklist-launcher-anchor')
+    const zIndex = Number(getComputedStyle(anchor).zIndex)
+    // Pinned to the ordering, not the literal number: Spotlight paints at theme.zIndex.modal
+    // while a tour runs, and the launcher must stay behind it rather than above it.
+    expect(zIndex).toBeLessThan(testTheme.zIndex.modal)
   })
 
   it('renders nothing once the checklist is dismissed', async () => {
@@ -101,5 +125,6 @@ describe('ChecklistLauncher', () => {
     await screen.findByRole('dialog')
     await user.keyboard('{Escape}')
     await waitFor(() => expect(launcher).toHaveFocus())
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
