@@ -1,4 +1,4 @@
-import type { GuideStorage, TourProgress } from './types'
+import type { ChecklistProgress, GuideStorage, TourProgress } from './types'
 
 export function createMemoryStorage(
   initial: Record<string, unknown> = {},
@@ -51,5 +51,19 @@ export function isTourProgress(value: unknown): value is TourProgress {
     Number.isInteger(candidate.stepIndex) &&
     candidate.stepIndex >= 0 &&
     (candidate.status === 'in-progress' || candidate.status === 'completed')
+  )
+}
+
+/**
+ * Same defensive posture as isTourProgress: a stored checklist value is
+ * never trusted until its shape is checked.
+ */
+export function isChecklistProgress(value: unknown): value is ChecklistProgress {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return (
+    Array.isArray(candidate.completed) &&
+    candidate.completed.every((entry) => typeof entry === 'string') &&
+    typeof candidate.dismissed === 'boolean'
   )
 }

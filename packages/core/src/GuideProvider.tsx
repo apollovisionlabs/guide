@@ -27,6 +27,7 @@ import { useElementRect } from './useElementRect'
 import { useAnnouncer } from './a11y'
 import { findMissingTargets } from './validateTour'
 import { isTourProgress } from './storage'
+import { resolveText } from './resolveText'
 
 export interface ActiveStep {
   tourId: string
@@ -65,16 +66,6 @@ export interface GuideProviderProps {
   onEvent?: (event: GuideEvent) => void
   onMissingTarget?: MissingTargetPolicy
   targetTimeoutMs?: number
-}
-
-function resolveText(
-  value: string | undefined,
-  key: string | undefined,
-  translate: Translate | undefined,
-): string {
-  if (value !== undefined) return value
-  if (key === undefined) return ''
-  return translate ? translate(key) : key
 }
 
 export function GuideProvider({
