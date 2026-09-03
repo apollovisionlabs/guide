@@ -17,6 +17,10 @@ This widens `GuideStorage` to make room for it, and both changes are breaking:
   written by an earlier version is orphaned: a user in the middle of a tour restarts it once, from
   the beginning, after upgrading.
 
+Dismissing `ChecklistLauncher` now leaves a brief off screen status message and moves focus to it,
+so a keyboard user is not dropped on the document body when the button and its popover unmount
+together.
+
 Stored values are also validated before they are trusted, which they were not before. A corrupted
 or hand edited entry that 0.1.x would have resumed from is now ignored and the tour starts from
 its first step.

@@ -288,6 +288,12 @@ import { Checklist, ChecklistLauncher } from '@apollovisionlabs/guide-mui'
 <ChecklistLauncher checklistId="onboarding" title="Get started" placement="bottom-right" />
 ```
 
+Dismissing the launcher removes it. Because the button and the popover disappear in the same
+commit, there would be nothing left for the browser to put focus on, so the launcher leaves a
+short off screen status message in its place, moves focus there, and removes that too as soon as
+focus goes anywhere else. A keyboard user hears the dismissal confirmed instead of landing at the
+top of the document.
+
 `Checklist` also takes `onDismiss`, called after the checklist is dismissed, and `onActivate`,
 called with the resolved item after any row is activated. `ChecklistLauncher` uses `onActivate`
 itself to close its popover; you need it only when you place `Checklist` inside a surface of your
