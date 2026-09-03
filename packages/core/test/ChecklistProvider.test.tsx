@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps } from 'react'
 import { ChecklistProvider } from '../src/ChecklistProvider'
@@ -24,8 +24,18 @@ const demoTour: Tour = {
 }
 
 function ChecklistReadout() {
-  const { items, completedCount, total, isComplete, dismissed, activate, toggle, dismiss, reset } =
-    useChecklist('onboarding')
+  const {
+    items,
+    completedCount,
+    total,
+    isComplete,
+    dismissed,
+    activate,
+    toggle,
+    complete,
+    dismiss,
+    reset,
+  } = useChecklist('onboarding')
   return (
     <div>
       <p>{`${completedCount}/${total}`}</p>
@@ -36,6 +46,9 @@ function ChecklistReadout() {
       ))}
       {items.map((item) => (
         <button key={item.id} onClick={() => toggle(item.id)}>{`toggle-${item.id}`}</button>
+      ))}
+      {items.map((item) => (
+        <button key={item.id} onClick={() => complete(item.id)}>{`complete-${item.id}`}</button>
       ))}
       {items.map((item) => (
         <button key={item.id} onClick={() => activate(item.id)}>{`activate-${item.id}`}</button>
@@ -84,9 +97,22 @@ describe('ChecklistProvider', () => {
   })
 
   it('ignores a stored value that is not checklist progress', async () => {
+    // The fixture below carries no `dismissed` field and a string `completed`, so it only
+    // survives if isChecklistProgress is actually applied. A guard that accepted it would
+    // read as one item completed (a string's `includes` matches on substring), so waiting
+    // for the read to settle and then asserting '0/3' fails loudly if the guard is skipped
+    // rather than silently agreeing with the pre-restore DOM.
     const storage = createMemoryStorage({ 'checklist:onboarding': { completed: 'profile' } })
+    const read = vi.spyOn(storage, 'read')
     render(<Harness storage={storage} />)
-    expect(await screen.findByText('0/3')).toBeInTheDocument()
+    await waitFor(() => expect(read).toHaveBeenCalledWith('checklist:onboarding'))
+    // Flush the restore effect's continuation (the code after the awaited storage.read call)
+    // by awaiting the same promise it awaited, inside act so any resulting state update commits.
+    await act(async () => {
+      await Promise.all(read.mock.results.map((result) => result.value))
+    })
+    expect(screen.getByText('0/3')).toBeInTheDocument()
+    expect(screen.queryByText('1/3')).not.toBeInTheDocument()
   })
 
   it('persists a tick', async () => {
@@ -122,6 +148,43 @@ describe('ChecklistProvider', () => {
     await user.click(screen.getByText('toggle-profile'))
     await user.click(screen.getByText('toggle-reports'))
     await user.click(screen.getByText('toggle-tour'))
+    await waitFor(() => expect(screen.getByText('complete')).toBeInTheDocument())
+    const completeEvents = events.filter((event) => event.type === 'checklist:complete')
+    expect(completeEvents).toHaveLength(1)
+  })
+
+  it('completes an item', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(screen.getByText('complete-profile'))
+    expect(await screen.findByText('profile:done')).toBeInTheDocument()
+  })
+
+  it('does nothing and emits nothing when completing an already completed item', async () => {
+    const user = userEvent.setup()
+    const events: GuideEvent[] = []
+    render(<Harness onEvent={(event) => events.push(event)} />)
+    await user.click(screen.getByText('complete-profile'))
+    await screen.findByText('profile:done')
+    events.length = 0
+
+    await user.click(screen.getByText('complete-profile'))
+    // Nothing should happen on the second click: give a wrongly-async no-op a moment to
+    // surface before asserting the events array is still empty.
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(screen.getByText('profile:done')).toBeInTheDocument()
+    expect(events).toHaveLength(0)
+  })
+
+  it('emits checklist:complete once when completing the last item', async () => {
+    const user = userEvent.setup()
+    const events: GuideEvent[] = []
+    render(<Harness onEvent={(event) => events.push(event)} />)
+    await user.click(screen.getByText('complete-profile'))
+    await user.click(screen.getByText('complete-reports'))
+    await user.click(screen.getByText('complete-tour'))
     await waitFor(() => expect(screen.getByText('complete')).toBeInTheDocument())
     const completeEvents = events.filter((event) => event.type === 'checklist:complete')
     expect(completeEvents).toHaveLength(1)

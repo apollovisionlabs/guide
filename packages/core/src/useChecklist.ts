@@ -13,6 +13,7 @@ export interface UseChecklistResult {
   dismissed: boolean
   activate: (itemId: string) => void
   toggle: (itemId: string) => void
+  complete: (itemId: string) => void
   dismiss: () => void
   reset: () => void
 }
@@ -47,7 +48,7 @@ export function useChecklist(checklistId: string): UseChecklistResult {
   const completedCount = items.filter((item) => item.completed).length
   const isComplete = total > 0 && completedCount === total
 
-  const { activate, toggle, dismiss, reset } = context
+  const { activate, toggle, complete, dismiss, reset } = context
 
   return useMemo(
     () => ({
@@ -58,9 +59,22 @@ export function useChecklist(checklistId: string): UseChecklistResult {
       dismissed,
       activate: (itemId: string) => activate(checklistId, itemId),
       toggle: (itemId: string) => toggle(checklistId, itemId),
+      complete: (itemId: string) => complete(checklistId, itemId),
       dismiss: () => dismiss(checklistId),
       reset: () => reset(checklistId),
     }),
-    [items, completedCount, total, isComplete, dismissed, activate, toggle, dismiss, reset, checklistId],
+    [
+      items,
+      completedCount,
+      total,
+      isComplete,
+      dismissed,
+      activate,
+      toggle,
+      complete,
+      dismiss,
+      reset,
+      checklistId,
+    ],
   )
 }

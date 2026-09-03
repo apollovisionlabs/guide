@@ -26,6 +26,7 @@ export interface ChecklistContextValue {
   translate?: Translate
   activate: (checklistId: string, itemId: string) => void
   toggle: (checklistId: string, itemId: string) => void
+  complete: (checklistId: string, itemId: string) => void
   dismiss: (checklistId: string) => void
   reset: (checklistId: string) => void
 }
@@ -123,81 +124,102 @@ export function ChecklistProvider({
     [storage, warnStorageFailure],
   )
 
-  const toggle = useCallback(
-    (checklistId: string, itemId: string) => {
+  // Shared lookup for every action below: one place to warn on an unknown checklist or item id,
+  // so toggle, complete, activate, dismiss and reset all reject bad ids the same way.
+  const resolveChecklist = useCallback(
+    (checklistId: string): Checklist | null => {
       const checklist = checklistsById.get(checklistId)
       if (!checklist) {
         console.warn(`[guide] unknown checklist "${checklistId}"`)
-        return
+        return null
       }
+      return checklist
+    },
+    [checklistsById],
+  )
+
+  const resolveItem = useCallback(
+    (checklistId: string, itemId: string) => {
+      const checklist = resolveChecklist(checklistId)
+      if (!checklist) return null
       const item = checklist.items.find((candidate) => candidate.id === itemId)
       if (!item) {
         console.warn(`[guide] unknown checklist item "${itemId}"`)
-        return
+        return null
       }
+      return { checklist, item }
+    },
+    [resolveChecklist],
+  )
+
+  // Idempotent: ticking an item that is already ticked does nothing and emits nothing. This is
+  // the one place item-complete and checklist-complete are emitted, so toggle's ticking half and
+  // activate's plain-item branch both delegate here rather than duplicating that logic.
+  const complete = useCallback(
+    (checklistId: string, itemId: string) => {
+      const resolved = resolveItem(checklistId, itemId)
+      if (!resolved) return
+      const { checklist } = resolved
 
       const current = progress[checklistId] ?? emptyProgress
+      if (current.completed.includes(itemId)) return
+
       const wasComplete =
         checklist.items.length > 0 &&
         checklist.items.every((candidate) => current.completed.includes(candidate.id))
 
-      const isTicked = current.completed.includes(itemId)
-      const nextCompleted = isTicked
-        ? current.completed.filter((id) => id !== itemId)
-        : [...current.completed, itemId]
-      const next: ChecklistProgress = { ...current, completed: nextCompleted }
+      const nextCompleted = [...current.completed, itemId]
+      writeProgress(checklistId, { ...current, completed: nextCompleted })
+      emit({ type: 'checklist:item-complete', checklistId, itemId })
 
-      writeProgress(checklistId, next)
-
-      if (!isTicked) {
-        emit({ type: 'checklist:item-complete', checklistId, itemId })
-        const isNowComplete =
-          checklist.items.length > 0 &&
-          checklist.items.every((candidate) => nextCompleted.includes(candidate.id))
-        if (isNowComplete && !wasComplete) emit({ type: 'checklist:complete', checklistId })
-      }
+      const isNowComplete =
+        checklist.items.length > 0 &&
+        checklist.items.every((candidate) => nextCompleted.includes(candidate.id))
+      if (isNowComplete && !wasComplete) emit({ type: 'checklist:complete', checklistId })
     },
-    [checklistsById, progress, writeProgress, emit],
+    [resolveItem, progress, writeProgress, emit],
+  )
+
+  const toggle = useCallback(
+    (checklistId: string, itemId: string) => {
+      const resolved = resolveItem(checklistId, itemId)
+      if (!resolved) return
+
+      const current = progress[checklistId] ?? emptyProgress
+      if (current.completed.includes(itemId)) {
+        const nextCompleted = current.completed.filter((id) => id !== itemId)
+        writeProgress(checklistId, { ...current, completed: nextCompleted })
+        return
+      }
+
+      complete(checklistId, itemId)
+    },
+    [resolveItem, progress, writeProgress, complete],
   )
 
   const dismiss = useCallback(
     (checklistId: string) => {
-      const checklist = checklistsById.get(checklistId)
-      if (!checklist) {
-        console.warn(`[guide] unknown checklist "${checklistId}"`)
-        return
-      }
+      if (!resolveChecklist(checklistId)) return
       const current = progress[checklistId] ?? emptyProgress
       writeProgress(checklistId, { ...current, dismissed: true })
       emit({ type: 'checklist:dismiss', checklistId })
     },
-    [checklistsById, progress, writeProgress, emit],
+    [resolveChecklist, progress, writeProgress, emit],
   )
 
   const reset = useCallback(
     (checklistId: string) => {
-      const checklist = checklistsById.get(checklistId)
-      if (!checklist) {
-        console.warn(`[guide] unknown checklist "${checklistId}"`)
-        return
-      }
+      if (!resolveChecklist(checklistId)) return
       writeProgress(checklistId, { completed: [], dismissed: false })
     },
-    [checklistsById, writeProgress],
+    [resolveChecklist, writeProgress],
   )
 
   const activate = useCallback(
     (checklistId: string, itemId: string) => {
-      const checklist = checklistsById.get(checklistId)
-      if (!checklist) {
-        console.warn(`[guide] unknown checklist "${checklistId}"`)
-        return
-      }
-      const item = checklist.items.find((candidate) => candidate.id === itemId)
-      if (!item) {
-        console.warn(`[guide] unknown checklist item "${itemId}"`)
-        return
-      }
+      const resolved = resolveItem(checklistId, itemId)
+      if (!resolved) return
+      const { item } = resolved
 
       if (item.tourId) {
         if (!guide) {
@@ -219,12 +241,12 @@ export function ChecklistProvider({
 
       toggle(checklistId, itemId)
     },
-    [checklistsById, guide, navigate, toggle, warnNoGuide],
+    [resolveItem, guide, navigate, toggle, warnNoGuide],
   )
 
   const value = useMemo<ChecklistContextValue>(
-    () => ({ checklists, progress, translate, activate, toggle, dismiss, reset }),
-    [checklists, progress, translate, activate, toggle, dismiss, reset],
+    () => ({ checklists, progress, translate, activate, toggle, complete, dismiss, reset }),
+    [checklists, progress, translate, activate, toggle, complete, dismiss, reset],
   )
 
   return <ChecklistContext.Provider value={value}>{children}</ChecklistContext.Provider>
