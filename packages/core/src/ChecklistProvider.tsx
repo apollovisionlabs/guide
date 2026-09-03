@@ -211,9 +211,13 @@ export function ChecklistProvider({
     [checklists, complete],
   )
 
-  // Watches the tour state for a finished run and ticks the matching item once. The guard is
-  // keyed by tourId rather than a plain boolean: leaving the completed state (STOP, or starting
-  // another tour) clears it, so running the same tour again after a reset can tick it again.
+  // Watches the tour state for a finished run and ticks the matching item. The guard is keyed by
+  // tourId rather than a plain boolean: leaving the completed state (STOP, or starting another
+  // tour) clears it, so running the same tour again after a reset can tick it again.
+  //
+  // Correctness does not depend on this guard. `complete` is idempotent, so deleting the ref
+  // entirely leaves every test green; it only saves a repeated walk of the checklists while a
+  // completed tour stays on screen. Do not read it as the thing that prevents a double tick.
   const handledCompletionRef = useRef<string | null>(null)
   useEffect(() => {
     const state = guide?.state
