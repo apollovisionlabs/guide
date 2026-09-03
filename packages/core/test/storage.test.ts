@@ -17,6 +17,23 @@ describe('createMemoryStorage', () => {
     const storage = createMemoryStorage({ a: { status: 'completed', stepIndex: 4 } })
     expect(await storage.read('a')).toEqual({ status: 'completed', stepIndex: 4 })
   })
+
+  it('stores and reads back an arbitrary shape under any key', async () => {
+    const storage = createMemoryStorage()
+    await storage.write('checklist:onboarding', { completed: ['a'], dismissed: false })
+    expect(await storage.read('checklist:onboarding')).toEqual({
+      completed: ['a'],
+      dismissed: false,
+    })
+  })
+
+  it('keeps keys from different namespaces apart', async () => {
+    const storage = createMemoryStorage()
+    await storage.write('tour:x', { status: 'in-progress', stepIndex: 2 })
+    await storage.write('checklist:x', { completed: [], dismissed: true })
+    expect(await storage.read('tour:x')).toEqual({ status: 'in-progress', stepIndex: 2 })
+    expect(await storage.read('checklist:x')).toEqual({ completed: [], dismissed: true })
+  })
 })
 
 describe('createBrowserStorage', () => {

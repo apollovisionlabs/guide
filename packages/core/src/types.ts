@@ -39,9 +39,44 @@ export interface TourProgress {
   stepIndex: number
 }
 
+export interface ChecklistItem {
+  id: string
+  title?: string
+  titleKey?: string
+  body?: string
+  bodyKey?: string
+  /** Tour launched when the item is activated. Completing it completes the item. */
+  tourId?: string
+  /** Path navigated to when the item is activated and carries no tour. */
+  href?: string
+}
+
+export interface Checklist {
+  id: string
+  items: ChecklistItem[]
+}
+
+export interface ChecklistProgress {
+  completed: string[]
+  dismissed: boolean
+}
+
+export interface ResolvedChecklistItem {
+  id: string
+  title: string
+  body: string
+  completed: boolean
+  tourId?: string
+  href?: string
+}
+
 export interface GuideStorage {
-  read(tourId: string): Promise<TourProgress | null>
-  write(tourId: string, progress: TourProgress): Promise<void>
+  /**
+   * Reads a previously written value. The key is namespaced by the caller,
+   * `tour:<id>` or `checklist:<id>`, so one storage serves both.
+   */
+  read<T>(key: string): Promise<T | null>
+  write<T>(key: string, value: T): Promise<void>
 }
 
 export type GuideEvent =
@@ -50,5 +85,8 @@ export type GuideEvent =
   | { type: 'tour:stop'; tourId: string; stepIndex: number }
   | { type: 'step:show'; tourId: string; stepIndex: number; target: string }
   | { type: 'target:missing'; tourId: string; stepIndex: number; target: string }
+  | { type: 'checklist:item-complete'; checklistId: string; itemId: string }
+  | { type: 'checklist:complete'; checklistId: string }
+  | { type: 'checklist:dismiss'; checklistId: string }
 
 export type Translate = (key: string) => string

@@ -101,43 +101,55 @@ the destination.
 
 ## Persistence
 
-`GuideStorage` is the two-method interface the provider reads from and writes to:
+`GuideStorage` is the two-method interface both `GuideProvider` and `ChecklistProvider` read from
+and write to. It is generic over the stored value, so one storage serves tour progress and
+checklist progress under different keys:
 
 ```ts
 interface GuideStorage {
-  read(tourId: string): Promise<TourProgress | null>
-  write(tourId: string, progress: TourProgress): Promise<void>
+  read<T>(key: string): Promise<T | null>
+  write<T>(key: string, value: T): Promise<void>
 }
 ```
+
+`GuideProvider` reads and writes tour progress under `tour:<id>`. `ChecklistProvider` reads and
+writes checklist progress under `checklist:<id>`. See [ADR 0016](docs/adr/0016-one-storage-contract-for-tours-and-checklists.md)
+for why the two share one interface.
 
 `@apollovisionlabs/guide-core` ships `createMemoryStorage()` for tests and `createBrowserStorage(namespace?)` for
 `localStorage`. Neither talks to a server. An implementation backed by your own API looks like
 this:
 
 ```ts
-import type { GuideStorage, TourProgress } from '@apollovisionlabs/guide-core'
+import type { GuideStorage } from '@apollovisionlabs/guide-core'
 
 function createServerStorage(): GuideStorage {
   return {
-    async read(tourId) {
-      const response = await fetch(`/api/tours/${tourId}/progress`)
+    async read<T>(key: string) {
+      const response = await fetch(`/api/guide/${key}`)
       if (!response.ok) return null
-      return (await response.json()) as TourProgress
+      return (await response.json()) as T
     },
-    async write(tourId, progress) {
-      await fetch(`/api/tours/${tourId}/progress`, {
+    async write<T>(key: string, value: T) {
+      await fetch(`/api/guide/${key}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(progress),
+        body: JSON.stringify(value),
       })
     },
   }
 }
 ```
 
-Pass it as the `storage` prop. The provider reads on `start()` (unless an explicit `from` step
-index is passed, or `resume: false` is passed) and writes whenever a running tour advances or
-completes.
+Pass it as the `storage` prop on either provider. `GuideProvider` reads on `start()` (unless an
+explicit `from` step index is passed, or `resume: false` is passed) and writes whenever a running
+tour advances or completes. `ChecklistProvider` reads once on mount and writes whenever an item is
+ticked, completed or the checklist is dismissed.
+
+A value read back from storage is validated before it is trusted (`isTourProgress`,
+`isChecklistProgress`, both exported from `@apollovisionlabs/guide-core`): a value that does not
+match the expected shape, from a hand-edited store or an older version of this library, is treated
+the same as nothing stored, rather than crashing or resuming into a broken state.
 
 ## Translations
 
@@ -158,7 +170,8 @@ and nothing English remains:
 
 ## Events
 
-`onEvent` on `GuideProvider` receives every lifecycle event as a discriminated union:
+`onEvent` on `GuideProvider` and on `ChecklistProvider` each receive their own lifecycle events, as
+a discriminated union of `GuideEvent`:
 
 | Event | Payload | When |
 | --- | --- | --- |
@@ -167,6 +180,9 @@ and nothing English remains:
 | `tour:stop` | `{ tourId, stepIndex }` | The tour is stopped before completion. |
 | `step:show` | `{ tourId, stepIndex, target }` | A step's target is resolved and the step becomes visible. |
 | `target:missing` | `{ tourId, stepIndex, target }` | A step's target didn't appear within `targetTimeoutMs`. |
+| `checklist:item-complete` | `{ checklistId, itemId }` | An item is completed, by finishing its linked tour or by a manual tick. Not emitted for an item already complete. |
+| `checklist:complete` | `{ checklistId }` | The last incomplete item in a checklist is completed. Fires on every transition into the complete state, so unticking an item and reticking it emits a second time. Deduplicate downstream if you count completions. |
+| `checklist:dismiss` | `{ checklistId }` | `dismiss()` is called. |
 
 ## Accessibility
 
@@ -189,6 +205,109 @@ Each step is checked against its `target` (matched by a `data-guide` attribute) 
 happens: `'skip'` moves to the next step, `'error'` stops the tour, and `'wait'` (the default)
 pauses and resumes automatically if the target appears later, for instance after a slow async
 render.
+
+## Checklist
+
+A checklist is a separate feature from the tour: a fixed list of items, each completed by
+finishing a linked tour or by a manual tick. An item can also carry an `href`, which navigates
+and nothing more. `ChecklistProvider` holds
+its state the way `GuideProvider` holds tour state, and nests inside it so that an item can launch
+a tour:
+
+```tsx
+import { GuideProvider, ChecklistProvider, type Tour, type Checklist } from '@apollovisionlabs/guide-core'
+import { GuideTour } from '@apollovisionlabs/guide-mui'
+import { ChecklistLauncher } from '@apollovisionlabs/guide-mui'
+
+const tour: Tour = {
+  id: 'welcome',
+  steps: [{ target: 'sidebar.projects', title: 'Your projects', body: 'Grouped under a project.' }],
+}
+
+const onboarding: Checklist = {
+  id: 'onboarding',
+  items: [
+    { id: 'tour', title: 'Take the tour', body: 'Two minutes.', tourId: 'welcome' },
+    { id: 'projects', title: 'Open your projects', body: 'See the list.', href: '/projects' },
+    { id: 'profile', title: 'Set your name', body: 'Manual, ticked by hand.' },
+  ],
+}
+
+function App() {
+  return (
+    <GuideProvider tours={[tour]} navigate={(path) => router.push(path)}>
+      <ChecklistProvider checklists={[onboarding]} navigate={(path) => router.push(path)}>
+        <Sidebar />
+        <GuideTour />
+        <ChecklistLauncher checklistId="onboarding" title="Get started" />
+      </ChecklistProvider>
+    </GuideProvider>
+  )
+}
+```
+
+An item with an `href`, or with neither `tourId` nor `href`, is completed by a manual tick only:
+activating an `href` item navigates and stops there, since arriving on a page is not evidence that
+anyone did anything on it. An item with `tourId`
+is completed automatically when that tour is finished (`next()` called on its last step); it can
+also be ticked by hand before that. Completion is idempotent: ticking an already-complete item, or
+finishing a tour whose item is already ticked, does nothing and emits no event.
+
+### `ChecklistProvider` props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `checklists` | `Checklist[]` | none | The checklists available to `useChecklist`. |
+| `children` | `ReactNode` | none | Your application. |
+| `storage` | `GuideStorage` | none | Persists checklist progress under `checklist:<id>`. See "Persistence". |
+| `translate` | `(key: string) => string` | none | Resolves `titleKey` / `bodyKey` on items. See "Translations". |
+| `navigate` | `(path: string) => void` | none | Called when an item with `href` is activated. |
+| `onEvent` | `(event: GuideEvent) => void` | none | Called for `checklist:item-complete`, `checklist:complete`, `checklist:dismiss`. See "Events". |
+
+### `useChecklist(checklistId)`
+
+Returns `{ items, completedCount, total, isComplete, dismissed, activate, toggle, complete, dismiss, reset }`.
+`items` is `ResolvedChecklistItem[]`: `{ id, title, body, completed, tourId?, href? }`, with
+`title` / `body` already resolved through `translate`. `activate(itemId)` runs an item's default
+action (start its tour, navigate to its `href`, or toggle it if it has neither); `toggle` and
+`complete` change completion directly; `dismiss()` and `reset()` act on the whole checklist.
+
+### `Checklist` and `ChecklistLauncher` (`@apollovisionlabs/guide-mui`)
+
+`Checklist` renders the list inline: a progress bar, one row per item with a checkbox and a
+dismiss button. `ChecklistLauncher` wraps it behind a floating action button showing
+`completedCount/total`, opened as a popover. The popover stays open while items are ticked one
+after another, and closes when an item hands off to something that needs the screen: launching a
+tour or navigating to an `href`. It does not close on a plain tick.
+
+```tsx
+import { Checklist, ChecklistLauncher } from '@apollovisionlabs/guide-mui'
+
+<Checklist checklistId="onboarding" title="Get started" />
+// or, as a floating launcher:
+<ChecklistLauncher checklistId="onboarding" title="Get started" placement="bottom-right" />
+```
+
+Dismissing the launcher removes it. Because the button and the popover disappear in the same
+commit, there would be nothing left for the browser to put focus on, so the launcher leaves a
+short off screen status message in its place, moves focus there, and removes that too as soon as
+focus goes anywhere else. A keyboard user hears the dismissal confirmed instead of landing at the
+top of the document.
+
+`Checklist` also takes `onDismiss`, called after the checklist is dismissed, and `onActivate`,
+called with the resolved item after any row is activated. `ChecklistLauncher` uses `onActivate`
+itself to close its popover; you need it only when you place `Checklist` inside a surface of your
+own that has to react the same way.
+
+Note one name collision if you import from both packages in the same file. `Checklist` is a type
+in `@apollovisionlabs/guide-core`, describing the list, and a component in
+`@apollovisionlabs/guide-mui`, rendering it. TypeScript will tell you, and an alias on the import
+settles it:
+
+```tsx
+import type { Checklist as ChecklistDefinition } from '@apollovisionlabs/guide-core'
+import { Checklist } from '@apollovisionlabs/guide-mui'
+```
 
 ## Compatibility
 
