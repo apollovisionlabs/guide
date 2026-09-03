@@ -355,6 +355,20 @@ describe('ChecklistProvider', () => {
     warn.mockRestore()
   })
 
+  it('warns once when an href item is activated without a navigate function', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(screen.getByText('activate-reports'))
+    await user.click(screen.getByText('activate-reports'))
+    const navigateWarnings = warn.mock.calls.filter(
+      (call) => typeof call[0] === 'string' && call[0].includes('navigate function'),
+    )
+    expect(navigateWarnings).toHaveLength(1)
+    expect(screen.getByText('reports:todo')).toBeInTheDocument()
+    warn.mockRestore()
+  })
+
   it('warns and does not reject when an item names a tour the provider does not hold', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const user = userEvent.setup()

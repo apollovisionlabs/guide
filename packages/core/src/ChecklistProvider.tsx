@@ -100,6 +100,15 @@ export function ChecklistProvider({
     console.warn('[guide] starting a tour for a checklist item failed', error)
   }, [])
 
+  // Same once-only shape as warnNoGuide and warnTourStartFailure: a missing navigate function
+  // is a host wiring mistake, so repeating the warning on every activation only buries it.
+  const noNavigateWarnedRef = useRef(false)
+  const warnNoNavigate = useCallback(() => {
+    if (noNavigateWarnedRef.current) return
+    noNavigateWarnedRef.current = true
+    console.warn('[guide] a checklist item declares an href but no navigate function was provided')
+  }, [])
+
   const onEventRef = useRef(onEvent)
   onEventRef.current = onEvent
   const emit = useCallback((event: GuideEvent) => onEventRef.current?.(event), [])
@@ -313,7 +322,7 @@ export function ChecklistProvider({
 
       if (item.href) {
         if (!navigate) {
-          console.warn('[guide] a checklist item declares an href but no navigate function was provided')
+          warnNoNavigate()
           return
         }
         navigate(item.href)
@@ -322,7 +331,7 @@ export function ChecklistProvider({
 
       toggle(checklistId, itemId)
     },
-    [resolveItem, guide, navigate, toggle, warnNoGuide, warnTourStartFailure],
+    [resolveItem, guide, navigate, toggle, warnNoGuide, warnNoNavigate, warnTourStartFailure],
   )
 
   const value = useMemo<ChecklistContextValue>(
