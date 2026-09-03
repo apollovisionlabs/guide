@@ -14,7 +14,7 @@
 
 - Never emit an em dash (U+2014) or an en dash (U+2013) in any authored text, including code comments, documentation, and commit messages. Rewrite the sentence instead.
 - English for code, comments, commit messages and documentation.
-- No Qualiresolve business vocabulary anywhere in this repository. Test and demo fixtures use neutral words such as `items`, `reports`, `projects`.
+- No vocabulary from the private product that motivated this library, anywhere in this repository. Test and demo fixtures use neutral words such as `items`, `reports`, `projects`.
 - Never consult the source of Intro.js or Shepherd.js. Both are AGPL or commercial and this package is MIT.
 - Conventional Commits, lowercase type, imperative subject, no trailing period: `feat: ...`, `fix: ...`, `docs: ...`, `test: ...`, `chore: ...`.
 - Every new public symbol is exported from the package `index.ts`.

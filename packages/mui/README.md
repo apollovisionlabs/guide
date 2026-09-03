@@ -181,7 +181,7 @@ a discriminated union of `GuideEvent`:
 | `step:show` | `{ tourId, stepIndex, target }` | A step's target is resolved and the step becomes visible. |
 | `target:missing` | `{ tourId, stepIndex, target }` | A step's target didn't appear within `targetTimeoutMs`. |
 | `checklist:item-complete` | `{ checklistId, itemId }` | An item is completed, by finishing its linked tour or by a manual tick. Not emitted for an item already complete. |
-| `checklist:complete` | `{ checklistId }` | The last incomplete item in a checklist is completed. |
+| `checklist:complete` | `{ checklistId }` | The last incomplete item in a checklist is completed. Fires on every transition into the complete state, so unticking an item and reticking it emits a second time. Deduplicate downstream if you count completions. |
 | `checklist:dismiss` | `{ checklistId }` | `dismiss()` is called. |
 
 ## Accessibility
@@ -209,7 +209,8 @@ render.
 ## Checklist
 
 A checklist is a separate feature from the tour: a fixed list of items, each completed by
-finishing a linked tour, by navigating to a page, or by a manual tick. `ChecklistProvider` holds
+finishing a linked tour or by a manual tick. An item can also carry an `href`, which navigates
+and nothing more. `ChecklistProvider` holds
 its state the way `GuideProvider` holds tour state, and nests inside it so that an item can launch
 a tour:
 
@@ -285,6 +286,21 @@ import { Checklist, ChecklistLauncher } from '@apollovisionlabs/guide-mui'
 <Checklist checklistId="onboarding" title="Get started" />
 // or, as a floating launcher:
 <ChecklistLauncher checklistId="onboarding" title="Get started" placement="bottom-right" />
+```
+
+`Checklist` also takes `onDismiss`, called after the checklist is dismissed, and `onActivate`,
+called with the resolved item after any row is activated. `ChecklistLauncher` uses `onActivate`
+itself to close its popover; you need it only when you place `Checklist` inside a surface of your
+own that has to react the same way.
+
+Note one name collision if you import from both packages in the same file. `Checklist` is a type
+in `@apollovisionlabs/guide-core`, describing the list, and a component in
+`@apollovisionlabs/guide-mui`, rendering it. TypeScript will tell you, and an alias on the import
+settles it:
+
+```tsx
+import type { Checklist as ChecklistDefinition } from '@apollovisionlabs/guide-core'
+import { Checklist } from '@apollovisionlabs/guide-mui'
 ```
 
 ## Compatibility

@@ -16,3 +16,7 @@ This widens `GuideStorage` to make room for it, and both changes are breaking:
 - Tour progress now persists under the key `tour:<id>` instead of the bare tour id. Progress
   written by an earlier version is orphaned: a user in the middle of a tour restarts it once, from
   the beginning, after upgrading.
+
+Stored values are also validated before they are trusted, which they were not before. A corrupted
+or hand edited entry that 0.1.x would have resumed from is now ignored and the tour starts from
+its first step.

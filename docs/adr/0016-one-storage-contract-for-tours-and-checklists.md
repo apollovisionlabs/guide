@@ -48,9 +48,10 @@ and the same two implementations, `createMemoryStorage` and `createBrowserStorag
 
 Neither implementation validates what it stores; they stay dumb pipes. Validation moved to the
 read site instead: `isTourProgress` and `isChecklistProgress` (`packages/core/src/storage.ts`)
-check the shape of whatever comes back before either provider trusts it. `isTourProgress` already
-existed as an unexported check; this decision is also what made it worth exporting, since a
-consumer's own storage code can now hit the same shape question `ChecklistProvider` does.
+check the shape of whatever comes back before either provider trusts it. Neither guard existed before this change. Until now
+`GuideProvider` passed whatever `JSON.parse` returned straight into the tour state, checking only
+that `status` read `in-progress`. Both guards are exported, since a consumer's own storage code
+hits the same shape question the providers do.
 
 ## Consequences
 
@@ -72,9 +73,11 @@ not two, and the checklist inherits the "no network calls" property
 [ADR 0007](0007-pluggable-persistence-no-network.md) established for tours without a separate
 decision.
 
-Values read from storage were already untrusted for tours (`isTourProgress`, added when the
-generic contract was drafted); the checklist gets the same treatment for free, by construction,
-because the read site is the enforcement point rather than the storage implementation.
+Tour progress is validated for the first time. A corrupted or hand edited entry that 0.1.x would
+have resumed from is now ignored, and the tour starts from the beginning instead. That is a
+behaviour change on its own, independent of the generic contract, and it is in the release note
+for that reason. The checklist gets the same treatment by construction, because the read site is
+the enforcement point rather than the storage implementation.
 
 ## Alternatives considered
 
