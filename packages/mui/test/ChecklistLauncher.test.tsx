@@ -92,13 +92,16 @@ describe('ChecklistLauncher', () => {
     expect(screen.getAllByRole('progressbar', { hidden: true })).toHaveLength(1)
   })
 
-  it('paints below the tour overlay rather than above it', async () => {
+  it('paints below the tour overlay and above the application chrome', async () => {
     renderLauncher(<ChecklistLauncher checklistId="demo" />)
     const anchor = await screen.findByTestId('checklist-launcher-anchor')
     const zIndex = Number(getComputedStyle(anchor).zIndex)
-    // Pinned to the ordering, not the literal number: Spotlight paints at theme.zIndex.modal
-    // while a tour runs, and the launcher must stay behind it rather than above it.
+    // Pinned to the ordering, not the literal numbers. Spotlight paints at theme.zIndex.modal
+    // while a tour runs, so the launcher must stay behind it; and it must stay in front of a
+    // host application's own chrome, which in MUI's scale is the app bar and the drawer.
     expect(zIndex).toBeLessThan(testTheme.zIndex.modal)
+    expect(zIndex).toBeGreaterThan(testTheme.zIndex.drawer)
+    expect(zIndex).toBeGreaterThan(testTheme.zIndex.appBar)
   })
 
   it('renders nothing once the checklist is dismissed', async () => {

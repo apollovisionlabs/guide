@@ -54,7 +54,14 @@ export function ChecklistLauncher({
     <>
       <Box
         data-testid="checklist-launcher-anchor"
-        sx={{ ...cornerSx(placement), zIndex: (theme) => theme.zIndex.speedDial }}
+        sx={{
+          ...cornerSx(placement),
+          // One below the modal layer. The launcher must sit above ordinary application
+          // chrome, a fixed app bar at 1100 or a drawer at 1200, or it vanishes behind
+          // them; and below the tour's Spotlight, which paints at the modal layer, or it
+          // stays bright over the dimmed page while the tour is meant to own the screen.
+          zIndex: (theme) => theme.zIndex.modal - 1,
+        }}
       >
         <Box sx={{ position: 'relative', display: 'inline-flex' }}>
           <CircularProgress
