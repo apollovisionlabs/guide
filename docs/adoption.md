@@ -227,8 +227,8 @@ tour advances past it after the timeout instead of hanging.
 ## 6. Wire persistence
 
 Without a `storage` prop, nothing is remembered: a reload restarts the tour from step one. Pass an
-implementation of `GuideStorage`, which is two async methods, and the provider reads on `start()`
-and writes on every advance and on completion.
+implementation of `GuideStorage`, which is two generic async methods, and the provider reads on
+`start()` and writes on every advance and on completion, under the key `tour:<id>`.
 
 Two implementations ship with the core:
 
@@ -236,17 +236,19 @@ Two implementations ship with the core:
 import { createMemoryStorage, createBrowserStorage } from '@apollovisionlabs/guide-core'
 
 createMemoryStorage() // lives for the page's lifetime; for tests
-createBrowserStorage('my-app') // localStorage, keyed "<namespace>:<tourId>"
+createBrowserStorage('my-app') // localStorage, keyed "<namespace>:<key>"
 ```
 
 Neither talks to a server. That is deliberate: the packages make no network calls at all
 ([ADR 0007](adr/0007-pluggable-persistence-no-network.md)), so if progress has to follow a user, you
 write the implementation.
 
-A server-backed implementation has to provide exactly this: `read(tourId)` returning the stored
-`TourProgress` or `null`, and `write(tourId, progress)` storing it. `TourProgress` is a status
-(`'in-progress'` or `'completed'`) and a step index. The full example is in the README's Persistence
-section; do not copy it twice.
+A server-backed implementation has to provide exactly this: `read<T>(key)` returning the stored
+value or `null`, and `write<T>(key, value)` storing it. `GuideProvider` calls it with
+`tour:<id>` keys and `TourProgress` values (a status, `'in-progress'` or `'completed'`, and a step
+index); if you also use `ChecklistProvider`, the same storage instance receives `checklist:<id>`
+keys, so one implementation serves both ([ADR 0016](adr/0016-one-storage-contract-for-tours-and-checklists.md)).
+The full example is in the README's Persistence section; do not copy it twice.
 
 Two things to get right in your own implementation:
 
@@ -357,9 +359,37 @@ What is yours to test, because it depends on your application and not on the lib
 
 Use `createMemoryStorage()` in tests so runs do not leak progress into each other.
 
+## 10. Add a checklist (optional)
+
+A checklist is a separate feature from the tour: a fixed list of items, completed by finishing a
+linked tour, by navigating to an `href`, or by a manual tick. Nest `ChecklistProvider` inside
+`GuideProvider`, the way `apps/demo/src/App.tsx` does, so items with a `tourId` can start it:
+
+```tsx
+import { ChecklistProvider } from '@apollovisionlabs/guide-core'
+import { ChecklistLauncher } from '@apollovisionlabs/guide-mui'
+import { onboardingChecklist } from './checklists'
+
+<GuideProvider tours={[productTour]} navigate={navigate} storage={storage}>
+  <ChecklistProvider checklists={[onboardingChecklist]} navigate={navigate} storage={storage}>
+    <AppRoutes />
+    <GuideTour />
+    <ChecklistLauncher checklistId="onboarding" title="Get started" />
+  </ChecklistProvider>
+</GuideProvider>
+```
+
+The full props and the `useChecklist` hook are in the README's Checklist section. Sharing the same
+`storage` instance between the two providers is the normal case: tour progress and checklist
+progress live at different keys in it, `tour:<id>` and `checklist:<id>`
+([ADR 0016](adr/0016-one-storage-contract-for-tours-and-checklists.md)).
+
+**Worked when**: the launcher's badge reads `0/3`, ticking an item updates it, and reloading keeps
+the tick.
+
 ## Traps a first integration falls into
 
-These three are real, and each has cost time in this repository.
+These four are real, and each has cost time in this repository.
 
 **Declaring the tour inline.** A tour built as a literal inside a component body is a new object on
 every render, and so is every step in it. The route timeout keys on step object **identity**: it
@@ -384,17 +414,25 @@ overlay is still there over the hole. A click inside the hole is ignored rather 
 dismissal, which is why the button seems inert rather than closing the tour. A click outside the
 hole stops the tour. If a step asks for a click, mark it interactive.
 
+**A checklist item's `tourId` naming no tour on the `GuideProvider`.** `activate(itemId)` calls
+`guide.start(item.tourId)` without awaiting or catching it (`packages/core/src/ChecklistProvider.tsx`).
+When the id doesn't match any tour in the `tours` prop, `start()` rejects with
+`[guide] unknown tour: <id>`, and since nothing at the call site attaches a `.catch`, that surfaces
+only as an unhandled promise rejection: no `onEvent`, no `console.warn`, no change on screen. The
+item just does not launch anything, and in production, where nobody is watching the browser
+console for unhandled rejections, this is silent. Keep checklist `tourId` values and `Tour.id`
+values in the same module, or covered by the same test, so a typo in either fails loudly instead.
+
 ## What this library does not do
 
 So you stop looking for it:
 
-- **No onboarding checklist.** There is no list of tasks, no completion widget, no "3 of 5 done".
-  The library runs one tour at a time and stores one step index per tour id.
-- **No tour builder.** There is no visual editor, no recorder, no admin UI. Tours are TypeScript
-  objects in your repository, reviewed like any other code.
+- **No tour builder.** There is no visual editor, no recorder, no admin UI. Tours and checklists
+  are TypeScript objects in your repository, reviewed like any other code.
 - **No analytics.** Nothing is sent anywhere, ever. The packages make no network call of their own.
-  What you get is `onEvent` on the provider, which fires `tour:start`, `tour:complete`, `tour:stop`,
-  `step:show` and `target:missing`. Forward them to whatever you already use:
+  What you get is `onEvent`, on `GuideProvider` (`tour:start`, `tour:complete`, `tour:stop`,
+  `step:show`, `target:missing`) and on `ChecklistProvider` (`checklist:item-complete`,
+  `checklist:complete`, `checklist:dismiss`). Forward them to whatever you already use:
 
   ```tsx
   <GuideProvider tours={[productTour]} onEvent={(event) => analytics.track(event.type, event)}>

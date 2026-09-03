@@ -22,3 +22,4 @@ sequentially, zero-padded.
 | [0013](0013-publish-from-a-release-workflow.md) | Publish from a release workflow driven by Changesets | stable, authentication superseded by 0014 |
 | [0014](0014-authenticate-releases-with-trusted-publishing.md) | Authenticate releases with npm trusted publishing | stable |
 | [0015](0015-pack-with-pnpm-publish-with-npm.md) | Pack with pnpm, publish with npm | stable |
+| [0016](0016-one-storage-contract-for-tours-and-checklists.md) | One storage contract for tours and checklists | stable |

@@ -2,6 +2,26 @@
 
 Newest first. Add an entry whenever any document in this bundle, or a root guide, changes.
 
+## 2026-09-03
+
+- Documented the first-steps checklist: `ChecklistProvider`, `useChecklist`, and the MUI
+  `Checklist` and `ChecklistLauncher` components. Added a Checklist section and three new
+  `checklist:*` events to `README.md`, copied verbatim into both package READMEs; added an
+  integration step and a trap to [adoption.md](adoption.md) (a checklist item whose `tourId`
+  names no tour on the `GuideProvider` fails as an unhandled promise rejection, not a warning);
+  removed the "no onboarding checklist" line from "What this library does not do", now false.
+- Recorded [ADR 0016](adr/0016-one-storage-contract-for-tours-and-checklists.md): `GuideStorage`
+  became generic over the stored value and the key, so `GuideProvider` and `ChecklistProvider`
+  share one storage instance under `tour:<id>` and `checklist:<id>`. Corrected the stale
+  `read(tourId)` / `write(tourId, progress)` signature this replaced everywhere it was documented,
+  in `README.md` and in `adoption.md`'s persistence step. Two breaking consequences follow: a
+  custom `GuideStorage` implementation must widen its signature, and tour progress stored under
+  the old bare-id key is orphaned, so a user mid tour restarts it once.
+- Added the new spec, plan and this ADR to the "Outside this bundle" and Decisions sections of
+  [index.md](index.md) and to [adr/index.md](adr/index.md).
+- Added a changeset marking both packages minor for the checklist feature and the two breaking
+  consequences above.
+
 ## 2026-09-02
 
 - Corrected `docs/migrations.md`, which still said nothing had been released and no release
