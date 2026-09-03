@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
 import { useLocation, useNavigate } from 'react-router'
-import { GuideProvider, createBrowserStorage } from '@apollovisionlabs/guide-core'
-import { GuideTour } from '@apollovisionlabs/guide-mui'
+import { ChecklistProvider, GuideProvider, createBrowserStorage } from '@apollovisionlabs/guide-core'
+import { ChecklistLauncher, GuideTour } from '@apollovisionlabs/guide-mui'
 import { productTour } from './tours'
+import { onboardingChecklist } from './checklists'
 import { AppRoutes } from './router'
 
 export function App() {
@@ -24,8 +25,16 @@ export function App() {
         onEvent={(event) => console.info('[guide]', event)}
         onMissingTarget="wait"
       >
-        <AppRoutes onToggleMode={() => setMode((value) => (value === 'light' ? 'dark' : 'light'))} />
-        <GuideTour />
+        <ChecklistProvider
+          checklists={[onboardingChecklist]}
+          navigate={(path) => navigate(path)}
+          storage={storage}
+          onEvent={(event) => console.info('[guide]', event)}
+        >
+          <AppRoutes onToggleMode={() => setMode((value) => (value === 'light' ? 'dark' : 'light'))} />
+          <GuideTour />
+          <ChecklistLauncher checklistId="onboarding" title="Get started" />
+        </ChecklistProvider>
       </GuideProvider>
     </ThemeProvider>
   )
