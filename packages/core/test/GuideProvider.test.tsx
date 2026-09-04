@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { ComponentProps } from 'react'
+import { useState, type ComponentProps } from 'react'
 import { GuideProvider } from '../src/GuideProvider'
 import { useTour } from '../src/useTour'
 import { useGuideStep } from '../src/useGuideStep'
@@ -48,6 +48,47 @@ function Harness(props: Partial<ComponentProps<typeof GuideProvider>> = {}) {
       <StepReadout />
     </GuideProvider>
   )
+}
+
+const clickTour: Tour = {
+  id: 'click',
+  steps: [
+    { target: 'one', title: 'First', advanceOn: 'click' },
+    { target: 'two', title: 'Second', advanceOn: 'click' },
+  ],
+}
+
+function ClickHarness({ onAppClick }: { onAppClick?: () => void } = {}) {
+  const [count, setCount] = useState(0)
+  return (
+    <GuideProvider tours={[clickTour]}>
+      <button
+        data-guide="one"
+        onClick={() => {
+          setCount((value) => value + 1)
+          onAppClick?.()
+        }}
+      >
+        one
+      </button>
+      <button data-guide="two">two</button>
+      <span>{`clicks:${count}`}</span>
+      <ClickStarter />
+      <StepReadout />
+      <FlagReadout />
+    </GuideProvider>
+  )
+}
+
+function ClickStarter() {
+  const { start } = useTour('click')
+  return <button onClick={() => void start()}>start click</button>
+}
+
+function FlagReadout() {
+  const active = useGuideStep()
+  if (!active) return null
+  return <p>{`interactive:${active.interactive} awaits:${active.awaitsAction}`}</p>
 }
 
 describe('GuideProvider', () => {
@@ -458,5 +499,92 @@ describe('GuideProvider', () => {
     await user.click(screen.getByText('start'))
     await waitFor(() => expect(failure).toBeInstanceOf(Error))
     expect((failure as Error).message).toMatch(/\[guide\] tour has no steps/)
+  })
+})
+
+describe('advanceOn', () => {
+  it('advances when the user clicks the target', async () => {
+    const user = userEvent.setup()
+    render(<ClickHarness />)
+    await user.click(screen.getByText('start click'))
+    expect(await screen.findByText('First')).toBeInTheDocument()
+
+    await user.click(screen.getByText('one'))
+    expect(await screen.findByText('Second')).toBeInTheDocument()
+  })
+
+  it('leaves the application handler working', async () => {
+    const user = userEvent.setup()
+    const onAppClick = vi.fn()
+    render(<ClickHarness onAppClick={onAppClick} />)
+    await user.click(screen.getByText('start click'))
+    await screen.findByText('First')
+
+    await user.click(screen.getByText('one'))
+    expect(onAppClick).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('clicks:1')).toBeInTheDocument()
+    // Without the assertion below, this test would pass even if advanceOn were never wired up,
+    // because the application's own handler runs regardless of the guide. It must also prove the
+    // click reached the guide and advanced the step.
+    expect(await screen.findByText('Second')).toBeInTheDocument()
+  })
+
+  it('does not advance on a click elsewhere', async () => {
+    const user = userEvent.setup()
+    render(<ClickHarness />)
+    await user.click(screen.getByText('start click'))
+    await screen.findByText('First')
+
+    await user.click(screen.getByText('two'))
+    expect(screen.getByText('First')).toBeInTheDocument()
+
+    // Without the assertion below, this test would pass even if the click listener were never
+    // attached at all, since nothing would ever advance. It must also prove that a click on the
+    // actual target still works, so the earlier click was really ignored rather than unhandled.
+    await user.click(screen.getByText('one'))
+    expect(await screen.findByText('Second')).toBeInTheDocument()
+  })
+
+  it('completes the tour when the last step is clicked', async () => {
+    const user = userEvent.setup()
+    const onEvent = vi.fn()
+    render(
+      <GuideProvider tours={[clickTour]} onEvent={onEvent}>
+        <button data-guide="one">one</button>
+        <button data-guide="two">two</button>
+        <ClickStarter />
+        <StepReadout />
+      </GuideProvider>,
+    )
+    await user.click(screen.getByText('start click'))
+    await screen.findByText('First')
+    await user.click(screen.getByText('one'))
+    await screen.findByText('Second')
+    await user.click(screen.getByText('two'))
+
+    await waitFor(() =>
+      expect(onEvent).toHaveBeenCalledWith({ type: 'tour:complete', tourId: 'click' }),
+    )
+  })
+
+  it('derives interactive and awaitsAction from advanceOn', async () => {
+    const user = userEvent.setup()
+    render(<ClickHarness />)
+    await user.click(screen.getByText('start click'))
+    expect(await screen.findByText('interactive:true awaits:true')).toBeInTheDocument()
+  })
+
+  it('leaves a plain step non-interactive and not awaiting', async () => {
+    const user = userEvent.setup()
+    render(
+      <GuideProvider tours={[tour]}>
+        <button data-guide="one">one</button>
+        <button data-guide="two">two</button>
+        <Starter />
+        <FlagReadout />
+      </GuideProvider>,
+    )
+    await user.click(screen.getByText('start'))
+    expect(await screen.findByText('interactive:false awaits:false')).toBeInTheDocument()
   })
 })

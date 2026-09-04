@@ -19,6 +19,11 @@ export interface Step {
   placement?: Placement
   /** Lets the user interact with the page during the step. */
   interactive?: boolean
+  /**
+   * Advances the tour when the user clicks the target. Implies `interactive`: a step that
+   * waits for a click has to let the click through.
+   */
+  advanceOn?: 'click'
   title?: string
   titleKey?: string
   body?: string

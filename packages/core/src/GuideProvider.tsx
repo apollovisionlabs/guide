@@ -36,6 +36,14 @@ export interface ActiveStep {
   stepCount: number
   element: HTMLElement | null
   rect: Rect | null
+  /**
+   * Whether the page stays reachable during the step. True when the step declares
+   * `interactive`, and also when it declares `advanceOn`, whose click has to reach the
+   * element. Renderers read this instead of `step.interactive`, so the rule lives here.
+   */
+  interactive: boolean
+  /** True when the step advances on a user action rather than on a button. */
+  awaitsAction: boolean
   title: string
   body: string
   isFirst: boolean
@@ -146,6 +154,22 @@ export function GuideProvider({
     dispatch({ type: 'NEXT', stepCount: tour.steps.length })
     if (isLast) emit({ type: 'tour:complete', tourId: tour.id })
   }, [tour, state.stepIndex, emit])
+
+  // A step that waits for a click observes the element rather than wrapping it: bubble phase,
+  // no preventDefault, no stopPropagation. The application's own handler runs first and keeps
+  // working; the tour only notices that it ran.
+  //
+  // `next` is read through a ref so that a re-render does not detach and reattach the listener
+  // on every step of every tour.
+  const nextRef = useRef(next)
+  nextRef.current = next
+
+  useEffect(() => {
+    if (state.status !== 'running' || !element || step?.advanceOn !== 'click') return
+    const onClick = () => nextRef.current()
+    element.addEventListener('click', onClick)
+    return () => element.removeEventListener('click', onClick)
+  }, [state.status, element, step?.advanceOn])
 
   const previous = useCallback(() => dispatch({ type: 'PREVIOUS' }), [])
 
@@ -301,6 +325,8 @@ export function GuideProvider({
       stepCount: tour.steps.length,
       element,
       rect,
+      interactive: step.interactive === true || step.advanceOn !== undefined,
+      awaitsAction: step.advanceOn !== undefined,
       title: resolveText(step.title, step.titleKey, translate),
       body: resolveText(step.body, step.bodyKey, translate),
       isFirst: state.stepIndex === 0,
