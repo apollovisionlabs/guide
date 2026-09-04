@@ -76,6 +76,24 @@ export interface GuideProviderProps {
   targetTimeoutMs?: number
 }
 
+/**
+ * Focus an element that is ordinary application markup and need not be focusable. A tabindex
+ * is added only when the element does not already carry one and cannot take focus on its own,
+ * and it is removed again the moment focus leaves, so nothing permanent is left in the host's
+ * DOM; -1 keeps the element out of the tab order meanwhile.
+ */
+function focusFallback(element: HTMLElement): void {
+  if (!element.hasAttribute('tabindex') && element.tabIndex < 0) {
+    element.setAttribute('tabindex', '-1')
+    const onBlur = () => {
+      element.removeAttribute('tabindex')
+      element.removeEventListener('blur', onBlur)
+    }
+    element.addEventListener('blur', onBlur)
+  }
+  element.focus()
+}
+
 export function GuideProvider({
   tours,
   children,
@@ -104,6 +122,10 @@ export function GuideProvider({
   // Element that held focus when the tour started: the popover unmounts and remounts on every
   // step, so its own focus trap cannot restore focus to that origin.
   const focusOriginRef = useRef<HTMLElement | null>(null)
+  // Element the tour last pointed at, kept in a ref because by the time focus is restored the
+  // step has already been torn down and `element` is null again. This is the destination of
+  // last resort: see the restore effect below.
+  const lastElementRef = useRef<HTMLElement | null>(null)
   const storageWarnedRef = useRef(false)
 
   const warnStorageFailure = useCallback((error: unknown) => {
@@ -307,13 +329,41 @@ export function GuideProvider({
     }
   }, [storage, state.tourId, state.status, state.stepIndex, warnStorageFailure])
 
+  useEffect(() => {
+    if (element) lastElementRef.current = element
+  }, [element])
+
   // Focus returns to its origin once the tour is stopped or completed.
   useEffect(() => {
     if (state.status !== 'idle' && state.status !== 'completed') return
     const origin = focusOriginRef.current
-    if (!origin) return
+    const fallback = lastElementRef.current
     focusOriginRef.current = null
-    if (typeof document !== 'undefined' && document.contains(origin)) origin.focus()
+    lastElementRef.current = null
+    if (typeof document === 'undefined') return
+
+    if (origin && document.contains(origin)) {
+      origin.focus()
+      return
+    }
+
+    // The origin is gone. A tour launched from a hotspot bubble is how that happens: the
+    // control captured here and the marker captured by the bubble's own focus trap both
+    // unmount the instant the tour starts, so `origin.focus()` is a no-op on a detached node
+    // and the user is dropped on document.body, with no focus ring, nothing announced, and the
+    // next Tab restarting at the top of the page. Keeping the marker alive is not an option:
+    // it is hidden for the duration of the tour on purpose, and the hotspot is seen by then
+    // anyway, so it has no marker to come back to. The element the tour last pointed at is
+    // present, is what the user was just being shown, and is where reading should resume, so
+    // that is where focus lands.
+    //
+    // Only when focus would otherwise have nowhere to go. A user who has already clicked or
+    // tabbed somewhere keeps what they chose: not stranding them and not stealing from them
+    // are both requirements, the same rule ChecklistLauncher and the hotspot bubble's
+    // outside-click recovery already follow.
+    if (document.activeElement !== document.body) return
+    if (!fallback || !document.contains(fallback)) return
+    focusFallback(fallback)
   }, [state.status])
 
   const activeStep = useMemo<ActiveStep | null>(() => {

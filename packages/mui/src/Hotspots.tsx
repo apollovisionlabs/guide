@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
@@ -8,6 +8,7 @@ import Popper from '@mui/material/Popper'
 import Typography from '@mui/material/Typography'
 import { useTheme } from '@mui/material/styles'
 import {
+  GuideContext,
   useElementRect,
   useFocusTrap,
   useHotspots,
@@ -48,6 +49,12 @@ export function Hotspots({ labels, placement = 'bottom', zIndex }: HotspotsProps
   const { hotspots, restored } = useHotspots()
   const [openId, setOpenId] = useState<string | null>(null)
 
+  // Read through the context rather than through useTour, and tolerating null, exactly as
+  // HotspotProvider does: a project that uses hotspots and no tours at all has no
+  // GuideProvider in its tree and must keep working.
+  const guide = useContext(GuideContext)
+  const tourIsLive = guide?.state.status === 'running' || guide?.state.status === 'paused'
+
   const text = { ...DEFAULT_LABELS, ...labels }
 
   // Nothing is drawn until the initial restore from storage has settled. Without this, a
@@ -56,6 +63,22 @@ export function Hotspots({ labels, placement = 'bottom', zIndex }: HotspotsProps
   // spurious hotspot:show, the very thing the feature promises never happens again once a
   // hotspot has been opened.
   if (!restored) return null
+
+  // An ambient hint must not compete with a guided flow the user is already in. A marker is
+  // `position: fixed` over its target's top-right corner, so when a tour points at that same
+  // element (which the shipped demo does) `document.elementFromPoint` at the marker's centre
+  // returns the marker: the click meant for an `advanceOn` step opens the bubble instead, the
+  // step never advances, and the user is left with a dialog stacked on a stuck step. On a
+  // non-interactive step the marker is worse than wrong, it is drawn bright and pulsing yet
+  // completely inert, because the spotlight at `theme.zIndex.modal` swallows the click. And a
+  // tour launched from a hotspot leaves that hotspot's own marker holding keyboard focus over
+  // the step it just launched. All three are one thing: while a tour is live, no markers.
+  //
+  // Suppression, not retirement. `paused` counts because a paused tour is waiting for its
+  // target, not finished. When the tour ends the markers come back, unchanged: nothing here
+  // touches `seen`, so a hotspot the user never opened still has something to say, and
+  // `hotspot:show` stays deduplicated per mount, so no second impression is announced.
+  if (tourIsLive) return null
 
   return (
     <>
@@ -126,10 +149,16 @@ function HotspotMarker({
 
   useFocusTrap(bubble, isOpen)
 
+  // A rect exists for an element that is in the DOM but not rendered, all zeros, and all zeros
+  // is truthy. That passed both this gate and the render guard below, and put a pulsing dot in
+  // the top-left corner of the viewport pointing at nothing. Size, not existence, is what says
+  // the target is on screen. Either dimension will do: a rule or a divider is genuinely there.
+  const isMeasured = !!rect && (rect.width > 0 || rect.height > 0)
+
   // Gated on the marker actually being drawn, not merely on the target being measurable: a
   // hotspot already seen renders nothing, and announcing an impression for a marker nobody
   // saw would make the event a lie.
-  const isDrawn = !!rect && (!hotspot.seen || openedHere)
+  const isDrawn = isMeasured && (!hotspot.seen || openedHere)
   useEffect(() => {
     if (isDrawn) notifyShown(hotspot.id)
   }, [isDrawn, hotspot.id, notifyShown])
@@ -174,10 +203,20 @@ function HotspotMarker({
     return () => document.removeEventListener('mousedown', onPointerDown)
   }, [isOpen, bubble, marker, onClose])
 
-  if (!rect) return null
+  if (!isMeasured || !rect) return null
   if (hotspot.seen && !openedHere) return null
 
   const onMarkerClick = () => {
+    // A second click on a marker whose bubble is already open closes it, and announces
+    // nothing. `open` emits hotspot:open before its seen check, so re-entering it here would
+    // announce an opening for a bubble that never closed: the event would count clicks rather
+    // than openings and over-count any funnel built on onEvent, while its sibling
+    // hotspot:show is deduplicated for exactly this reason. Closing is also what the marker's
+    // own aria-expanded already promises a screen reader user.
+    if (isOpen) {
+      onClose()
+      return
+    }
     setOpenedHere(true)
     open(hotspot.id)
     onOpen()

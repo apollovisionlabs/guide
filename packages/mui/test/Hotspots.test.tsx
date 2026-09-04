@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -7,8 +7,10 @@ import {
   GuideProvider,
   HotspotProvider,
   createMemoryStorage,
+  useTour,
 } from '@apollovisionlabs/guide-core'
-import type { GuideStorage, Hotspot, Tour } from '@apollovisionlabs/guide-core'
+import type { GuideEvent, GuideStorage, Hotspot, Tour } from '@apollovisionlabs/guide-core'
+import { GuideTour } from '../src/GuideTour'
 import { Hotspots } from '../src/Hotspots'
 
 function createControllableStorage() {
@@ -45,6 +47,62 @@ function Page({ children, ...rest }: { children?: ReactNode } & Record<string, u
   )
 }
 
+function TourStarter({ tourId }: { tourId: string }) {
+  const { start, status } = useTour(tourId)
+  return (
+    <>
+      <button onClick={() => void start()}>start tour</button>
+      <span data-testid="tour-status">{status}</span>
+    </>
+  )
+}
+
+/**
+ * The collision the whole-branch review found in the shipped demo: one element is both the
+ * target of a tour step that advances on a click and the target of a hotspot. The marker is
+ * `position: fixed` over the target's top-right corner, so in a browser
+ * `document.elementFromPoint` at the marker's centre returns the marker, not the target.
+ */
+const collisionTour: Tour = {
+  id: 'demo',
+  steps: [
+    {
+      target: 'filters',
+      title: 'Click it',
+      body: 'This step waits for a click on the real element.',
+      advanceOn: 'click',
+    },
+  ],
+}
+
+const collisionHotspots: Hotspot[] = [
+  { id: 'filters', target: 'filters', title: 'Filters', body: 'Narrow the list.', tourId: 'demo' },
+]
+
+function Collision({
+  onTourEvent,
+  onHotspotEvent,
+  tours = [collisionTour],
+  ...rest
+}: {
+  onTourEvent?: (event: GuideEvent) => void
+  onHotspotEvent?: (event: GuideEvent) => void
+  tours?: Tour[]
+} & Record<string, unknown>) {
+  return (
+    <ThemeProvider theme={testTheme}>
+      <GuideProvider tours={tours} onEvent={onTourEvent} {...rest}>
+        <HotspotProvider hotspots={collisionHotspots} onEvent={onHotspotEvent}>
+          <button data-guide="filters">filters</button>
+          <TourStarter tourId="demo" />
+          <Hotspots />
+          <GuideTour />
+        </HotspotProvider>
+      </GuideProvider>
+    </ThemeProvider>
+  )
+}
+
 describe('Hotspots', () => {
   it('marks an unseen hotspot with a labelled button', async () => {
     render(<Page />)
@@ -64,6 +122,68 @@ describe('Hotspots', () => {
     expect(
       screen.queryByRole('button', { name: /Show what is new/ }),
     ).not.toBeInTheDocument()
+  })
+
+  it('draws no marker and emits no hotspot:show for a target that is present but not rendered', async () => {
+    const onEvent = vi.fn()
+    render(
+      <ThemeProvider theme={testTheme}>
+        <HotspotProvider hotspots={hotspots} onEvent={onEvent}>
+          <button data-guide="filters" style={{ display: 'none' }}>
+            filters
+          </button>
+          <Hotspots />
+        </HotspotProvider>
+      </ThemeProvider>,
+    )
+
+    // The element is in the DOM, so useTargetElement finds it and useElementRect measures it:
+    // an all-zero rect, which is truthy. Drawing on that puts a pulsing dot in the top-left
+    // corner of the viewport pointing at nothing, announces an impression for a marker nobody
+    // saw, and lets a click retire the hotspot before the user ever met the element it
+    // explains.
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(
+      screen.queryByRole('button', { name: /Show what is new/ }),
+    ).not.toBeInTheDocument()
+    expect(onEvent).not.toHaveBeenCalledWith({ type: 'hotspot:show', hotspotId: 'filters' })
+  })
+
+  it('draws the marker again once the target is rendered', async () => {
+    function Toggling() {
+      const [hidden, setHidden] = useState(true)
+      return (
+        <ThemeProvider theme={testTheme}>
+          <HotspotProvider hotspots={hotspots}>
+            <button data-guide="filters" style={hidden ? { display: 'none' } : undefined}>
+              filters
+            </button>
+            <button onClick={() => setHidden(false)}>reveal</button>
+            <Hotspots />
+          </HotspotProvider>
+        </ThemeProvider>
+      )
+    }
+    const user = userEvent.setup()
+    render(<Toggling />)
+    expect(
+      screen.queryByRole('button', { name: /Show what is new/ }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByText('reveal'))
+    // In a browser the element gaining a box is itself what re-measures it, through the
+    // ResizeObserver useElementRect attaches. jsdom's ResizeObserver is a stub that never
+    // fires, so the re-measure is triggered here through the other listener the same hook
+    // installs. What is under test is the gate re-opening once the rect has size, not which
+    // event carried the news.
+    act(() => {
+      window.dispatchEvent(new Event('resize'))
+    })
+    expect(
+      await screen.findByRole('button', { name: 'Show what is new: Filters' }),
+    ).toBeInTheDocument()
   })
 
   it('opens a labelled dialog carrying the body', async () => {
@@ -107,6 +227,30 @@ describe('Hotspots', () => {
     // The provider now reports the hotspot as seen. If the marker unmounted on that, the
     // bubble would have lost its anchor at the moment it opened.
     expect(screen.getByRole('button', { name: /Filters/ })).toBeInTheDocument()
+  })
+
+  it('emits hotspot:open once, and a second click on the marker closes its bubble', async () => {
+    const user = userEvent.setup()
+    const onEvent = vi.fn()
+    render(<Page onEvent={onEvent} />)
+    const marker = await screen.findByRole('button', { name: /Filters/ })
+
+    await user.click(marker)
+    await screen.findByRole('dialog', { name: 'Filters' })
+    expect(
+      onEvent.mock.calls.filter(([event]) => event.type === 'hotspot:open'),
+    ).toHaveLength(1)
+
+    // The marker stays clickable while its own bubble is open, and the bubble is anchored to
+    // it, so a second click is easy to make by accident. Announcing another opening for a
+    // bubble already on screen counts clicks rather than openings, and over-counts any funnel
+    // built on onEvent; the sibling event hotspot:show is deduplicated for exactly this reason.
+    await user.click(marker)
+    expect(
+      onEvent.mock.calls.filter(([event]) => event.type === 'hotspot:open'),
+    ).toHaveLength(1)
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(marker).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('closes on Escape and leaves focus on the marker', async () => {
@@ -290,5 +434,111 @@ describe('Hotspots', () => {
     await waitFor(() =>
       expect(onEvent).toHaveBeenCalledWith({ type: 'tour:start', tourId: 'demo', stepIndex: 0 }),
     )
+  })
+})
+
+describe('Hotspots against a running tour', () => {
+  it('draws no marker over the element a running tour points at, so the tour keeps the click', async () => {
+    const user = userEvent.setup()
+    const onTourEvent = vi.fn()
+    const onHotspotEvent = vi.fn()
+    render(<Collision onTourEvent={onTourEvent} onHotspotEvent={onHotspotEvent} />)
+
+    // Before the tour, the ambient hint is exactly where it belongs.
+    expect(
+      await screen.findByRole('button', { name: 'Show what is new: Filters' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByText('start tour'))
+    await screen.findByRole('dialog', { name: 'Click it' })
+
+    // The marker sits on the step's own target. While the tour owns the screen it must not.
+    expect(
+      screen.queryByRole('button', { name: /Show what is new/ }),
+    ).not.toBeInTheDocument()
+
+    // And the click the step is waiting for reaches the step rather than the bubble.
+    await user.click(screen.getByRole('button', { name: 'filters' }))
+    await waitFor(() =>
+      expect(onTourEvent).toHaveBeenCalledWith({ type: 'tour:complete', tourId: 'demo' }),
+    )
+    expect(onHotspotEvent).not.toHaveBeenCalledWith({
+      type: 'hotspot:open',
+      hotspotId: 'filters',
+    })
+  })
+
+  it('draws no marker while the tour is paused waiting for a target', async () => {
+    const user = userEvent.setup()
+    const pausingTour: Tour = {
+      id: 'demo',
+      steps: [{ target: 'nowhere', title: 'Waiting', body: 'The target is not here.' }],
+    }
+    render(<Collision tours={[pausingTour]} targetTimeoutMs={10} />)
+
+    expect(
+      await screen.findByRole('button', { name: 'Show what is new: Filters' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByText('start tour'))
+    await waitFor(() =>
+      expect(screen.getByTestId('tour-status')).toHaveTextContent('paused'),
+    )
+
+    // A paused tour still owns the screen: it is waiting, not finished.
+    expect(
+      screen.queryByRole('button', { name: /Show what is new/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('leaves focus on a real element after a tour started from the bubble ends', async () => {
+    const user = userEvent.setup()
+    render(<Collision />)
+
+    await user.click(await screen.findByRole('button', { name: /Show what is new: Filters/ }))
+    await screen.findByRole('dialog', { name: 'Filters' })
+    await user.click(screen.getByRole('button', { name: 'Show me' }))
+    await screen.findByRole('dialog', { name: 'Click it' })
+
+    await user.keyboard('{Escape}')
+    await waitFor(() =>
+      expect(screen.getByTestId('tour-status')).toHaveTextContent('idle'),
+    )
+
+    // Both restore targets are detached by now: GuideProvider captured the "Show me" button,
+    // the bubble's focus trap captured the marker, and the tour unmounted both. Landing on
+    // document.body means no focus ring, nothing announced, and the next Tab restarting at the
+    // top of the page.
+    await waitFor(() => expect(document.activeElement).not.toBe(document.body))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'filters' }))
+  })
+
+  it('brings the markers back once the tour is over', async () => {
+    const user = userEvent.setup()
+    render(<Collision />)
+
+    await user.click(screen.getByText('start tour'))
+    await screen.findByRole('dialog', { name: 'Click it' })
+    expect(
+      screen.queryByRole('button', { name: /Show what is new/ }),
+    ).not.toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    await waitFor(() =>
+      expect(screen.getByTestId('tour-status')).toHaveTextContent('idle'),
+    )
+
+    // Suppression during a tour is deference, not retirement: the hotspot was never opened,
+    // so it still has something to say.
+    expect(
+      await screen.findByRole('button', { name: 'Show what is new: Filters' }),
+    ).toBeInTheDocument()
+  })
+
+  it('still works with no GuideProvider anywhere in the tree', async () => {
+    render(<Page />)
+    expect(
+      await screen.findByRole('button', { name: 'Show what is new: Filters' }),
+    ).toBeInTheDocument()
   })
 })

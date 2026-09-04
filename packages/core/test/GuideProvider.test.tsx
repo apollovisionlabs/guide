@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ComponentProps } from 'react'
 import { GuideProvider } from '../src/GuideProvider'
@@ -454,6 +454,89 @@ describe('GuideProvider', () => {
 
     await user.click(screen.getByText('stop'))
     await waitFor(() => expect(origin).toHaveFocus())
+  })
+
+  describe('when the control that started the tour is gone by the time it ends', () => {
+    // A hotspot bubble is the real case: the "Show me" button GuideProvider captures and the
+    // marker the bubble's focus trap captures both unmount when the tour starts, so both
+    // restore targets are detached and focus is left on document.body.
+    function VanishingStarter() {
+      const { start, status } = useTour('demo')
+      if (status !== 'idle') return null
+      return <button onClick={() => void start()}>start</button>
+    }
+
+    function VanishingHarness() {
+      return (
+        <GuideProvider tours={[tour]}>
+          <button data-guide="one">one</button>
+          <button data-guide="two">two</button>
+          <button>somewhere else</button>
+          <VanishingStarter />
+          <StepReadout />
+        </GuideProvider>
+      )
+    }
+
+    it('lands focus on the element the tour last pointed at, rather than on the body', async () => {
+      const user = userEvent.setup()
+      render(<VanishingHarness />)
+      await user.click(screen.getByText('start'))
+      await screen.findByText('First')
+      expect(screen.queryByText('start')).not.toBeInTheDocument()
+
+      // No popover here, so nothing has moved focus: this is the stranded state itself.
+      act(() => (document.activeElement as HTMLElement | null)?.blur())
+      expect(document.activeElement).toBe(document.body)
+
+      // fireEvent rather than userEvent: a real pointer click focuses the button it lands on,
+      // which would hide the stranded state this test is about.
+      fireEvent.click(screen.getByText('stop'))
+      await waitFor(() => expect(screen.getByText('one')).toHaveFocus())
+    })
+
+    it('leaves focus alone when something else already holds it', async () => {
+      const user = userEvent.setup()
+      render(<VanishingHarness />)
+      await user.click(screen.getByText('start'))
+      await screen.findByText('First')
+
+      const elsewhere = screen.getByText('somewhere else')
+      act(() => elsewhere.focus())
+
+      fireEvent.click(screen.getByText('stop'))
+      await screen.findByText('no step')
+      // The user put focus here deliberately. Pulling it onto the step's target would be the
+      // ChecklistLauncher mistake from the other side: not stranding and not stealing are both
+      // requirements.
+      expect(elsewhere).toHaveFocus()
+    })
+
+    it('makes an unfocusable target focusable only for as long as it holds focus', async () => {
+      const user = userEvent.setup()
+      const divTour: Tour = { id: 'demo', steps: [{ target: 'plain', title: 'First' }] }
+      render(
+        <GuideProvider tours={[divTour]}>
+          <div data-guide="plain">plain</div>
+          <button>somewhere else</button>
+          <VanishingStarter />
+          <StepReadout />
+        </GuideProvider>,
+      )
+      await user.click(screen.getByText('start'))
+      await screen.findByText('First')
+      act(() => (document.activeElement as HTMLElement | null)?.blur())
+
+      fireEvent.click(screen.getByText('stop'))
+      const plain = screen.getByText('plain')
+      await waitFor(() => expect(plain).toHaveFocus())
+      // A tabindex left behind would put ordinary application markup into a state the host
+      // never asked for; -1 keeps it out of the tab order meanwhile.
+      expect(plain).toHaveAttribute('tabindex', '-1')
+
+      act(() => screen.getByText('somewhere else').focus())
+      await waitFor(() => expect(plain).not.toHaveAttribute('tabindex'))
+    })
   })
 
   it('starts anyway when storage fails on read', async () => {
