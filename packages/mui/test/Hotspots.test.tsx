@@ -8,8 +8,22 @@ import {
   HotspotProvider,
   createMemoryStorage,
 } from '@apollovisionlabs/guide-core'
-import type { Hotspot, Tour } from '@apollovisionlabs/guide-core'
+import type { GuideStorage, Hotspot, Tour } from '@apollovisionlabs/guide-core'
 import { Hotspots } from '../src/Hotspots'
+
+function createControllableStorage() {
+  let resolveRead!: (value: unknown) => void
+  let rejectRead!: (reason?: unknown) => void
+  const pending = new Promise<unknown>((resolve, reject) => {
+    resolveRead = resolve
+    rejectRead = reject
+  })
+  const storage: GuideStorage = {
+    read: () => pending as Promise<never>,
+    write: async () => {},
+  }
+  return { storage, resolveRead, rejectRead }
+}
 
 const testTheme = createTheme({
   components: { MuiButtonBase: { defaultProps: { disableRipple: true } } },
@@ -175,35 +189,68 @@ describe('Hotspots', () => {
     expect(document.activeElement).not.toBe(marker)
   })
 
-  it('emits no hotspot:show for a hotspot that is already seen', async () => {
+  it('renders no marker and emits no hotspot:show while a hotspot already seen is still restoring', async () => {
     const onEvent = vi.fn()
-    const storage = createMemoryStorage({ 'hotspots:seen': { seen: ['filters'] } })
+    const { storage, resolveRead } = createControllableStorage()
 
-    render(
-      <ThemeProvider theme={testTheme}>
-        <HotspotProvider hotspots={hotspots} storage={storage} onEvent={onEvent}>
-          <Hotspots />
-        </HotspotProvider>
-      </ThemeProvider>,
-    )
+    render(<Page storage={storage} onEvent={onEvent} />)
 
-    // The target is attached only after the stored "seen" state has had time to land, so the
-    // marker's very first render never coincides with a stale "unseen" value. Coincide the two
-    // and the marker would legitimately, if pointlessly, draw and announce itself once before
-    // catching up: a timing artefact unrelated to what this test is checking.
+    // The read is deliberately never resolved yet: this is the race itself, asserted rather
+    // than hoped past. Before the restore lands, the hotspot is indistinguishable from a
+    // genuinely unseen one, and drawing the marker or announcing it here would be exactly the
+    // spurious flash and spurious event this fix exists to prevent.
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 20))
+      await Promise.resolve()
+      await Promise.resolve()
     })
-    const target = document.createElement('button')
-    target.setAttribute('data-guide', 'filters')
-    document.body.appendChild(target)
-
-    await waitFor(() =>
-      expect(
-        screen.queryByRole('button', { name: /Show what is new/ }),
-      ).not.toBeInTheDocument(),
-    )
+    expect(
+      screen.queryByRole('button', { name: /Show what is new/ }),
+    ).not.toBeInTheDocument()
     expect(onEvent).not.toHaveBeenCalledWith({ type: 'hotspot:show', hotspotId: 'filters' })
+
+    // Now the read settles: the hotspot was already seen all along.
+    await act(async () => {
+      resolveRead({ seen: ['filters'] })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(
+      screen.queryByRole('button', { name: /Show what is new/ }),
+    ).not.toBeInTheDocument()
+    expect(onEvent).not.toHaveBeenCalledWith({ type: 'hotspot:show', hotspotId: 'filters' })
+  })
+
+  it('renders the marker and emits hotspot:show immediately with no storage at all', async () => {
+    const onEvent = vi.fn()
+    render(<Page onEvent={onEvent} />)
+
+    // No storage means nothing to wait for: this must not block on a restore that was never
+    // going to happen.
+    expect(
+      await screen.findByRole('button', { name: 'Show what is new: Filters' }),
+    ).toBeInTheDocument()
+    await waitFor(() =>
+      expect(onEvent).toHaveBeenCalledWith({ type: 'hotspot:show', hotspotId: 'filters' }),
+    )
+  })
+
+  it('renders the marker once a storage read rejects, rather than hiding it forever', async () => {
+    const { storage, rejectRead } = createControllableStorage()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    render(<Page storage={storage} />)
+
+    await act(async () => {
+      rejectRead(new Error('storage unavailable'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(
+      await screen.findByRole('button', { name: 'Show what is new: Filters' }),
+    ).toBeInTheDocument()
+    warn.mockRestore()
   })
 
   it('describes the bubble through aria-describedby, distinct from its accessible name', async () => {

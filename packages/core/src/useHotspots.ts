@@ -12,6 +12,12 @@ export interface UseHotspotsResult {
    * one too; filtering is one line at the call site.
    */
   hotspots: ResolvedHotspot[]
+  /**
+   * Whether the initial restore from storage has settled. A renderer should wait for this
+   * before drawing any marker, or a hotspot already seen in storage can flash on screen once
+   * before the restore lands.
+   */
+  restored: boolean
   open: (hotspotId: string) => void
   startTour: (hotspotId: string) => void
   reset: () => void
@@ -23,7 +29,7 @@ export function useHotspots(): UseHotspotsResult {
   if (!context)
     throw new Error('[guide] useHotspots must be used inside a HotspotProvider')
 
-  const { seen, translate, open, startTour, reset, notifyShown } = context
+  const { seen, translate, restored, open, startTour, reset, notifyShown } = context
 
   const hotspots = useMemo<ResolvedHotspot[]>(
     () =>
@@ -40,7 +46,7 @@ export function useHotspots(): UseHotspotsResult {
   )
 
   return useMemo(
-    () => ({ hotspots, open, startTour, reset, notifyShown }),
-    [hotspots, open, startTour, reset, notifyShown],
+    () => ({ hotspots, restored, open, startTour, reset, notifyShown }),
+    [hotspots, restored, open, startTour, reset, notifyShown],
   )
 }

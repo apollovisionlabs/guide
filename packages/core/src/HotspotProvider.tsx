@@ -20,6 +20,12 @@ export interface HotspotContextValue {
   hotspots: Hotspot[]
   seen: string[]
   translate?: Translate
+  /**
+   * Whether the initial restore from storage has settled: true immediately when no `storage`
+   * prop was given (there is nothing to wait for), and true once the read resolves or
+   * rejects, so a renderer can wait for it without a broken backend hiding hotspots forever.
+   */
+  restored: boolean
   open: (hotspotId: string) => void
   startTour: (hotspotId: string) => void
   reset: () => void
@@ -57,6 +63,10 @@ export function HotspotProvider({
   }, [hotspots])
 
   const [seen, setSeen] = useState<string[]>([])
+
+  // No storage means nothing to wait for. With storage, this flips once the read settles,
+  // one way or the other: see the restore effect below.
+  const [restored, setRestored] = useState(() => !storage)
 
   // Synchronous mirror of `seen`, for the same reason ChecklistProvider keeps one (see
   // progressRef there): two calls in a single tick would otherwise both compute their next
@@ -103,14 +113,19 @@ export function HotspotProvider({
         stored = await storage.read<unknown>(STORAGE_KEY)
       } catch (error) {
         warnStorageFailure(error)
+        // A broken read must degrade to showing hotspots, not hiding them forever.
+        if (!cancelled) setRestored(true)
         return
       }
-      if (cancelled || !isHotspotsProgress(stored)) return
-      const merged = seenRef.current.concat(
-        stored.seen.filter((id) => !seenRef.current.includes(id)),
-      )
-      seenRef.current = merged
-      setSeen(merged)
+      if (cancelled) return
+      if (isHotspotsProgress(stored)) {
+        const merged = seenRef.current.concat(
+          stored.seen.filter((id) => !seenRef.current.includes(id)),
+        )
+        seenRef.current = merged
+        setSeen(merged)
+      }
+      setRestored(true)
     })()
     return () => {
       cancelled = true
@@ -183,8 +198,8 @@ export function HotspotProvider({
   )
 
   const value = useMemo<HotspotContextValue>(
-    () => ({ hotspots, seen, translate, open, startTour, reset, notifyShown }),
-    [hotspots, seen, translate, open, startTour, reset, notifyShown],
+    () => ({ hotspots, seen, translate, restored, open, startTour, reset, notifyShown }),
+    [hotspots, seen, translate, restored, open, startTour, reset, notifyShown],
   )
 
   return <HotspotContext.Provider value={value}>{children}</HotspotContext.Provider>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useId, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
@@ -45,10 +45,17 @@ export interface HotspotsProps {
 }
 
 export function Hotspots({ labels, placement = 'bottom', zIndex }: HotspotsProps = {}) {
-  const { hotspots } = useHotspots()
+  const { hotspots, restored } = useHotspots()
   const [openId, setOpenId] = useState<string | null>(null)
 
   const text = { ...DEFAULT_LABELS, ...labels }
+
+  // Nothing is drawn until the initial restore from storage has settled. Without this, a
+  // hotspot already marked seen would still get a marker mounted (and its notifyShown effect
+  // run) against the stale, pre-restore "unseen" state: a spurious flash on screen and a
+  // spurious hotspot:show, the very thing the feature promises never happens again once a
+  // hotspot has been opened.
+  if (!restored) return null
 
   return (
     <>
@@ -105,6 +112,18 @@ function HotspotMarker({
   // marker, never falls through to document.body.
   const [openedHere, setOpenedHere] = useState(false)
 
+  // Deferred focus recovery/cleanup, stored so a component that unmounts mid-flight (the
+  // bubble closes and the marker itself goes away in the same beat as the outside click that
+  // triggered this) does not leave a stray timer to fire against a gone component.
+  const outsideClickTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => {
+    return () => {
+      clearTimeout(outsideClickTimeoutRef.current)
+      clearTimeout(blurTimeoutRef.current)
+    }
+  }, [])
+
   useFocusTrap(bubble, isOpen)
 
   // Gated on the marker actually being drawn, not merely on the target being measurable: a
@@ -146,7 +165,8 @@ function HotspotMarker({
       // and pulling it back would be focus theft), so the recovery only fires when focus would
       // otherwise have nowhere to land. This also has to run before the marker's own onBlur
       // below decides whether to let the marker go: see the comment there.
-      setTimeout(() => {
+      clearTimeout(outsideClickTimeoutRef.current)
+      outsideClickTimeoutRef.current = setTimeout(() => {
         if (document.activeElement === document.body) marker?.focus()
       })
     }
@@ -182,7 +202,8 @@ function HotspotMarker({
           // check happens, focus is either back on the marker (nothing to do here) or it has
           // genuinely moved to something else (a real tab or click away, which does mean the
           // marker should go).
-          setTimeout(() => {
+          clearTimeout(blurTimeoutRef.current)
+          blurTimeoutRef.current = setTimeout(() => {
             if (document.activeElement !== marker) setOpenedHere(false)
           })
         }}
