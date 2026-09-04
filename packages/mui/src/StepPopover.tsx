@@ -15,6 +15,8 @@ export interface StepPopoverLabels {
   previous: string
   finish: string
   close: string
+  /** Shown in place of the primary button while the step waits for a user action. */
+  awaitingAction: string
 }
 
 const DEFAULT_LABELS: StepPopoverLabels = {
@@ -22,6 +24,7 @@ const DEFAULT_LABELS: StepPopoverLabels = {
   previous: 'Back',
   finish: 'Finish',
   close: 'Close',
+  awaitingAction: 'Click the highlighted element to continue.',
 }
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -45,6 +48,8 @@ export interface StepPopoverProps {
   describeElement?: HTMLElement | null
   /** A non-modal step lets the user reach the page. Defaults to true. */
   modal?: boolean
+  /** The step advances on a user action, so the popover offers no way around it. */
+  awaitsAction?: boolean
   labels?: Partial<StepPopoverLabels>
   onNext: () => void
   onPrevious: () => void
@@ -64,6 +69,7 @@ export function StepPopover({
   zIndex,
   describeElement,
   modal = true,
+  awaitsAction = false,
   labels,
   onNext,
   onPrevious,
@@ -87,13 +93,15 @@ export function StepPopover({
         onStop()
       } else if (event.key === 'ArrowRight') {
         event.preventDefault()
-        onNext()
+        // A step that waits for an action must not be advanced from the keyboard either:
+        // the arrow would be a way around the very thing the step is asking for.
+        if (!awaitsAction) onNext()
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault()
         if (!isFirst) onPrevious()
       }
     },
-    [onStop, onNext, onPrevious, isFirst],
+    [onStop, onNext, onPrevious, isFirst, awaitsAction],
   )
 
   useEffect(() => {
@@ -153,9 +161,15 @@ export function StepPopover({
               {text.previous}
             </Button>
           )}
-          <Button size="small" variant="contained" onClick={onNext}>
-            {isLast ? text.finish : text.next}
-          </Button>
+          {awaitsAction ? (
+            <Typography variant="caption" color="text.secondary">
+              {text.awaitingAction}
+            </Typography>
+          ) : (
+            <Button size="small" variant="contained" onClick={onNext}>
+              {isLast ? text.finish : text.next}
+            </Button>
+          )}
         </Box>
       </Paper>
     </Popper>

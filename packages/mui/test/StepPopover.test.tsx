@@ -178,3 +178,42 @@ describe('StepPopover', () => {
     expect(screen.getByRole('dialog')).toHaveFocus()
   })
 })
+
+describe('a step awaiting an action', () => {
+  it('offers no button that would skip the action', () => {
+    setup({ awaitsAction: true })
+    expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Finish' })).not.toBeInTheDocument()
+  })
+
+  it('says what the user is expected to do', () => {
+    setup({ awaitsAction: true })
+    expect(
+      screen.getByText('Click the highlighted element to continue.'),
+    ).toBeInTheDocument()
+  })
+
+  it('takes that sentence from the labels', () => {
+    setup({ awaitsAction: true, labels: { awaitingAction: 'Cliquez pour continuer.' } })
+    expect(screen.getByText('Cliquez pour continuer.')).toBeInTheDocument()
+  })
+
+  it('ignores ArrowRight, which would be a hidden way around', async () => {
+    const user = userEvent.setup()
+    const props = setup({ awaitsAction: true })
+    await user.keyboard('{ArrowRight}')
+    expect(props.onNext).not.toHaveBeenCalled()
+  })
+
+  it('still stops on Escape, so the user is never trapped', async () => {
+    const user = userEvent.setup()
+    const props = setup({ awaitsAction: true })
+    await user.keyboard('{Escape}')
+    expect(props.onStop).toHaveBeenCalled()
+  })
+
+  it('still offers Back', () => {
+    setup({ awaitsAction: true, isFirst: false })
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
+  })
+})

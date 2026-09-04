@@ -111,4 +111,30 @@ describe('GuideTour', () => {
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('idle'))
   })
+
+  it('renders a step that advances on a click without a Next button', async () => {
+    const user = userEvent.setup()
+    const clickTour: Tour = {
+      id: 'click-demo',
+      steps: [{ target: 'one', title: 'First', body: 'Body one', advanceOn: 'click' }],
+    }
+
+    function ClickStarter() {
+      const { start } = useTour('click-demo')
+      return <button onClick={() => void start()}>start-click</button>
+    }
+
+    renderTour(
+      <GuideProvider tours={[clickTour]}>
+        <button data-guide="one">one</button>
+        <ClickStarter />
+        <GuideTour />
+      </GuideProvider>,
+    )
+
+    await user.click(screen.getByText('start-click'))
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('guide-spotlight')).toHaveStyle({ pointerEvents: 'none' })
+  })
 })
