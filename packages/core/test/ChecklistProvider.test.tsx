@@ -211,6 +211,85 @@ describe('ChecklistProvider', () => {
     expect(screen.getByText('a:not-restored')).toBeInTheDocument()
   })
 
+  // Committed safety net for two-checklist merge composition. Round 2 made every checklist's
+  // restore read run concurrently, each one merging into progressRef.current independently, and
+  // a real user action can land between two such merges. This is the case that discriminates
+  // hardest: A's read resolves, then the user ticks an item on B by hand (going through
+  // applyProgress, not the restore merge), then B's own read resolves last, carrying a
+  // different completion for B. A's stored completion, B's live tick, and B's stored completion
+  // must all three still be standing at the end; a restore merge that read a stale render-time
+  // `progress` closure instead of the always-current `progressRef.current` would drop the
+  // user's tick under B's later merge.
+  it('composes correctly when two checklists restore concurrently and the user acts in between', async () => {
+    const checklistA: Checklist = { id: 'a', items: [{ id: 'x', title: 'X' }] }
+    const checklistB: Checklist = {
+      id: 'b',
+      items: [
+        { id: 'y', title: 'Y' },
+        { id: 'z', title: 'Z' },
+      ],
+    }
+
+    let resolveA!: (value: unknown) => void
+    let resolveB!: (value: unknown) => void
+    const storage: GuideStorage = {
+      read: (key: string) =>
+        new Promise<unknown>((resolve) => {
+          if (key === 'checklist:a') resolveA = resolve
+          else resolveB = resolve
+        }) as Promise<never>,
+      write: async () => {},
+    }
+
+    function TwoChecklistReadout() {
+      const a = useChecklist('a')
+      const b = useChecklist('b')
+      return (
+        <div>
+          <p>
+            {`a:${a.items.map((item) => `${item.id}:${item.completed ? 'done' : 'todo'}`).join(',')}`}
+          </p>
+          <p>
+            {`b:${b.items.map((item) => `${item.id}:${item.completed ? 'done' : 'todo'}`).join(',')}`}
+          </p>
+          <button onClick={() => b.toggle('y')}>toggle-b-y</button>
+        </div>
+      )
+    }
+
+    const user = userEvent.setup()
+    render(
+      <ChecklistProvider checklists={[checklistA, checklistB]} storage={storage}>
+        <TwoChecklistReadout />
+      </ChecklistProvider>,
+    )
+
+    // A's read resolves first, with a stored completion for its own item.
+    await act(async () => {
+      resolveA({ completed: ['x'], dismissed: false })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(await screen.findByText('a:x:done')).toBeInTheDocument()
+
+    // Between A's resolution and B's, the user ticks an item on B by hand: B's read is still
+    // in flight at this point.
+    await user.click(screen.getByText('toggle-b-y'))
+    expect(await screen.findByText('b:y:done,z:todo')).toBeInTheDocument()
+
+    // B's read lands last, carrying a stored completion for a different item on B. It must
+    // merge with the user's live tick rather than replacing it, and must leave A's
+    // already-merged state alone.
+    await act(async () => {
+      resolveB({ completed: ['z'], dismissed: false })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(await screen.findByText('b:y:done,z:done')).toBeInTheDocument()
+    expect(screen.getByText('a:x:done')).toBeInTheDocument()
+  })
+
   it('ignores a stored value that is not checklist progress', async () => {
     // The fixture below carries no `dismissed` field and a string `completed`, so it only
     // survives if isChecklistProgress is actually applied. A guard that accepted it would
