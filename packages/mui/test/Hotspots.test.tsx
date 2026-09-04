@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import {
@@ -128,6 +128,90 @@ describe('Hotspots', () => {
     expect(
       await screen.findByRole('button', { name: 'Nouveau : Filters' }),
     ).toBeInTheDocument()
+  })
+
+  it('closing on an outside click that lands nowhere focusable returns focus to the marker', async () => {
+    const user = userEvent.setup()
+    render(
+      <Page>
+        <div data-testid="empty-area">nothing focusable here</div>
+      </Page>,
+    )
+    const marker = await screen.findByRole('button', { name: /Filters/ })
+    await user.click(marker)
+    await screen.findByRole('dialog', { name: 'Filters' })
+
+    await user.click(screen.getByTestId('empty-area'))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    // A plain div cannot itself hold focus, so without an explicit recovery the browser's
+    // own blur-on-mousedown-outside would strand focus on document.body.
+    await waitFor(() => expect(document.activeElement).toBe(marker))
+  })
+
+  it('closing on an outside click that lands on a real control leaves focus there', async () => {
+    const user = userEvent.setup()
+    render(
+      <Page>
+        <button type="button">elsewhere</button>
+      </Page>,
+    )
+    const marker = await screen.findByRole('button', { name: /Filters/ })
+    await user.click(marker)
+    await screen.findByRole('dialog', { name: 'Filters' })
+
+    const elsewhere = screen.getByRole('button', { name: 'elsewhere' })
+    await user.click(elsewhere)
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    // The click landed on a real control, which already claimed focus. Pulling focus back to
+    // the marker here would be focus theft: the user deliberately clicked somewhere else and
+    // must keep the focus they put there.
+    await waitFor(() => expect(document.activeElement).toBe(elsewhere))
+    expect(document.activeElement).not.toBe(marker)
+  })
+
+  it('emits no hotspot:show for a hotspot that is already seen', async () => {
+    const onEvent = vi.fn()
+    const storage = createMemoryStorage({ 'hotspots:seen': { seen: ['filters'] } })
+
+    render(
+      <ThemeProvider theme={testTheme}>
+        <HotspotProvider hotspots={hotspots} storage={storage} onEvent={onEvent}>
+          <Hotspots />
+        </HotspotProvider>
+      </ThemeProvider>,
+    )
+
+    // The target is attached only after the stored "seen" state has had time to land, so the
+    // marker's very first render never coincides with a stale "unseen" value. Coincide the two
+    // and the marker would legitimately, if pointlessly, draw and announce itself once before
+    // catching up: a timing artefact unrelated to what this test is checking.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    })
+    const target = document.createElement('button')
+    target.setAttribute('data-guide', 'filters')
+    document.body.appendChild(target)
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: /Show what is new/ }),
+      ).not.toBeInTheDocument(),
+    )
+    expect(onEvent).not.toHaveBeenCalledWith({ type: 'hotspot:show', hotspotId: 'filters' })
+  })
+
+  it('describes the bubble through aria-describedby, distinct from its accessible name', async () => {
+    const user = userEvent.setup()
+    render(<Page />)
+    await user.click(await screen.findByRole('button', { name: /Filters/ }))
+    const dialog = await screen.findByRole('dialog', { name: 'Filters' })
+    expect(dialog).toHaveAccessibleDescription('Narrow the list.')
   })
 
   it('starts the named tour from the bubble', async () => {

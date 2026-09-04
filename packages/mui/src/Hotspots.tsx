@@ -137,6 +137,18 @@ function HotspotMarker({
       if (bubble.contains(node)) return
       if (marker?.contains(node)) return
       onClose()
+      // useFocusTrap's cleanup runs synchronously here and calls marker.focus(), but the
+      // browser's own default action for this same mousedown, which blurs whatever is
+      // currently focused when the click lands outside it, has not fired yet: it runs after
+      // this listener returns and wins the race, leaving focus on document.body. Deferring the
+      // check to after the current task lets that blur happen first. A click that landed on a
+      // real, focusable control must be left alone (that control has already claimed focus,
+      // and pulling it back would be focus theft), so the recovery only fires when focus would
+      // otherwise have nowhere to land. This also has to run before the marker's own onBlur
+      // below decides whether to let the marker go: see the comment there.
+      setTimeout(() => {
+        if (document.activeElement === document.body) marker?.focus()
+      })
     }
     document.addEventListener('mousedown', onPointerDown)
     return () => document.removeEventListener('mousedown', onPointerDown)
@@ -161,7 +173,18 @@ function HotspotMarker({
         aria-expanded={isOpen}
         onClick={onMarkerClick}
         onBlur={() => {
-          if (!isOpen) setOpenedHere(false)
+          if (isOpen) return
+          // The outside-click recovery above briefly refocuses the marker while closing, and
+          // the browser's own pending default action can then blur it straight back out
+          // before that recovery has had its chance to run: this handler would otherwise see
+          // that transient blur and let the marker go before the recovery lands. Deferring to
+          // after the current task, same as the recovery, lets it run first: by the time this
+          // check happens, focus is either back on the marker (nothing to do here) or it has
+          // genuinely moved to something else (a real tab or click away, which does mean the
+          // marker should go).
+          setTimeout(() => {
+            if (document.activeElement !== marker) setOpenedHere(false)
+          })
         }}
         sx={{
           position: 'fixed',
