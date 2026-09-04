@@ -1261,9 +1261,13 @@ function HotspotMarker({
 
   useFocusTrap(bubble, isOpen)
 
+  // Gated on the marker actually being drawn, not merely on the target being measurable: a
+  // hotspot already seen renders nothing, and announcing an impression for a marker nobody
+  // saw would make the event a lie.
+  const isDrawn = !!rect && (!hotspot.seen || openedHere)
   useEffect(() => {
-    if (rect) notifyShown(hotspot.id)
-  }, [rect, hotspot.id, notifyShown])
+    if (isDrawn) notifyShown(hotspot.id)
+  }, [isDrawn, hotspot.id, notifyShown])
 
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -1437,14 +1441,14 @@ import type { Hotspot } from '@apollovisionlabs/guide-core'
 
 export const hotspots: Hotspot[] = [
   {
-    id: 'filters',
-    target: 'filters',
-    title: 'Filter your projects',
-    body: 'Narrow the list down to what you are working on right now.',
+    id: 'create',
+    target: 'projects.create',
+    title: 'Start a project',
+    body: 'Everything else in here hangs off a project.',
   },
   {
     id: 'share',
-    target: 'share',
+    target: 'project.share',
     title: 'Share a project',
     body: 'Send a link to anyone on your team.',
     tourId: 'product',
@@ -1452,7 +1456,8 @@ export const hotspots: Hotspot[] = [
 ]
 ```
 
-Use the tour id the demo actually declares. Add a `data-guide="filters"` element to the projects page if none exists.
+These are the targets the demo already carries, `projects.create` on the projects page and
+`project.share` on the detail page, and `product` is its only tour. Do not invent new ones.
 
 - [ ] **Step 3: Wire the provider and the renderer**
 
@@ -1473,18 +1478,18 @@ test.beforeEach(async ({ page }) => {
 
 test('a hotspot explains one element and then stays gone', async ({ page }) => {
   await page.goto('/projects')
-  const marker = page.getByRole('button', { name: /Filter your projects/ })
+  const marker = page.getByRole('button', { name: /Start a project/ })
   await expect(marker).toBeVisible()
 
   await marker.click()
-  const bubble = page.getByRole('dialog', { name: 'Filter your projects' })
-  await expect(bubble).toContainText('Narrow the list down')
+  const bubble = page.getByRole('dialog', { name: 'Start a project' })
+  await expect(bubble).toContainText('Everything else in here hangs off')
 
   await page.keyboard.press('Escape')
   await expect(bubble).toBeHidden()
 
   await page.reload()
-  await expect(page.getByRole('button', { name: /Filter your projects/ })).toBeHidden()
+  await expect(page.getByRole('button', { name: /Start a project/ })).toBeHidden()
 })
 ```
 
@@ -1508,7 +1513,7 @@ git commit -m "test(e2e): a step waiting on a click, and a hotspot seen once"
 
 **Files:**
 - Modify: `README.md`
-- Modify: `packages/core/README.md` and `packages/mui/README.md` if they carry the same tables
+- Modify: `packages/core/README.md` and `packages/mui/README.md`. All three READMEs overlap and each ships to a different audience, the repository and the two npm pages. Documenting only the root one leaves both published pages silent.
 - Modify: `docs/adoption.md`
 - Create: `docs/adr/0017-advancing-on-an-action-implies-an-interactive-step.md`
 - Modify: `docs/adr/index.md`
