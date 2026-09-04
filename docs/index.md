@@ -14,7 +14,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 | Document | What it covers |
 | --- | --- |
-| [README.md](../README.md) | The public API reference, covering every prop, event and option a consumer uses. Copied verbatim into each package and published to npm; the two copies carry no frontmatter, per [ADR 0010](adr/0010-shipped-package-readmes-exempt-from-frontmatter.md). |
+| [README.md](../README.md) | The public API reference, covering every prop, event and option a consumer uses. Each package also carries its own README, published to npm and written for that package's readers rather than copied from this one; none of the three carries frontmatter, per [ADR 0010](adr/0010-shipped-package-readmes-exempt-from-frontmatter.md), whose claim that the copies stay byte-identical stopped being true once they diverged. |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Package layering, target resolution, cross-page navigation, spotlight geometry, accessibility, known seams. |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Prerequisites, commands, branch and commit conventions, language policy, licence discipline. |
 | [INFRA.md](../INFRA.md) | Build, continuous integration and its ordering, tests, and the exact state of the release path. |
