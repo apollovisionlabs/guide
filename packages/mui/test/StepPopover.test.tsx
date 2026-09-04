@@ -216,4 +216,37 @@ describe('a step awaiting an action', () => {
     setup({ awaitsAction: true, isFirst: false })
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
   })
+
+  it('keeps ignoring ArrowRight after awaitsAction turns on without remounting', async () => {
+    const user = userEvent.setup()
+    const anchor = document.createElement('button')
+    document.body.appendChild(anchor)
+    const onNext = vi.fn()
+
+    const baseProps = {
+      anchorEl: anchor,
+      open: true,
+      title: 'Title',
+      body: 'Body',
+      stepIndex: 0,
+      stepCount: 1,
+      isFirst: true,
+      isLast: true,
+      onNext,
+      onPrevious: () => {},
+      onStop: () => {},
+    }
+
+    const view = renderPopover(<StepPopover {...baseProps} awaitsAction={false} />)
+    // Same component instance, only the prop changes: this is the only way a stale closure
+    // captured in the onKeyDown useCallback (missing awaitsAction from its deps) would bite.
+    view.rerender(
+      <ThemeProvider theme={testTheme}>
+        <StepPopover {...baseProps} awaitsAction={true} />
+      </ThemeProvider>,
+    )
+
+    await user.keyboard('{ArrowRight}')
+    expect(onNext).not.toHaveBeenCalled()
+  })
 })

@@ -114,9 +114,15 @@ describe('GuideTour', () => {
 
   it('renders a step that advances on a click without a Next button', async () => {
     const user = userEvent.setup()
+    // Two steps, so the click step is not the last one: if it rendered a primary button at all,
+    // it would genuinely be labelled "Next", not "Finish" as a single-step tour would force it to
+    // be regardless of whether awaitsAction is honoured.
     const clickTour: Tour = {
       id: 'click-demo',
-      steps: [{ target: 'one', title: 'First', body: 'Body one', advanceOn: 'click' }],
+      steps: [
+        { target: 'one', title: 'First', body: 'Body one', advanceOn: 'click' },
+        { target: 'two', title: 'Second', body: 'Body two' },
+      ],
     }
 
     function ClickStarter() {
@@ -127,6 +133,7 @@ describe('GuideTour', () => {
     renderTour(
       <GuideProvider tours={[clickTour]}>
         <button data-guide="one">one</button>
+        <button data-guide="two">two</button>
         <ClickStarter />
         <GuideTour />
       </GuideProvider>,
