@@ -187,7 +187,7 @@ lifecycle events, as a discriminated union of `GuideEvent`:
 | `checklist:complete` | `{ checklistId }` | The last incomplete item in a checklist is completed. Fires on every transition into the complete state, so unticking an item and reticking it emits a second time. Deduplicate downstream if you count completions. |
 | `checklist:dismiss` | `{ checklistId }` | `dismiss()` is called. |
 | `hotspot:show` | `{ hotspotId }` | A hotspot's marker is actually drawn on screen. Emitted once per hotspot per mount. |
-| `hotspot:open` | `{ hotspotId }` | The hotspot's bubble is opened, which also marks it seen. |
+| `hotspot:open` | `{ hotspotId }` | The hotspot's bubble is opened, which also marks it seen. Not emitted again for a bubble that is already open. |
 
 ## Accessibility
 
@@ -238,9 +238,16 @@ asking for; `Escape` and `ArrowLeft` still work.
 
 The click listener is attached, in the bubble phase, to the element resolved when the step
 opened, without `preventDefault` or `stopPropagation`, so your own click handler on the target
-still runs. If your application replaces that DOM node afterward, the step stops advancing: this
-follows from how every step resolves its target (see "Missing targets"), not from anything
-specific to `advanceOn`.
+still runs.
+
+If your application replaces that DOM node afterward, for instance by re-rendering a list, the
+listener goes with it and the step stops advancing. Nothing notices: the target was found once,
+so the timeout was already cleared, no `target:missing` is emitted and no `wait`, `skip` or
+`error` policy runs. The tour simply sits on that step. The consequence is specific to
+`advanceOn`, even though the cause is not: an `advanceOn` step offers no primary button and
+ignores `ArrowRight`, so a replaced node leaves the tour with `Escape` as its only exit. If the
+element a step points at can be re-created under it, either give it a stable target that survives
+the re-render or use an ordinary step with a Next button.
 
 ## Checklist
 
@@ -353,8 +360,21 @@ it just sits at its target until opened. `HotspotProvider` nests inside `GuidePr
 way `ChecklistProvider` does, so a hotspot naming a `tourId` can start it:
 
 ```tsx
-import { GuideProvider, HotspotProvider, type Hotspot } from '@apollovisionlabs/guide-core'
+import {
+  GuideProvider,
+  HotspotProvider,
+  type Hotspot,
+  type Tour,
+} from '@apollovisionlabs/guide-core'
 import { GuideTour, Hotspots } from '@apollovisionlabs/guide-mui'
+
+const welcomeTour: Tour = {
+  id: 'welcome',
+  steps: [
+    { target: 'projects.create', title: 'Create a project', body: 'Start here.' },
+    { target: 'project.share', title: 'Share it', body: 'Send a link to your team.' },
+  ],
+}
 
 const hotspots: Hotspot[] = [
   {
@@ -368,15 +388,16 @@ const hotspots: Hotspot[] = [
     target: 'project.share',
     title: 'Share a project',
     body: 'Send a link to anyone on your team.',
+    // Named tours must exist on the GuideProvider above, or starting one warns and does nothing.
     tourId: 'welcome',
   },
 ]
 
 function App() {
   return (
-    <GuideProvider tours={[tour]}>
+    <GuideProvider tours={[welcomeTour]}>
       <HotspotProvider hotspots={hotspots}>
-        <Sidebar />
+        <YourApplication />
         <GuideTour />
         <Hotspots />
       </HotspotProvider>
@@ -430,9 +451,24 @@ title, body, and, when it names a `tourId`, a button that starts that tour.
 
 Default labels: `` { marker: (title) => `Show what is new: ${title}`, startTour: 'Show me', close: 'Close' } ``.
 
+No marker is drawn while a tour is running or paused. A hotspot is an ambient hint and must not
+compete with a guided flow the user is already in: a marker over the element a step points at
+would take the click meant for that step, and one over a non-interactive step would be drawn
+bright and pulsing yet inert behind the spotlight. The markers come back when the tour ends,
+unchanged: this suppresses them, it does not mark them seen. `Hotspots` reads the tour state
+through context and tolerates its absence, so hotspots work with no `GuideProvider` in the tree.
+
 The default `zIndex` sits below `theme.zIndex.modal`, the level a running tour's spotlight uses,
-so a hotspot whose target lives inside a modal dialog is covered by it. Raise `zIndex` on
+so a hotspot whose target lives inside your own modal dialog is covered by it. Raise `zIndex` on
 `Hotspots` to bring the marker above that dialog.
+
+A marker is drawn only for a target that has actual size on screen. An element that is in the DOM
+but not rendered, `display: none` for instance, measures an all-zero rectangle; that draws no
+marker and emits no `hotspot:show`, so a hotspot cannot be retired before the user has seen what
+it explains.
+
+Clicking a marker whose bubble is already open closes the bubble, and emits no second
+`hotspot:open`.
 
 With a `storage` prop configured on `HotspotProvider`, `Hotspots` waits for the initial restore to
 settle (`useHotspots().restored`) before drawing any marker.

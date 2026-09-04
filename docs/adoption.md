@@ -364,9 +364,14 @@ unaffected. See [ADR 0017](adr/0017-advancing-on-an-action-implies-an-interactiv
 `interactive` is derived rather than set alongside `advanceOn`.
 
 The click listener is attached to the element resolved when the step opened. If your application
-replaces that DOM node afterward, for instance by re-rendering a list, the step stops advancing.
-That follows from how every step resolves its target, the same mechanism step 5 above covers; it
-is not specific to `advanceOn`.
+replaces that DOM node afterward, for instance by re-rendering a list, the listener goes with it
+and the step stops advancing. Nothing notices: the target was found once, so the timeout was
+already cleared, no `target:missing` is emitted and none of the missing-target policies from step
+5 runs. The tour simply sits on that step. The cause is not specific to `advanceOn`, but the
+consequence is: this step offers no primary button and ignores `ArrowRight`, so a replaced node
+leaves the user with `Escape` as the only way out. If the element can be re-created under the
+step, either give it a stable target that survives the re-render or use an ordinary step with a
+Next button.
 
 **Worked when**: clicking the highlighted element both performs its real action and moves the tour
 to the next step, with no button offered instead.
@@ -454,9 +459,14 @@ initial read to settle before drawing any marker, so a hotspot already seen does
 screen once before the restore lands.
 
 The full props, `useHotspots`, and the MUI `Hotspots` component are in the README's Hotspots
-section. One stacking note worth knowing before you reach for it: the marker's default `zIndex`
-sits below `theme.zIndex.modal`, so a hotspot whose target lives inside a modal dialog is covered
-by it. Raise `zIndex` on `Hotspots` to bring it out.
+section. Three behaviours are worth knowing before you reach for it. No marker is drawn at all
+while a tour is running or paused, so an ambient hint never competes with, or steals a click
+from, a guided flow the user is already in; the markers come back when the tour ends, and are
+not marked seen by the suppression. A marker is drawn only for a target that has actual size on
+screen, so an element that is present but not rendered produces neither a marker nor a
+`hotspot:show`. And the marker's default `zIndex` sits below `theme.zIndex.modal`, so a hotspot
+whose target lives inside one of your own modal dialogs is covered by it: raise `zIndex` on
+`Hotspots` to bring it out.
 
 **Worked when**: an unseen hotspot shows a marker at its target, opening it shows the bubble and
 marks it seen, and reloading leaves it gone.

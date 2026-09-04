@@ -33,7 +33,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 ## Decisions
 
-[adr/index.md](adr/index.md) lists seventeen records, `0001` to `0017`, plus [adr/template.md](adr/template.md).
+[adr/index.md](adr/index.md) lists eighteen records, `0001` to `0018`, plus [adr/template.md](adr/template.md).
 
 - [0001](adr/0001-headless-core-and-rendering-layer.md) Split a headless core from the rendering layer
 - [0002](adr/0002-logical-targets-via-data-attribute.md) Resolve targets by logical key, never by CSS selector
@@ -52,6 +52,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 - [0015](adr/0015-pack-with-pnpm-publish-with-npm.md) Pack with pnpm, publish with npm
 - [0016](adr/0016-one-storage-contract-for-tours-and-checklists.md) One storage contract for tours and checklists
 - [0017](adr/0017-advancing-on-an-action-implies-an-interactive-step.md) Advancing on an action implies an interactive step
+- [0018](adr/0018-hotspots-defer-to-a-running-tour.md) Hotspots defer to a running tour, and a stranded focus lands on the step's target
 
 ## Plans
 

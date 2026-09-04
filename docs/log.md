@@ -4,6 +4,23 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-04
 
+- Corrected the `advanceOn` target-replacement paragraph in `README.md`, both package READMEs and
+  [adoption.md](adoption.md). The inference it stated was right, the framing around it was wrong
+  twice: it sent the reader to the missing-target policy, but the target was found once so the
+  timeout was already cleared, no `target:missing` is emitted and no `wait`, `skip` or `error`
+  policy runs; and it called the consequence unspecific to `advanceOn`, when such a step has no
+  primary button and ignores `ArrowRight`, so a replaced node leaves `Escape` as the only exit.
+- Documented what `Hotspots` now does at the seam with a running tour: no marker while a tour is
+  running or paused, a marker only for a target with actual size on screen, and no second
+  `hotspot:open` for a bubble already open. Added the last of those to the events table.
+- Made the Hotspots snippet in all three READMEs copyable: it named `tourId: 'welcome'` while
+  passing an undefined `tour` to `GuideProvider` and rendering an undefined `Sidebar`. The tour it
+  names is now defined in the snippet.
+- Recorded [ADR 0018](adr/0018-hotspots-defer-to-a-running-tour.md) and added it to
+  [adr/index.md](adr/index.md) and to the Decisions section of [index.md](index.md).
+- Extended the changeset with the one source-level note on this branch: `StepPopoverLabels` gained
+  a required `awaitingAction`, so an annotated full labels constant stops typechecking. Both
+  packages stay a minor.
 - Documented advancing a step on a click and hotspots, both merged past what
   `docs/superpowers/plans/2026-09-04-guide-actions-and-hotspots.md` described: `useHotspots()`
   returns six members, not five (`restored` was added during implementation), and `Hotspots` takes
