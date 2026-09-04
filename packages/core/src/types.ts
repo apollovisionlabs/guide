@@ -75,10 +75,37 @@ export interface ResolvedChecklistItem {
   href?: string
 }
 
+export interface Hotspot {
+  id: string
+  /** Logical key carried by the data-guide attribute on the element. */
+  target: string
+  title?: string
+  titleKey?: string
+  body?: string
+  bodyKey?: string
+  /** Tour started from the hotspot's bubble. */
+  tourId?: string
+  placement?: Placement
+}
+
+export interface ResolvedHotspot {
+  id: string
+  target: string
+  title: string
+  body: string
+  seen: boolean
+  tourId?: string
+  placement?: Placement
+}
+
+export interface HotspotsProgress {
+  seen: string[]
+}
+
 export interface GuideStorage {
   /**
    * Reads a previously written value. The key is namespaced by the caller,
-   * `tour:<id>` or `checklist:<id>`, so one storage serves both.
+   * `tour:<id>`, `checklist:<id>`, or `hotspots:seen`, so one storage serves them all.
    */
   read<T>(key: string): Promise<T | null>
   write<T>(key: string, value: T): Promise<void>
@@ -93,5 +120,7 @@ export type GuideEvent =
   | { type: 'checklist:item-complete'; checklistId: string; itemId: string }
   | { type: 'checklist:complete'; checklistId: string }
   | { type: 'checklist:dismiss'; checklistId: string }
+  | { type: 'hotspot:show'; hotspotId: string }
+  | { type: 'hotspot:open'; hotspotId: string }
 
 export type Translate = (key: string) => string

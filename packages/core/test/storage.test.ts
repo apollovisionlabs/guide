@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { createMemoryStorage, createBrowserStorage } from '../src/storage'
+import { createMemoryStorage, createBrowserStorage, isHotspotsProgress } from '../src/storage'
 
 describe('createMemoryStorage', () => {
   it('returns null for an unknown tour', async () => {
@@ -52,5 +52,19 @@ describe('createBrowserStorage', () => {
     window.localStorage.setItem('demo:a', 'not json')
     const storage = createBrowserStorage('demo')
     expect(await storage.read('a')).toBeNull()
+  })
+})
+
+describe('isHotspotsProgress', () => {
+  it('accepts a list of seen ids', () => {
+    expect(isHotspotsProgress({ seen: ['a', 'b'] })).toBe(true)
+    expect(isHotspotsProgress({ seen: [] })).toBe(true)
+  })
+
+  it('rejects anything else', () => {
+    expect(isHotspotsProgress(null)).toBe(false)
+    expect(isHotspotsProgress({})).toBe(false)
+    expect(isHotspotsProgress({ seen: 'a' })).toBe(false)
+    expect(isHotspotsProgress({ seen: [1] })).toBe(false)
   })
 })

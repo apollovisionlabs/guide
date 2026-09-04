@@ -1,4 +1,4 @@
-import type { ChecklistProgress, GuideStorage, TourProgress } from './types'
+import type { ChecklistProgress, GuideStorage, HotspotsProgress, TourProgress } from './types'
 
 export function createMemoryStorage(
   initial: Record<string, unknown> = {},
@@ -65,5 +65,18 @@ export function isChecklistProgress(value: unknown): value is ChecklistProgress 
     Array.isArray(candidate.completed) &&
     candidate.completed.every((entry) => typeof entry === 'string') &&
     typeof candidate.dismissed === 'boolean'
+  )
+}
+
+/**
+ * Same defensive posture as the two guards above: a stored hotspot value is never trusted
+ * until its shape is checked.
+ */
+export function isHotspotsProgress(value: unknown): value is HotspotsProgress {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return (
+    Array.isArray(candidate.seen) &&
+    candidate.seen.every((entry) => typeof entry === 'string')
   )
 }
