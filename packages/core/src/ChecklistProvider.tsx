@@ -24,6 +24,13 @@ export interface ChecklistContextValue {
   checklists: Checklist[]
   progress: Record<string, ChecklistProgress>
   translate?: Translate
+  /**
+   * Whether the initial restore from storage has settled: true immediately when no `storage`
+   * prop was given (there is nothing to wait for), and true once every checklist's read has
+   * resolved or rejected, so a renderer can wait for it without a broken backend hiding
+   * checklists forever.
+   */
+  restored: boolean
   activate: (checklistId: string, itemId: string) => void
   toggle: (checklistId: string, itemId: string) => void
   complete: (checklistId: string, itemId: string) => void
@@ -73,6 +80,10 @@ export function ChecklistProvider({
   // consecutive calls compose correctly.
   const progressRef = useRef(progress)
 
+  // No storage means nothing to wait for. With storage, this flips once every checklist's read
+  // has settled, one way or the other: see the restore effect below.
+  const [restored, setRestored] = useState(() => !storage)
+
   const guide = useContext(GuideContext)
 
   const storageWarnedRef = useRef(false)
@@ -118,16 +129,16 @@ export function ChecklistProvider({
     if (!storage) return
     let cancelled = false
     void (async () => {
-      const restored: Record<string, ChecklistProgress> = {}
+      const restoredEntries: Record<string, ChecklistProgress> = {}
       for (const candidate of checklists) {
         try {
           const stored = await storage.read<unknown>(`checklist:${candidate.id}`)
-          if (isChecklistProgress(stored)) restored[candidate.id] = stored
+          if (isChecklistProgress(stored)) restoredEntries[candidate.id] = stored
         } catch (error) {
           warnStorageFailure(error)
         }
       }
-      if (!cancelled && Object.keys(restored).length > 0) {
+      if (!cancelled && Object.keys(restoredEntries).length > 0) {
         // A read that was already in flight must never undo something the user did while it
         // was running. With a server-backed storage the read can take hundreds of
         // milliseconds, and the list is on screen and interactive for all of it.
@@ -146,7 +157,7 @@ export function ChecklistProvider({
         // deliberate clearing ever has to survive the window, it needs to be sequenced against
         // the read rather than merged with it.
         const merged = { ...progressRef.current }
-        for (const [checklistId, stored] of Object.entries(restored)) {
+        for (const [checklistId, stored] of Object.entries(restoredEntries)) {
           const live = merged[checklistId] ?? emptyProgress
           merged[checklistId] = {
             completed: live.completed.concat(
@@ -158,6 +169,7 @@ export function ChecklistProvider({
         progressRef.current = merged
         setProgress(merged)
       }
+      if (!cancelled) setRestored(true)
     })()
     return () => {
       cancelled = true
@@ -341,8 +353,18 @@ export function ChecklistProvider({
   )
 
   const value = useMemo<ChecklistContextValue>(
-    () => ({ checklists, progress, translate, activate, toggle, complete, dismiss, reset }),
-    [checklists, progress, translate, activate, toggle, complete, dismiss, reset],
+    () => ({
+      checklists,
+      progress,
+      translate,
+      restored,
+      activate,
+      toggle,
+      complete,
+      dismiss,
+      reset,
+    }),
+    [checklists, progress, translate, restored, activate, toggle, complete, dismiss, reset],
   )
 
   return <ChecklistContext.Provider value={value}>{children}</ChecklistContext.Provider>

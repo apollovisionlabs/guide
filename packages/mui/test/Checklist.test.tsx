@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import {
@@ -31,6 +31,24 @@ function storageWithCompleted(itemIds: string[]): GuideStorage {
     },
     write: async () => {},
   }
+}
+
+// A storage backed by a real async function resolves before any assertion between render and
+// the next await can run, so it can never distinguish "nothing drawn because restore is
+// pending" from "nothing drawn regardless of storage". Resolving or rejecting this by hand
+// makes the race itself the thing under test, rather than something hoped past.
+function controllableStorage() {
+  let resolveRead!: (value: unknown) => void
+  let rejectRead!: (reason?: unknown) => void
+  const pending = new Promise<unknown>((resolve, reject) => {
+    resolveRead = resolve
+    rejectRead = reject
+  })
+  const storage: GuideStorage = {
+    read: () => pending as Promise<never>,
+    write: async () => {},
+  }
+  return { storage, resolveRead, rejectRead }
 }
 
 function renderChecklist(
@@ -144,6 +162,55 @@ describe('Checklist', () => {
       { storage: storageWithCompleted(['one']) },
     )
     await screen.findByText('progress:1/3')
+  })
+
+  it('renders nothing while a slow restore is in flight, then the real progress once it resolves', async () => {
+    const { storage, resolveRead } = controllableStorage()
+    const { container } = renderChecklist(<Checklist checklistId="demo" />, { storage })
+
+    // The read is deliberately left unresolved: this is the race itself, asserted rather than
+    // hoped past. Before it resolves, storage says one item is complete but the component does
+    // not know that yet; drawing "0 of 3" here, or any row at all, would be exactly the flash
+    // this fix exists to prevent.
+    expect(container).toBeEmptyDOMElement()
+    expect(screen.queryByText(/of 3/)).not.toBeInTheDocument()
+
+    await act(async () => {
+      resolveRead({ completed: ['one'], dismissed: false })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(await screen.findByText('1 of 3')).toBeInTheDocument()
+    expect(
+      screen.getByRole('checkbox', { name: 'Mark First as not complete' }),
+    ).toBeChecked()
+  })
+
+  it('renders immediately with no storage prop at all', () => {
+    renderChecklist(<Checklist checklistId="demo" />)
+    // getByText, not findByText: proves there is nothing to wait for, not merely that it
+    // eventually appears.
+    expect(screen.getByText('First')).toBeInTheDocument()
+    expect(screen.getByText('0 of 3')).toBeInTheDocument()
+  })
+
+  it('renders once a storage read rejects, rather than hiding the checklist forever', async () => {
+    const { storage, rejectRead } = controllableStorage()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { container } = renderChecklist(<Checklist checklistId="demo" />, { storage })
+
+    expect(container).toBeEmptyDOMElement()
+
+    await act(async () => {
+      rejectRead(new Error('storage unavailable'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(await screen.findByText('First')).toBeInTheDocument()
+    expect(screen.getByText('0 of 3')).toBeInTheDocument()
+    warn.mockRestore()
   })
 
   it('passes the item title to the checkbox accessible name labels', async () => {

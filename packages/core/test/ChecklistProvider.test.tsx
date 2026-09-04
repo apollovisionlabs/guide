@@ -31,6 +31,7 @@ function ChecklistReadout() {
     total,
     isComplete,
     dismissed,
+    restored,
     activate,
     toggle,
     complete,
@@ -42,6 +43,7 @@ function ChecklistReadout() {
       <p>{`${completedCount}/${total}`}</p>
       <p>{isComplete ? 'complete' : 'incomplete'}</p>
       <p>{dismissed ? 'dismissed' : 'not-dismissed'}</p>
+      <p>{restored ? 'restored' : 'not-restored'}</p>
       {items.map((item) => (
         <p key={item.id}>{`${item.id}:${item.completed ? 'done' : 'todo'}`}</p>
       ))}
@@ -95,6 +97,66 @@ describe('ChecklistProvider', () => {
     render(<Harness storage={storage} />)
     expect(await screen.findByText('1/3')).toBeInTheDocument()
     expect(screen.getByText('profile:done')).toBeInTheDocument()
+  })
+
+  // A memory storage resolves before any assertion can run, so it can never distinguish
+  // "restored is true because it started true" from "restored is true because the read already
+  // landed". A controllable storage, resolved or rejected by hand, is what makes the flag's
+  // three required states each their own observation rather than a hope that a race is won.
+  function controllableStorage() {
+    let resolveRead!: (value: unknown) => void
+    let rejectRead!: (reason?: unknown) => void
+    const pending = new Promise<unknown>((resolve, reject) => {
+      resolveRead = resolve
+      rejectRead = reject
+    })
+    const storage: GuideStorage = {
+      read: () => pending as Promise<never>,
+      write: async () => {},
+    }
+    return { storage, resolveRead, rejectRead }
+  }
+
+  it('is restored immediately with no storage prop at all', () => {
+    render(<Harness />)
+    expect(screen.getByText('restored')).toBeInTheDocument()
+  })
+
+  it('is not restored while a storage read is still in flight, and becomes restored once it resolves', async () => {
+    const { storage, resolveRead } = controllableStorage()
+    render(<Harness storage={storage} />)
+
+    // The read is deliberately left unresolved: this is the race itself, asserted rather than
+    // hoped past. A provider that started `restored` true regardless of `storage` would pass
+    // this assertion trivially, which is exactly why it has to be checked before the resolve
+    // below, not only after.
+    expect(screen.getByText('not-restored')).toBeInTheDocument()
+    expect(screen.queryByText('restored')).not.toBeInTheDocument()
+
+    await act(async () => {
+      resolveRead({ completed: [], dismissed: false })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(await screen.findByText('restored')).toBeInTheDocument()
+  })
+
+  it('becomes restored once a storage read rejects, rather than staying unsettled forever', async () => {
+    const { storage, rejectRead } = controllableStorage()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    render(<Harness storage={storage} />)
+
+    expect(screen.getByText('not-restored')).toBeInTheDocument()
+
+    await act(async () => {
+      rejectRead(new Error('storage unavailable'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(await screen.findByText('restored')).toBeInTheDocument()
+    warn.mockRestore()
   })
 
   it('ignores a stored value that is not checklist progress', async () => {

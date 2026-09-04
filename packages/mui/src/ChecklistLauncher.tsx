@@ -62,7 +62,7 @@ export function ChecklistLauncher({
   labels,
 }: ChecklistLauncherProps) {
   const text = { ...DEFAULT_LAUNCHER_LABELS, ...labels }
-  const { completedCount, total, dismissed } = useChecklist(checklistId)
+  const { completedCount, total, dismissed, restored } = useChecklist(checklistId)
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
   // Set only when the dismissal happened here, in this session, from inside the popover. A
   // checklist that storage already reports as dismissed never sets it, so a returning user
@@ -75,6 +75,12 @@ export function ChecklistLauncher({
   useEffect(() => {
     if (!dismissed) setDismissedHere(false)
   }, [dismissed])
+
+  // Nothing is drawn until the initial restore from storage has settled. Without this, a
+  // checklist already dismissed, or partly completed, in storage would still get a launcher
+  // mounted against the stale, pre-restore state for one paint: a dismissed launcher flashing
+  // on screen before vanishing, or "0 of 4" jumping to "3 of 4".
+  if (!restored) return null
 
   if (dismissed) {
     // Dismissing from inside the popover unmounts the Fab and the Popover in the same

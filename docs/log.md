@@ -4,6 +4,17 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-04
 
+- Fixed the same restore-race defect in the checklist that `useHotspots` was fixed for
+  (`packages/core/src/ChecklistProvider.tsx`, `packages/core/src/useChecklist.ts`): a checklist
+  rendered its initial empty state, nothing completed and not dismissed, until its async storage
+  read landed. `useChecklist` gains `restored`, true immediately with no `storage` prop and true
+  once every checklist's read has resolved or rejected; `Checklist` and `ChecklistLauncher`
+  (`@apollovisionlabs/guide-mui`) both wait for it before drawing anything. Documented in the
+  `useChecklist` bullet and a new paragraph in the `Checklist` and `ChecklistLauncher` section, in
+  all three READMEs. Added a changeset marking both packages minor. No new ADR: the general rule
+  (settle immediately with no storage, settle on reject as well as resolve, a renderer waits for
+  it) was established as a bug fix for hotspots, not recorded as an architectural decision there,
+  so recording it here as one would be inventing a precedent that does not exist.
 - Corrected [ADR 0018](adr/0018-hotspots-defer-to-a-running-tour.md) where it claimed the
   temporary `tabindex` is always removed on blur. It is now kept only once focus is verified to
   have landed, so the claim holds; the ADR also states what it had omitted, that focus can end up

@@ -11,6 +11,12 @@ export interface UseChecklistResult {
   total: number
   isComplete: boolean
   dismissed: boolean
+  /**
+   * Whether the initial restore from storage has settled. A renderer should wait for this
+   * before drawing anything, or a checklist already dismissed or partly completed in storage
+   * can flash its empty initial state on screen once before the restore lands.
+   */
+  restored: boolean
   activate: (itemId: string) => void
   toggle: (itemId: string) => void
   complete: (itemId: string) => void
@@ -30,6 +36,7 @@ export function useChecklist(checklistId: string): UseChecklistResult {
   const completed = progress?.completed ?? []
   const dismissed = progress?.dismissed ?? false
   const translate = context.translate
+  const restored = context.restored
 
   const items = useMemo<ResolvedChecklistItem[]>(
     () =>
@@ -57,6 +64,7 @@ export function useChecklist(checklistId: string): UseChecklistResult {
       total,
       isComplete,
       dismissed,
+      restored,
       activate: (itemId: string) => activate(checklistId, itemId),
       toggle: (itemId: string) => toggle(checklistId, itemId),
       complete: (itemId: string) => complete(checklistId, itemId),
@@ -69,6 +77,7 @@ export function useChecklist(checklistId: string): UseChecklistResult {
       total,
       isComplete,
       dismissed,
+      restored,
       activate,
       toggle,
       complete,

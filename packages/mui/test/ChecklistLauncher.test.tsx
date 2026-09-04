@@ -48,6 +48,24 @@ function storageWithCompleted(itemIds: string[], dismissed = false): GuideStorag
   }
 }
 
+// A storage backed by a real async function resolves before any assertion between render and
+// the next await can run, so it can never distinguish "nothing drawn because restore is
+// pending" from "nothing drawn regardless of storage". Resolving or rejecting this by hand
+// makes the race itself the thing under test, rather than something hoped past.
+function controllableStorage() {
+  let resolveRead!: (value: unknown) => void
+  let rejectRead!: (reason?: unknown) => void
+  const pending = new Promise<unknown>((resolve, reject) => {
+    resolveRead = resolve
+    rejectRead = reject
+  })
+  const storage: GuideStorage = {
+    read: () => pending as Promise<never>,
+    write: async () => {},
+  }
+  return { storage, resolveRead, rejectRead }
+}
+
 function renderLauncher(
   ui: ReactElement,
   options: {
@@ -142,6 +160,55 @@ describe('ChecklistLauncher', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /3 of 3/ })).toBeInTheDocument(),
     )
+  })
+
+  it('renders nothing while a slow restore is in flight, then stays gone once it reports the checklist dismissed', async () => {
+    const { storage, resolveRead } = controllableStorage()
+    const { container } = renderLauncher(<ChecklistLauncher checklistId="demo" />, { storage })
+
+    // The read is deliberately left unresolved: this is the race itself, asserted rather than
+    // hoped past. Storage already says the checklist was dismissed, but the component does not
+    // know that yet; drawing the Fab here would be exactly the flash this fix exists to
+    // prevent, a launcher for a checklist the user dismissed long ago appearing before
+    // vanishing again.
+    expect(container).toBeEmptyDOMElement()
+    expect(screen.queryByRole('button', { name: /Checklist/ })).not.toBeInTheDocument()
+
+    await act(async () => {
+      resolveRead({ completed: [], dismissed: true })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    // Still nothing: the read landed and confirmed the dismissal, so there is nothing to draw
+    // and no dismissal confirmation either, since dismissedHere was never set from inside this
+    // session.
+    await waitFor(() => expect(container).toBeEmptyDOMElement())
+    expect(screen.queryByRole('button', { name: /Checklist/ })).not.toBeInTheDocument()
+  })
+
+  it('renders immediately with no storage prop at all', () => {
+    renderLauncher(<ChecklistLauncher checklistId="demo" />)
+    // getByRole, not findByRole: proves there is nothing to wait for, not merely that it
+    // eventually appears.
+    expect(screen.getByRole('button', { name: /0 of 3/ })).toBeInTheDocument()
+  })
+
+  it('renders the launcher once a storage read rejects, rather than hiding it forever', async () => {
+    const { storage, rejectRead } = controllableStorage()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { container } = renderLauncher(<ChecklistLauncher checklistId="demo" />, { storage })
+
+    expect(container).toBeEmptyDOMElement()
+
+    await act(async () => {
+      rejectRead(new Error('storage unavailable'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(await screen.findByRole('button', { name: /0 of 3/ })).toBeInTheDocument()
+    warn.mockRestore()
   })
 
   it('closes the popover when the activated item carries a tourId', async () => {

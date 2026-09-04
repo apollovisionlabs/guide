@@ -309,11 +309,14 @@ finishing a tour whose item is already ticked, does nothing and emits no event.
 
 ### `useChecklist(checklistId)`
 
-Returns `{ items, completedCount, total, isComplete, dismissed, activate, toggle, complete, dismiss, reset }`.
+Returns `{ items, completedCount, total, isComplete, dismissed, restored, activate, toggle, complete, dismiss, reset }`.
 `items` is `ResolvedChecklistItem[]`: `{ id, title, body, completed, tourId?, href? }`, with
 `title` / `body` already resolved through `translate`. `activate(itemId)` runs an item's default
 action (start its tour, navigate to its `href`, or toggle it if it has neither); `toggle` and
 `complete` change completion directly; `dismiss()` and `reset()` act on the whole checklist.
+`restored` is whether the initial read from storage has settled: `true` immediately with no
+`storage` prop (there is nothing to wait for), and `true` once every checklist's read has
+resolved or rejected.
 
 ### `Checklist` and `ChecklistLauncher` (`@apollovisionlabs/guide-mui`)
 
@@ -330,6 +333,12 @@ import { Checklist, ChecklistLauncher } from '@apollovisionlabs/guide-mui'
 // or, as a floating launcher:
 <ChecklistLauncher checklistId="onboarding" title="Get started" placement="bottom-right" />
 ```
+
+With a `storage` prop configured on `ChecklistProvider`, both `Checklist` and `ChecklistLauncher`
+wait for the initial restore to settle (`useChecklist().restored`) before drawing anything, rather
+than rendering their empty initial state (nothing completed, not dismissed) for one paint. The
+tradeoff: with a slow storage backend, a checklist now appears later than it used to, instead of
+appearing at once and then jumping.
 
 Dismissing the launcher removes it. Because the button and the popover disappear in the same
 commit, there would be nothing left for the browser to put focus on, so the launcher leaves a

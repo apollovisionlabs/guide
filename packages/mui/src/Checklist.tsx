@@ -36,9 +36,15 @@ export interface ChecklistProps {
 }
 
 export function Checklist({ checklistId, title, onDismiss, onActivate, labels }: ChecklistProps) {
-  const { items, completedCount, total, dismissed, activate, toggle, dismiss } =
+  const { items, completedCount, total, dismissed, restored, activate, toggle, dismiss } =
     useChecklist(checklistId)
   const text = { ...DEFAULT_LABELS, ...labels }
+
+  // Nothing is drawn until the initial restore from storage has settled. Without this, a
+  // checklist already dismissed, or partly completed, in storage would still render its
+  // stale, pre-restore empty state for one paint: a dismissed list flashing its launcher, or
+  // "0 of 4" jumping to "3 of 4".
+  if (!restored) return null
 
   if (dismissed) return null
 
