@@ -4,6 +4,16 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-04
 
+- Corrected the checklist restore fix below: `ChecklistProvider`'s restore effect awaited each
+  checklist's `storage.read` in sequence and set one shared `restored` flag after the whole loop,
+  which meant a hung read for one checklist blocked the loop before it ever reached the next, so
+  neither checklist ever restored. Made `restored` a `Record<string, boolean>` on the context,
+  one entry per checklist, and read every checklist's storage concurrently rather than in
+  sequence, so each checklist settles its own entry as soon as its own read resolves or rejects,
+  independently of any other checklist's read. `useChecklist(checklistId).restored` now reads
+  that checklist's own entry. Updated the `useChecklist` bullet and the `Checklist` /
+  `ChecklistLauncher` paragraph in all three READMEs, and the changeset, to say "per checklist"
+  rather than "for the whole provider". Still no new ADR, for the same reason as before.
 - Fixed the same restore-race defect in the checklist that `useHotspots` was fixed for
   (`packages/core/src/ChecklistProvider.tsx`, `packages/core/src/useChecklist.ts`): a checklist
   rendered its initial empty state, nothing completed and not dismissed, until its async storage

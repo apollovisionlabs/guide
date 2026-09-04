@@ -159,6 +159,58 @@ describe('ChecklistProvider', () => {
     warn.mockRestore()
   })
 
+  // Round 2: settling once for the whole provider, as round 1 did, meant a hung read for one
+  // checklist blocked the loop before it ever reached the next, so a perfectly healthy checklist
+  // never restored either. This is the test that pins the fix: two checklists, one storage read
+  // that never settles and one that does, and the resolving one must restore on its own.
+  it('a hanging read for one checklist does not hold another checklist restored forever', async () => {
+    const checklistA: Checklist = { id: 'a', items: [{ id: 'x', title: 'X' }] }
+    const checklistB: Checklist = { id: 'b', items: [{ id: 'y', title: 'Y' }] }
+
+    let resolveB!: (value: unknown) => void
+    const storage: GuideStorage = {
+      // 'a' never settles, deliberately: this is the hang, not a slow-but-finite read.
+      read: (key: string) =>
+        (key === 'checklist:a'
+          ? new Promise<never>(() => {})
+          : new Promise<unknown>((resolve) => {
+              resolveB = resolve
+            })) as Promise<never>,
+      write: async () => {},
+    }
+
+    function TwoChecklistReadout() {
+      const a = useChecklist('a')
+      const b = useChecklist('b')
+      return (
+        <div>
+          <p>{`a:${a.restored ? 'restored' : 'not-restored'}`}</p>
+          <p>{`b:${b.restored ? 'restored' : 'not-restored'}`}</p>
+        </div>
+      )
+    }
+
+    render(
+      <ChecklistProvider checklists={[checklistA, checklistB]} storage={storage}>
+        <TwoChecklistReadout />
+      </ChecklistProvider>,
+    )
+
+    expect(screen.getByText('a:not-restored')).toBeInTheDocument()
+    expect(screen.getByText('b:not-restored')).toBeInTheDocument()
+
+    await act(async () => {
+      resolveB({ completed: [], dismissed: false })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    // b settled even though a's read never will, and never went through a's rejection path
+    // either: this is the concurrency property, not the reject property covered above.
+    expect(await screen.findByText('b:restored')).toBeInTheDocument()
+    expect(screen.getByText('a:not-restored')).toBeInTheDocument()
+  })
+
   it('ignores a stored value that is not checklist progress', async () => {
     // The fixture below carries no `dismissed` field and a string `completed`, so it only
     // survives if isChecklistProgress is actually applied. A guard that accepted it would

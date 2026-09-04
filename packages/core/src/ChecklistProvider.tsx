@@ -25,12 +25,14 @@ export interface ChecklistContextValue {
   progress: Record<string, ChecklistProgress>
   translate?: Translate
   /**
-   * Whether the initial restore from storage has settled: true immediately when no `storage`
-   * prop was given (there is nothing to wait for), and true once every checklist's read has
-   * resolved or rejected, so a renderer can wait for it without a broken backend hiding
-   * checklists forever.
+   * Whether each checklist's initial restore from storage has settled, keyed by checklist id:
+   * true immediately for a checklist when no `storage` prop was given (there is nothing to
+   * wait for), and true once that checklist's own read has resolved or rejected. Settled
+   * independently per checklist, so a slow or hung read for one checklist never holds another
+   * checklist's rendering hostage, and a renderer can wait for its own entry without a broken
+   * backend hiding it forever.
    */
-  restored: boolean
+  restored: Record<string, boolean>
   activate: (checklistId: string, itemId: string) => void
   toggle: (checklistId: string, itemId: string) => void
   complete: (checklistId: string, itemId: string) => void
@@ -80,9 +82,13 @@ export function ChecklistProvider({
   // consecutive calls compose correctly.
   const progressRef = useRef(progress)
 
-  // No storage means nothing to wait for. With storage, this flips once every checklist's read
-  // has settled, one way or the other: see the restore effect below.
-  const [restored, setRestored] = useState(() => !storage)
+  // No storage means nothing to wait for a checklist. With storage, each checklist's own entry
+  // flips once its own read has settled, one way or the other: see the restore effect below.
+  const [restoredById, setRestoredById] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    for (const candidate of checklists) initial[candidate.id] = !storage
+    return initial
+  })
 
   const guide = useContext(GuideContext)
 
@@ -125,52 +131,60 @@ export function ChecklistProvider({
   const emit = useCallback((event: GuideEvent) => onEventRef.current?.(event), [])
 
   // Restore persisted progress once on mount: later checklist prop changes are not re-read.
+  // Every checklist's read runs concurrently, not in sequence, and each one applies its own
+  // progress and settles its own `restoredById` entry as soon as it lands: a hung read for one
+  // checklist must never hold up another checklist's read, its progress, or its `restored` flag.
+  // A single shared flag that only flipped once every read had settled tried this once and got
+  // it backwards, trading a wrong-but-visible render for one that hides a working checklist
+  // behind a different checklist's stuck I/O forever, exactly the outcome the "degrade to
+  // showing, never hide forever" rule below exists to rule out.
   useEffect(() => {
     if (!storage) return
     let cancelled = false
-    void (async () => {
-      const restoredEntries: Record<string, ChecklistProgress> = {}
-      for (const candidate of checklists) {
+    for (const candidate of checklists) {
+      void (async () => {
         try {
           const stored = await storage.read<unknown>(`checklist:${candidate.id}`)
-          if (isChecklistProgress(stored)) restoredEntries[candidate.id] = stored
+          if (!cancelled && isChecklistProgress(stored)) {
+            // A read that was already in flight must never undo something the user did while it
+            // was running. With a server-backed storage the read can take hundreds of
+            // milliseconds, and the list is on screen and interactive for all of it.
+            //
+            // Merging into the live entry rather than replacing it is what makes that true. Every
+            // checklist starts empty at mount, so the moves a user makes before the read lands are
+            // one-way in practice: ticking an item and dismissing the list. The union of the stored
+            // completions with the live ones, dismissed if either side says so, keeps both.
+            // Replacing the live entry instead erased a tick the user could see on screen, and the
+            // next toggle persisted the erased state.
+            //
+            // The union cannot subtract, so the two moves that do subtract lose against a read
+            // still in flight: unticking an item the stored value has ticked, and reset. Both come
+            // back when the read lands. That window is bounded by one read at mount and it is
+            // strictly better than the replace it replaced, which lost these too and lost ticks
+            // besides. If a deliberate clearing ever has to survive the window, it needs to be
+            // sequenced against the read rather than merged with it.
+            const live = progressRef.current[candidate.id] ?? emptyProgress
+            const merged = {
+              ...progressRef.current,
+              [candidate.id]: {
+                completed: live.completed.concat(
+                  stored.completed.filter((id) => !live.completed.includes(id)),
+                ),
+                dismissed: live.dismissed || stored.dismissed,
+              },
+            }
+            progressRef.current = merged
+            setProgress(merged)
+          }
         } catch (error) {
           warnStorageFailure(error)
-        }
-      }
-      if (!cancelled && Object.keys(restoredEntries).length > 0) {
-        // A read that was already in flight must never undo something the user did while it
-        // was running. With a server-backed storage the read can take hundreds of
-        // milliseconds, and the list is on screen and interactive for all of it.
-        //
-        // Merging entry by entry rather than replacing them is what makes that true. Every
-        // checklist starts empty at mount, so the moves a user makes before the read lands are
-        // one-way in practice: ticking an item and dismissing the list. The union of the stored
-        // completions with the live ones, dismissed if either side says so, keeps both. Replacing
-        // the live entry instead erased a tick the user could see on screen, and the next toggle
-        // persisted the erased state.
-        //
-        // The union cannot subtract, so the two moves that do subtract lose against a read still
-        // in flight: unticking an item the stored value has ticked, and reset. Both come back
-        // when the read lands. That window is bounded by one read at mount and it is strictly
-        // better than the replace it replaced, which lost these too and lost ticks besides. If a
-        // deliberate clearing ever has to survive the window, it needs to be sequenced against
-        // the read rather than merged with it.
-        const merged = { ...progressRef.current }
-        for (const [checklistId, stored] of Object.entries(restoredEntries)) {
-          const live = merged[checklistId] ?? emptyProgress
-          merged[checklistId] = {
-            completed: live.completed.concat(
-              stored.completed.filter((id) => !live.completed.includes(id)),
-            ),
-            dismissed: live.dismissed || stored.dismissed,
+        } finally {
+          if (!cancelled) {
+            setRestoredById((current) => ({ ...current, [candidate.id]: true }))
           }
         }
-        progressRef.current = merged
-        setProgress(merged)
-      }
-      if (!cancelled) setRestored(true)
-    })()
+      })()
+    }
     return () => {
       cancelled = true
     }
@@ -357,14 +371,14 @@ export function ChecklistProvider({
       checklists,
       progress,
       translate,
-      restored,
+      restored: restoredById,
       activate,
       toggle,
       complete,
       dismiss,
       reset,
     }),
-    [checklists, progress, translate, restored, activate, toggle, complete, dismiss, reset],
+    [checklists, progress, translate, restoredById, activate, toggle, complete, dismiss, reset],
   )
 
   return <ChecklistContext.Provider value={value}>{children}</ChecklistContext.Provider>

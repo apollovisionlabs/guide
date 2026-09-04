@@ -10,10 +10,12 @@ state. A user saw a checklist they had dismissed long ago flash its launcher on 
 vanishing, and a checklist with three of four items done render "0 of 4" before jumping to
 "3 of 4", on every page load.
 
-`useChecklist` gains a `restored` member: `true` immediately when no `storage` prop was given,
-and `true` once the read resolves or rejects (a broken storage backend now degrades to showing
-the checklist, not hiding it forever). `Checklist` and `ChecklistLauncher` both wait for it
-before drawing anything.
+`useChecklist` gains a `restored` member, settled per checklist: `true` immediately when no
+`storage` prop was given, and `true` once that checklist's own read resolves or rejects (a
+broken storage backend now degrades to showing the checklist, not hiding it forever). Reads run
+concurrently across checklists, so a slow or hung read for one checklist cannot hold a different
+checklist's `restored` false either. `Checklist` and `ChecklistLauncher` both wait for it before
+drawing anything.
 
 Both packages stay a minor: `restored` is a new member on an existing return type, not a
 breaking change to the shape callers already destructure from, and the MUI components' visible

@@ -12,9 +12,11 @@ export interface UseChecklistResult {
   isComplete: boolean
   dismissed: boolean
   /**
-   * Whether the initial restore from storage has settled. A renderer should wait for this
-   * before drawing anything, or a checklist already dismissed or partly completed in storage
-   * can flash its empty initial state on screen once before the restore lands.
+   * Whether this checklist's own initial restore from storage has settled. A renderer should
+   * wait for this before drawing anything, or a checklist already dismissed or partly
+   * completed in storage can flash its empty initial state on screen once before the restore
+   * lands. Settled per checklist: a slow or hung read for a different checklist on the same
+   * provider never holds this one false.
    */
   restored: boolean
   activate: (itemId: string) => void
@@ -36,7 +38,10 @@ export function useChecklist(checklistId: string): UseChecklistResult {
   const completed = progress?.completed ?? []
   const dismissed = progress?.dismissed ?? false
   const translate = context.translate
-  const restored = context.restored
+  // Falls back to true for a checklist this provider has no entry for yet, the same way a
+  // checklist added to `checklists` after mount (which the restore effect does not watch) is
+  // never tracked: nothing here should block on a read that was never started.
+  const restored = context.restored[checklistId] ?? true
 
   const items = useMemo<ResolvedChecklistItem[]>(
     () =>

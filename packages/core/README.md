@@ -314,9 +314,11 @@ Returns `{ items, completedCount, total, isComplete, dismissed, restored, activa
 `title` / `body` already resolved through `translate`. `activate(itemId)` runs an item's default
 action (start its tour, navigate to its `href`, or toggle it if it has neither); `toggle` and
 `complete` change completion directly; `dismiss()` and `reset()` act on the whole checklist.
-`restored` is whether the initial read from storage has settled: `true` immediately with no
-`storage` prop (there is nothing to wait for), and `true` once every checklist's read has
-resolved or rejected.
+`restored` is whether this checklist's own initial read from storage has settled: `true`
+immediately with no `storage` prop (there is nothing to wait for), and `true` once this
+checklist's own read has resolved or rejected. It settles independently per checklist, so a
+`ChecklistProvider` holding several checklists never lets a slow or hung read for one hold
+another one's `restored` false; each checklist's read runs concurrently with the others.
 
 ### `Checklist` and `ChecklistLauncher` (`@apollovisionlabs/guide-mui`)
 
@@ -335,10 +337,11 @@ import { Checklist, ChecklistLauncher } from '@apollovisionlabs/guide-mui'
 ```
 
 With a `storage` prop configured on `ChecklistProvider`, both `Checklist` and `ChecklistLauncher`
-wait for the initial restore to settle (`useChecklist().restored`) before drawing anything, rather
-than rendering their empty initial state (nothing completed, not dismissed) for one paint. The
-tradeoff: with a slow storage backend, a checklist now appears later than it used to, instead of
-appearing at once and then jumping.
+wait for their own checklist's restore to settle (`useChecklist(checklistId).restored`) before
+drawing anything, rather than rendering their empty initial state (nothing completed, not
+dismissed) for one paint. The tradeoff: with a slow storage backend, a checklist now appears later
+than it used to, instead of appearing at once and then jumping. A slow or broken read for one
+checklist never holds a different checklist back; each restores on its own.
 
 ## Hotspots
 
