@@ -2,6 +2,29 @@
 
 Newest first. Add an entry whenever any document in this bundle, or a root guide, changes.
 
+## 2026-09-04
+
+- Documented advancing a step on a click and hotspots, both merged past what
+  `docs/superpowers/plans/2026-09-04-guide-actions-and-hotspots.md` described: `useHotspots()`
+  returns six members, not five (`restored` was added during implementation), and `Hotspots` takes
+  `labels`, `placement` and `zIndex`. Added an "Advancing on an action" section and a "Hotspots"
+  section to `README.md`, copied verbatim into both package READMEs; added `advanceOn` to the
+  `GuideTour` `labels` row, `hotspot:show` / `hotspot:open` to the events table, `hotspots:seen` to
+  the persistence section, and `isHotspotsProgress` to the validation sentence.
+- Extended step 8 of [adoption.md](adoption.md) with `advanceOn: 'click'`, and added step 11,
+  "Add hotspots (optional)". Stated the one stacking limit plainly: a hotspot whose target lives
+  inside a modal dialog is covered by it, because the default marker `zIndex` sits below
+  `theme.zIndex.modal`; `zIndex` on `Hotspots` is the way out. Added `e2e/hotspots.spec.ts` and the
+  click-step scenario in `e2e/tour.spec.ts` to the "Verify" step, and the two `hotspot:*` events to
+  "What this library does not do".
+- Recorded [ADR 0017](adr/0017-advancing-on-an-action-implies-an-interactive-step.md): a step
+  declaring `advanceOn` gets `interactive` and `awaitsAction` derived on `ActiveStep`
+  (`packages/core/src/GuideProvider.tsx`), rather than requiring the caller to also set
+  `interactive: true`. A renderer must read `ActiveStep`, not `Step.interactive` directly.
+- Added the ADR to [adr/index.md](adr/index.md) and to the Decisions section of [index.md](index.md),
+  and listed the new spec and plan in [index.md](index.md)'s "Outside this bundle" section.
+- Added a changeset marking both packages minor. Nothing on this branch is breaking.
+
 ## 2026-09-03
 
 - Documented the first-steps checklist: `ChecklistProvider`, `useChecklist`, and the MUI

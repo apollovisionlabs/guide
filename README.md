@@ -73,7 +73,7 @@ missing-target policy below from ever firing.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `labels` | `Partial<{ next, previous, finish, close }>` | `{ next: 'Next', previous: 'Back', finish: 'Finish', close: 'Close' }` | The popover's button labels. Defaults are English; override any subset. See "Translations". |
+| `labels` | `Partial<{ next, previous, finish, close, awaitingAction }>` | `{ next: 'Next', previous: 'Back', finish: 'Finish', close: 'Close', awaitingAction: 'Click the highlighted element to continue.' }` | The popover's button labels. Defaults are English; override any subset. See "Translations". |
 | `zIndex` | `number` | `theme.zIndex.modal` | Stacking level of the spotlight; the popover sits one above it. |
 | `padding` | `number` | `8` | Margin, in pixels, between the highlighted element and the edge of the spotlight hole. |
 | `radius` | `number` | `8` | Corner radius, in pixels, of the spotlight hole. |
@@ -125,8 +125,10 @@ interface GuideStorage {
 ```
 
 `GuideProvider` reads and writes tour progress under `tour:<id>`. `ChecklistProvider` reads and
-writes checklist progress under `checklist:<id>`. See [ADR 0016](docs/adr/0016-one-storage-contract-for-tours-and-checklists.md)
-for why the two share one interface.
+writes checklist progress under `checklist:<id>`. `HotspotProvider` reads and writes which
+hotspots have been opened under the single key `hotspots:seen`. See
+[ADR 0016](docs/adr/0016-one-storage-contract-for-tours-and-checklists.md) for why they share one
+interface.
 
 `@apollovisionlabs/guide-core` ships `createMemoryStorage()` for tests and `createBrowserStorage(namespace?)` for
 `localStorage`. Neither talks to a server. An implementation backed by your own API looks like
@@ -159,7 +161,8 @@ tour advances or completes. `ChecklistProvider` reads once on mount and writes w
 ticked, completed or the checklist is dismissed.
 
 A value read back from storage is validated before it is trusted (`isTourProgress`,
-`isChecklistProgress`, both exported from `@apollovisionlabs/guide-core`): a value that does not
+`isChecklistProgress`, `isHotspotsProgress`, all exported from `@apollovisionlabs/guide-core`): a
+value that does not
 match the expected shape, from a hand-edited store or an older version of this library, is treated
 the same as nothing stored, rather than crashing or resuming into a broken state.
 
@@ -182,8 +185,8 @@ and nothing English remains:
 
 ## Events
 
-`onEvent` on `GuideProvider` and on `ChecklistProvider` each receive their own lifecycle events, as
-a discriminated union of `GuideEvent`:
+`onEvent` on `GuideProvider`, `ChecklistProvider` and `HotspotProvider` each receive their own
+lifecycle events, as a discriminated union of `GuideEvent`:
 
 | Event | Payload | When |
 | --- | --- | --- |
@@ -195,6 +198,8 @@ a discriminated union of `GuideEvent`:
 | `checklist:item-complete` | `{ checklistId, itemId }` | An item is completed, by finishing its linked tour or by a manual tick. Not emitted for an item already complete. |
 | `checklist:complete` | `{ checklistId }` | The last incomplete item in a checklist is completed. Fires on every transition into the complete state, so unticking an item and reticking it emits a second time. Deduplicate downstream if you count completions. |
 | `checklist:dismiss` | `{ checklistId }` | `dismiss()` is called. |
+| `hotspot:show` | `{ hotspotId }` | A hotspot's marker is actually drawn on screen. Emitted once per hotspot per mount. |
+| `hotspot:open` | `{ hotspotId }` | The hotspot's bubble is opened, which also marks it seen. |
 
 ## Accessibility
 
@@ -217,6 +222,37 @@ Each step is checked against its `target` (matched by a `data-guide` attribute) 
 happens: `'skip'` moves to the next step, `'error'` stops the tour, and `'wait'` (the default)
 pauses and resumes automatically if the target appears later, for instance after a slow async
 render.
+
+## Advancing on an action
+
+A step can declare `advanceOn: 'click'` instead of ending on the popover's button:
+
+```ts
+{
+  target: 'project.share',
+  title: 'Share it',
+  body: 'Click the button yourself, this step is interactive.',
+  advanceOn: 'click',
+}
+```
+
+The step advances when the user clicks the target, not the popover. `advanceOn` implies
+`interactive`: a step that waits for a click has to let the click through, so `GuideProvider`
+derives both `interactive` and `awaitsAction` on `ActiveStep` from `advanceOn`, rather than
+requiring both to be set by hand. Read `activeStep.interactive` / `activeStep.awaitsAction`, not
+`step.interactive`, which is left `undefined` on a step that only sets `advanceOn`. See
+[ADR 0017](docs/adr/0017-advancing-on-an-action-implies-an-interactive-step.md).
+
+`@apollovisionlabs/guide-mui`'s popover reflects `awaitsAction`: no primary button, and the
+`awaitingAction` label in its place (see the `labels` row above). `ArrowRight` is ignored while a
+step awaits its action, since letting it through would be a way around the very thing the step is
+asking for; `Escape` and `ArrowLeft` still work.
+
+The click listener is attached, in the bubble phase, to the element resolved when the step
+opened, without `preventDefault` or `stopPropagation`, so your own click handler on the target
+still runs. If your application replaces that DOM node afterward, the step stops advancing: this
+follows from how every step resolves its target (see "Missing targets"), not from anything
+specific to `advanceOn`.
 
 ## Checklist
 
@@ -320,6 +356,98 @@ settles it:
 import type { Checklist as ChecklistDefinition } from '@apollovisionlabs/guide-core'
 import { Checklist } from '@apollovisionlabs/guide-mui'
 ```
+
+## Hotspots
+
+A hotspot marks one element outside any tour: a small marker that opens a short explanation, and
+optionally a button that starts a tour. Unlike a tour step, a hotspot has no route and no order;
+it just sits at its target until opened. `HotspotProvider` nests inside `GuideProvider`, the same
+way `ChecklistProvider` does, so a hotspot naming a `tourId` can start it:
+
+```tsx
+import { GuideProvider, HotspotProvider, type Hotspot } from '@apollovisionlabs/guide-core'
+import { GuideTour, Hotspots } from '@apollovisionlabs/guide-mui'
+
+const hotspots: Hotspot[] = [
+  {
+    id: 'create',
+    target: 'projects.create',
+    title: 'Start a project',
+    body: 'Everything else in here hangs off a project.',
+  },
+  {
+    id: 'share',
+    target: 'project.share',
+    title: 'Share a project',
+    body: 'Send a link to anyone on your team.',
+    tourId: 'welcome',
+  },
+]
+
+function App() {
+  return (
+    <GuideProvider tours={[tour]}>
+      <HotspotProvider hotspots={hotspots}>
+        <Sidebar />
+        <GuideTour />
+        <Hotspots />
+      </HotspotProvider>
+    </GuideProvider>
+  )
+}
+```
+
+Without a `GuideProvider` above it, starting a hotspot's tour warns once in the console and does
+nothing.
+
+### `HotspotProvider` props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `hotspots` | `Hotspot[]` | none | The hotspots to render. Ids must be unique. |
+| `children` | `ReactNode` | none | Your application. |
+| `storage` | `GuideStorage` | none | Persists which hotspots have been opened, under `hotspots:seen`. See "Persistence". |
+| `translate` | `(key: string) => string` | none | Resolves `titleKey` / `bodyKey` on hotspots. See "Translations". |
+| `onEvent` | `(event: GuideEvent) => void` | none | Called for `hotspot:show` and `hotspot:open`. See "Events". |
+
+### `useHotspots()`
+
+Returns `{ hotspots, restored, open, startTour, reset, notifyShown }`.
+
+- `hotspots` is `ResolvedHotspot[]`: every hotspot, each carrying its own `seen`, with `title` /
+  `body` already resolved through `translate`. It lists the seen ones too, rather than only the
+  unseen ones, because a renderer that keeps a marker mounted while its own bubble closes needs
+  the seen one as well; filtering to unseen-only is one line at the call site.
+- `restored` is whether the initial read from storage has settled: `true` immediately with no
+  `storage` prop (there is nothing to wait for), and `true` once the read resolves or rejects.
+  Wait for it before drawing any marker, or a hotspot already seen in storage can flash on screen
+  once before the restore lands.
+- `open(hotspotId)` marks a hotspot seen and emits `hotspot:open`.
+- `startTour(hotspotId)` starts the tour named by the hotspot's `tourId`, if it has one.
+- `reset()` clears the seen state for every hotspot.
+- `notifyShown(hotspotId)` is for renderers: call it once a marker is actually drawn on screen, so
+  `hotspot:show` fires once per hotspot per mount. `@apollovisionlabs/guide-mui`'s `Hotspots`
+  already calls it.
+
+### `Hotspots` (`@apollovisionlabs/guide-mui`)
+
+Renders a marker at each unseen hotspot's target; clicking it opens a bubble with the hotspot's
+title, body, and, when it names a `tourId`, a button that starts that tour.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `labels` | `Partial<{ marker, startTour, close }>` | see below | Wording. `marker` is a function of the hotspot's title, not a fixed string, because word order around a name varies by language. |
+| `placement` | `Placement` | `'bottom'` | Where the bubble opens relative to the marker. Overridable per hotspot through `Hotspot.placement`. |
+| `zIndex` | `number` | `theme.zIndex.drawer + 1` | Stacking level of the marker; the bubble sits one above it. |
+
+Default labels: `` { marker: (title) => `Show what is new: ${title}`, startTour: 'Show me', close: 'Close' } ``.
+
+The default `zIndex` sits below `theme.zIndex.modal`, the level a running tour's spotlight uses,
+so a hotspot whose target lives inside a modal dialog is covered by it. Raise `zIndex` on
+`Hotspots` to bring the marker above that dialog.
+
+With a `storage` prop configured on `HotspotProvider`, `Hotspots` waits for the initial restore to
+settle (`useHotspots().restored`) before drawing any marker.
 
 ## Compatibility
 

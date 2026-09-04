@@ -342,6 +342,35 @@ Use it for the steps that ask for an action, not as a default. See
 **Worked when**: on that step, clicking the highlighted element performs its real action instead of
 dismissing the tour, and Tab reaches it.
 
+A step can go one step further and advance itself on that same click, instead of waiting for the
+popover's button. `advanceOn: 'click'` implies `interactive: true`, so you set only one of them.
+`apps/demo/src/tours.ts` uses exactly this on its share step:
+
+```ts
+{
+  target: 'project.share',
+  route: '/projects/:id',
+  navigateTo: '/projects/42',
+  title: 'Share it',
+  body: 'Click the button yourself, this step is interactive.',
+  advanceOn: 'click',
+  placement: 'left',
+}
+```
+
+On that step the popover shows no primary button, and `ArrowRight` does nothing either: both
+would be a way around the very click the step is asking for. `Escape` and `ArrowLeft` are
+unaffected. See [ADR 0017](adr/0017-advancing-on-an-action-implies-an-interactive-step.md) for why
+`interactive` is derived rather than set alongside `advanceOn`.
+
+The click listener is attached to the element resolved when the step opened. If your application
+replaces that DOM node afterward, for instance by re-rendering a list, the step stops advancing.
+That follows from how every step resolves its target, the same mechanism step 5 above covers; it
+is not specific to `advanceOn`.
+
+**Worked when**: clicking the highlighted element both performs its real action and moves the tour
+to the next step, with no button offered instead.
+
 ## 9. Verify
 
 What this repository's end-to-end suite already proves, against `apps/demo`, so you do not have to
@@ -349,10 +378,12 @@ prove it again about the library itself:
 
 - `e2e/tour.spec.ts`: a tour crosses three pages and completes; it resumes where it was interrupted
   after a reload; the spotlight follows the target when the page scrolls; an interactive step lets
-  the page be clicked.
+  the page be clicked; a step waiting on a click offers no button and clicking its target advances
+  it.
 - `e2e/a11y.spec.ts`: the full keyboard walkthrough (focus lands on the dialog, arrow keys move,
   Escape stops); the step position is announced in the `aria-live` region as `"1 / 3"`; both light
   and dark themes render legibly, against screenshot baselines.
+- `e2e/hotspots.spec.ts`: a hotspot explains one element and then stays gone once opened.
 
 What is yours to test, because it depends on your application and not on the library:
 
@@ -395,6 +426,40 @@ progress live at different keys in it, `tour:<id>` and `checklist:<id>`
 
 **Worked when**: the launcher's badge reads `0/3`, ticking an item updates it, and reloading keeps
 the tick.
+
+## 11. Add hotspots (optional)
+
+A hotspot marks one element outside any tour: a small marker that opens a short explanation, and
+optionally a button that starts a tour. Unlike a tour step, a hotspot has no route and no order; it
+just sits at its target until opened. Nest `HotspotProvider` inside `GuideProvider`, the way
+`apps/demo/src/App.tsx` does, so a hotspot naming a `tourId` can start it:
+
+```tsx
+import { HotspotProvider } from '@apollovisionlabs/guide-core'
+import { Hotspots } from '@apollovisionlabs/guide-mui'
+import { hotspots } from './hotspots'
+
+<GuideProvider tours={[productTour]} navigate={navigate} storage={storage}>
+  <HotspotProvider hotspots={hotspots} storage={storage}>
+    <AppRoutes />
+    <GuideTour />
+    <Hotspots />
+  </HotspotProvider>
+</GuideProvider>
+```
+
+Opening a hotspot marks it seen, for good, through the same `storage` the tour and the checklist
+use, under its own key, `hotspots:seen`. With `storage` configured, `Hotspots` waits for that
+initial read to settle before drawing any marker, so a hotspot already seen does not flash on
+screen once before the restore lands.
+
+The full props, `useHotspots`, and the MUI `Hotspots` component are in the README's Hotspots
+section. One stacking note worth knowing before you reach for it: the marker's default `zIndex`
+sits below `theme.zIndex.modal`, so a hotspot whose target lives inside a modal dialog is covered
+by it. Raise `zIndex` on `Hotspots` to bring it out.
+
+**Worked when**: an unseen hotspot shows a marker at its target, opening it shows the bubble and
+marks it seen, and reloading leaves it gone.
 
 ## Traps a first integration falls into
 
@@ -439,12 +504,13 @@ after the first one warns is silent.
 
 So you stop looking for it:
 
-- **No tour builder.** There is no visual editor, no recorder, no admin UI. Tours and checklists
-  are TypeScript objects in your repository, reviewed like any other code.
+- **No tour builder.** There is no visual editor, no recorder, no admin UI. Tours, checklists and
+  hotspots are TypeScript objects in your repository, reviewed like any other code.
 - **No analytics.** Nothing is sent anywhere, ever. The packages make no network call of their own.
   What you get is `onEvent`, on `GuideProvider` (`tour:start`, `tour:complete`, `tour:stop`,
-  `step:show`, `target:missing`) and on `ChecklistProvider` (`checklist:item-complete`,
-  `checklist:complete`, `checklist:dismiss`). Forward them to whatever you already use:
+  `step:show`, `target:missing`), on `ChecklistProvider` (`checklist:item-complete`,
+  `checklist:complete`, `checklist:dismiss`), and on `HotspotProvider` (`hotspot:show`,
+  `hotspot:open`). Forward them to whatever you already use:
 
   ```tsx
   <GuideProvider tours={[productTour]} onEvent={(event) => analytics.track(event.type, event)}>
