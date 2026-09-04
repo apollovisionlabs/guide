@@ -59,9 +59,15 @@ pointed at. When the tour ends and the captured origin is detached, focus falls 
 element, which is present, is what the user was just being shown, and is where reading should
 resume. Only when `document.activeElement` is `document.body`: a user who has already clicked or
 tabbed somewhere keeps what they chose. Not stranding the user and not stealing from them are both
-requirements, the rule `ChecklistLauncher` established. If the element cannot take focus on its
-own, a `tabindex="-1"` is added and removed again on blur, so nothing permanent is left in the
-host's DOM and the element never enters the tab order.
+requirements, the rule `ChecklistLauncher` established.
+
+If the element cannot take focus on its own, a `tabindex="-1"` is added, focus is attempted, and
+the attribute is kept only if `document.activeElement` is then the element; otherwise it is
+removed again immediately and no listener is left behind. When it is kept, a blur listener drops
+it as soon as focus leaves. An element the host already put in the tab order is focused as it is
+and never touched. The verification is not a formality: an element with no box, because it or an
+ancestor is `display: none`, silently ignores `focus()` and fires no blur, so an attribute written
+optimistically and a listener waiting for that blur would both outlive the page.
 
 ## Consequences
 
@@ -74,7 +80,20 @@ host's DOM and the element never enters the tab order.
   its own, not only the hotspot path.
 - The fallback focuses application markup the library does not own. The temporary `tabindex` keeps
   that as small as it can be, but a host with its own focus handling on the target will see a
-  focus event it did not cause.
+  focus event it did not cause, and `focus()` carries an implicit scroll, so the page can move to
+  bring the target into view when the tour ends.
+- Focus can still end up nowhere. If the element the tour last pointed at cannot take focus at the
+  moment the tour ends, the honest outcome is that no focus is placed and the user is left on
+  `document.body`, which is where they were. This is stated rather than papered over: the library
+  will not write a permanent attribute into a host's DOM to chase a focus that cannot land. The
+  case that produces it, a step target hidden between the last step and the end of the tour, is
+  rare and is not a state a tour should be left in anyway.
+- Suppressing markers on `paused` means the suppression can outlive any visible tour. A tour
+  paused waiting for a target that never mounts draws nothing itself, under the `wait` policy,
+  and now also hides every hotspot for as long as it stays paused, with `Escape` as the only exit
+  and nothing on screen to suggest it. That is a consequence of treating `paused` as live, which
+  is the right call for the case that actually happens (a target that appears a moment later), and
+  the underlying problem, a paused tour with no visible affordance, predates this decision.
 
 ## Alternatives considered
 

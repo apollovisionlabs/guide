@@ -470,6 +470,12 @@ bright and pulsing yet inert behind the spotlight. The markers come back when th
 unchanged: this suppresses them, it does not mark them seen. `Hotspots` reads the tour state
 through context and tolerates its absence, so hotspots work with no `GuideProvider` in the tree.
 
+`paused` counts, because a paused tour is waiting for its target rather than finished. Note what
+that implies at the edge: a tour paused on a target that never appears, the default `wait`
+policy, draws nothing itself and now hides every hotspot too, for as long as it stays paused,
+with `Escape` as the only way out and nothing on screen to suggest it. If your steps point at
+targets that may never mount, prefer the `skip` or `error` missing-target policy over `wait`.
+
 The default `zIndex` sits below `theme.zIndex.modal`, the level a running tour's spotlight uses,
 so a hotspot whose target lives inside your own modal dialog is covered by it. Raise `zIndex` on
 `Hotspots` to bring the marker above that dialog.

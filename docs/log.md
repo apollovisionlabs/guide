@@ -4,6 +4,13 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-04
 
+- Corrected [ADR 0018](adr/0018-hotspots-defer-to-a-running-tour.md) where it claimed the
+  temporary `tabindex` is always removed on blur. It is now kept only once focus is verified to
+  have landed, so the claim holds; the ADR also states what it had omitted, that focus can end up
+  nowhere when the step's target cannot take it, that `focus()` carries an implicit scroll, and
+  that suppressing markers on `paused` can outlive any visible tour.
+- Said in all three READMEs that a tour paused on a target that never appears hides every hotspot
+  for as long as it stays paused, and pointed at the `skip` and `error` policies as the way out.
 - Corrected the `advanceOn` target-replacement paragraph in `README.md`, both package READMEs and
   [adoption.md](adoption.md). The inference it stated was right, the framing around it was wrong
   twice: it sent the reader to the missing-target policy, but the target was found once so the

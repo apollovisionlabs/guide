@@ -77,21 +77,37 @@ export interface GuideProviderProps {
 }
 
 /**
- * Focus an element that is ordinary application markup and need not be focusable. A tabindex
- * is added only when the element does not already carry one and cannot take focus on its own,
- * and it is removed again the moment focus leaves, so nothing permanent is left in the host's
- * DOM; -1 keeps the element out of the tab order meanwhile.
+ * Focus an element that is ordinary application markup and need not be focusable. A tabindex is
+ * added only when the element does not already carry one and cannot take focus on its own, and
+ * it is dropped again as soon as focus leaves, so nothing permanent is left in the host's DOM;
+ * -1 keeps the element out of the tab order meanwhile. An element the host put in the tab order
+ * itself is focused as it is and never touched.
+ *
+ * The attribute is verified to have worked before anything is left behind. An element that
+ * cannot take focus at all, one with no box because it or an ancestor is `display: none` being
+ * the ordinary case, silently ignores `focus()` and fires no blur, so a tabindex written
+ * optimistically and a listener waiting for that blur would both outlive the page. Where focus
+ * cannot be placed, this places none and leaves the element exactly as it found it.
  */
 function focusFallback(element: HTMLElement): void {
-  if (!element.hasAttribute('tabindex') && element.tabIndex < 0) {
-    element.setAttribute('tabindex', '-1')
-    const onBlur = () => {
-      element.removeAttribute('tabindex')
-      element.removeEventListener('blur', onBlur)
-    }
-    element.addEventListener('blur', onBlur)
+  const needsTabIndex = !element.hasAttribute('tabindex') && element.tabIndex < 0
+  if (!needsTabIndex) {
+    element.focus()
+    return
   }
+
+  element.setAttribute('tabindex', '-1')
   element.focus()
+  if (document.activeElement !== element) {
+    element.removeAttribute('tabindex')
+    return
+  }
+
+  const onBlur = () => {
+    element.removeAttribute('tabindex')
+    element.removeEventListener('blur', onBlur)
+  }
+  element.addEventListener('blur', onBlur)
 }
 
 export function GuideProvider({

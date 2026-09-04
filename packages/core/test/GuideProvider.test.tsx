@@ -512,6 +512,65 @@ describe('GuideProvider', () => {
       expect(elsewhere).toHaveFocus()
     })
 
+    it('leaves nothing behind when the target cannot take focus at all', async () => {
+      const user = userEvent.setup()
+      const divTour: Tour = { id: 'demo', steps: [{ target: 'plain', title: 'First' }] }
+      const { container } = render(
+        <GuideProvider tours={[divTour]}>
+          {/* In the DOM, so useTargetElement resolves it and the tour runs, but with no box by
+              the time the tour ends. document.contains() is true for it, and focus() on it is a
+              silent no-op that fires no blur. */}
+          <div data-guide="plain" style={{ display: 'none' }}>
+            plain
+          </div>
+          <VanishingStarter />
+          <StepReadout />
+        </GuideProvider>,
+      )
+      await user.click(screen.getByText('start'))
+      await screen.findByText('First')
+      act(() => (document.activeElement as HTMLElement | null)?.blur())
+
+      fireEvent.click(screen.getByText('stop'))
+      await screen.findByText('no step')
+
+      const plain = container.querySelector('[data-guide="plain"]')!
+      // Focus could not be placed. The library must accept that rather than leave a tabindex
+      // and a blur listener on a host's element for the life of the page, waiting for a blur
+      // that can never fire.
+      expect(plain).not.toHaveAttribute('tabindex')
+      expect(document.activeElement).toBe(document.body)
+    })
+
+    it("never reads, overwrites or removes a host's own tabindex", async () => {
+      const user = userEvent.setup()
+      const divTour: Tour = { id: 'demo', steps: [{ target: 'plain', title: 'First' }] }
+      render(
+        <GuideProvider tours={[divTour]}>
+          <div data-guide="plain" tabIndex={0}>
+            plain
+          </div>
+          <button>somewhere else</button>
+          <VanishingStarter />
+          <StepReadout />
+        </GuideProvider>,
+      )
+      await user.click(screen.getByText('start'))
+      await screen.findByText('First')
+      act(() => (document.activeElement as HTMLElement | null)?.blur())
+
+      fireEvent.click(screen.getByText('stop'))
+      const plain = screen.getByText('plain')
+      await waitFor(() => expect(plain).toHaveFocus())
+
+      // The host put this element in the tab order deliberately. Overwriting it with -1 would
+      // take it back out, and removing it on blur would take it out permanently.
+      expect(plain).toHaveAttribute('tabindex', '0')
+      act(() => screen.getByText('somewhere else').focus())
+      await waitFor(() => expect(screen.getByText('somewhere else')).toHaveFocus())
+      expect(plain).toHaveAttribute('tabindex', '0')
+    })
+
     it('makes an unfocusable target focusable only for as long as it holds focus', async () => {
       const user = userEvent.setup()
       const divTour: Tour = { id: 'demo', steps: [{ target: 'plain', title: 'First' }] }
