@@ -21,7 +21,8 @@ test('the tour crosses three pages and completes', async ({ page }) => {
   await expect(page).toHaveURL('/projects/42')
   await expect(dialog).toContainText('Share it')
 
-  await dialog.getByRole('button', { name: 'Finish' }).click()
+  // The last step waits for a click on its real target, not a Finish button.
+  await page.locator('[data-guide="project.share"]').click()
   await expect(dialog).toBeHidden()
 })
 
@@ -51,4 +52,23 @@ test('an interactive step lets the page be clicked', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Next' }).click()
   await expect(dialog).toContainText('Share it')
   await page.locator('[data-guide="project.share"]').click()
+})
+
+test('a step waiting on a click offers no button, and clicking the target advances it', async ({
+  page,
+}) => {
+  await page.getByTestId('start-tour').click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Next' }).click()
+  await dialog.getByRole('button', { name: 'Next' }).click()
+  await expect(dialog).toContainText('Share it')
+
+  // The step waits for a click on the real target: it must not offer a way to fake that.
+  await expect(dialog.getByRole('button', { name: 'Next' })).toHaveCount(0)
+  await expect(dialog.getByRole('button', { name: 'Finish' })).toHaveCount(0)
+
+  await page.locator('[data-guide="project.share"]').click()
+
+  // This is the last step, so clicking the real element completes the tour.
+  await expect(dialog).toBeHidden()
 })

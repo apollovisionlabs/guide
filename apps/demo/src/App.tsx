@@ -1,10 +1,16 @@
 import { useMemo, useState } from 'react'
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
 import { useLocation, useNavigate } from 'react-router'
-import { ChecklistProvider, GuideProvider, createBrowserStorage } from '@apollovisionlabs/guide-core'
-import { ChecklistLauncher, GuideTour } from '@apollovisionlabs/guide-mui'
+import {
+  ChecklistProvider,
+  GuideProvider,
+  HotspotProvider,
+  createBrowserStorage,
+} from '@apollovisionlabs/guide-core'
+import { ChecklistLauncher, GuideTour, Hotspots } from '@apollovisionlabs/guide-mui'
 import { productTour } from './tours'
 import { onboardingChecklist } from './checklists'
+import { hotspots } from './hotspots'
 import { AppRoutes } from './router'
 
 export function App() {
@@ -25,16 +31,23 @@ export function App() {
         onEvent={(event) => console.info('[guide]', event)}
         onMissingTarget="wait"
       >
-        <ChecklistProvider
-          checklists={[onboardingChecklist]}
-          navigate={(path) => navigate(path)}
+        <HotspotProvider
+          hotspots={hotspots}
           storage={storage}
           onEvent={(event) => console.info('[guide]', event)}
         >
-          <AppRoutes onToggleMode={() => setMode((value) => (value === 'light' ? 'dark' : 'light'))} />
-          <GuideTour />
-          <ChecklistLauncher checklistId="onboarding" title="Get started" />
-        </ChecklistProvider>
+          <ChecklistProvider
+            checklists={[onboardingChecklist]}
+            navigate={(path) => navigate(path)}
+            storage={storage}
+            onEvent={(event) => console.info('[guide]', event)}
+          >
+            <AppRoutes onToggleMode={() => setMode((value) => (value === 'light' ? 'dark' : 'light'))} />
+            <GuideTour />
+            <Hotspots />
+            <ChecklistLauncher checklistId="onboarding" title="Get started" />
+          </ChecklistProvider>
+        </HotspotProvider>
       </GuideProvider>
     </ThemeProvider>
   )

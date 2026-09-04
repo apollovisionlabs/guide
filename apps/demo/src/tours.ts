@@ -24,7 +24,7 @@ export const productTour: Tour = {
       navigateTo: '/projects/42',
       title: 'Share it',
       body: 'Click the button yourself, this step is interactive.',
-      interactive: true,
+      advanceOn: 'click',
       placement: 'left',
     },
   ],

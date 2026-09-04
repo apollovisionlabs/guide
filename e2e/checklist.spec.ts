@@ -24,7 +24,8 @@ test('an item launches the tour, and finishing it ticks the item', async ({ page
   await tourDialog.getByRole('button', { name: 'Next' }).click()
   await expect(page).toHaveURL('/projects/42')
   await expect(tourDialog).toContainText('Share it')
-  await tourDialog.getByRole('button', { name: 'Finish' }).click()
+  // The last step waits for a click on its real target, not a Finish button.
+  await page.locator('[data-guide="project.share"]').click()
   await expect(tourDialog).toBeHidden()
 
   // Reopen the launcher to see the completion reflected: the checklist popover was closed by
