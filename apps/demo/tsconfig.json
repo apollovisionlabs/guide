@@ -1,4 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src"]
+  "compilerOptions": {
+    "baseUrl": ".",
+    // The demo imports the packages by name, but their dist directories only
+    // exist after a build. Mapping the names to source keeps the typecheck
+    // independent of build order, the way packages/mui already does.
+    "paths": {
+      "@apollovisionlabs/guide-core": ["../../packages/core/src/index.ts"],
+      "@apollovisionlabs/guide-mui": ["../../packages/mui/src/index.ts"],
+      "@apollovisionlabs/guide-unstyled": ["../../packages/unstyled/src/index.ts"]
+    }
+  },
+  "include": ["src", "../../packages/core/src/globals.d.ts"]
 }
