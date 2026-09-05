@@ -2,9 +2,11 @@
 
 `guide` is a headless React library for building in-app product tours. `@apollovisionlabs/guide-core` owns the
 state machine, target resolution, routing, persistence and accessibility concerns, and exposes
-them as hooks with no rendering opinion. `@apollovisionlabs/guide-mui` consumes those hooks to render a tour with
-[MUI](https://mui.com) components (a spotlight overlay and a popover), so you get a complete tour
-out of the box, or you can render your own UI on top of `@apollovisionlabs/guide-core` directly.
+them as hooks with no rendering opinion. Two packages render on top of those hooks out of the box:
+`@apollovisionlabs/guide-mui` with [MUI](https://mui.com) components (a spotlight overlay and a
+popover), and `@apollovisionlabs/guide-unstyled` with the same parts as plain DOM elements and an
+optional stylesheet. You can also render your own UI on top of `@apollovisionlabs/guide-core`
+directly.
 
 This repository includes a runnable demo. From the repo root, run `pnpm --filter demo dev` and
 open `http://localhost:5173` to try a three-page tour end to end.
@@ -497,6 +499,7 @@ settle (`useHotspots().restored`) before drawing any marker.
 | --- | --- |
 | React | 19 |
 | MUI (`@apollovisionlabs/guide-mui` only) | 7, 9 |
+| `@apollovisionlabs/guide-unstyled` | no UI toolkit; peers on `react` and `react-dom` only |
 | Rendering | ESM and CommonJS, with `"use client"` for Next's App Router |
 
 ## Prior art
@@ -504,8 +507,9 @@ settle (`useHotspots().restored`) before drawing any marker.
 The spotlight-and-popover approach is inspired by [driver.js](https://driverjs.com) (MIT), as are
 [react-joyride](https://github.com/gilbarbara/react-joyride) (MIT) and
 [reactour](https://github.com/elrumordelaluz/reactour) (MIT). `guide` differs from all three mainly
-in splitting the state machine (`@apollovisionlabs/guide-core`) from rendering (`@apollovisionlabs/guide-mui`), so the logic can be
-reused with a different design system. Contributors must also read the licence discipline in
+in splitting the state machine (`@apollovisionlabs/guide-core`) from rendering, which ships as two
+packages, `@apollovisionlabs/guide-mui` and `@apollovisionlabs/guide-unstyled`, so the same logic
+renders through a design system or through plain DOM. Contributors must also read the licence discipline in
 `CONTRIBUTING.md` before looking at any other tour library.
 
 ## Documentation

@@ -1,0 +1,257 @@
+/*
+ * Optional stylesheet for @apollovisionlabs/guide-unstyled.
+ *
+ * Every component in this package renders plain DOM elements with a `guide-` class and no
+ * inline appearance. This file supplies colour, spacing, borders, radius, typography, the
+ * strike through on a completed checklist item, the pulse on a hotspot marker, and transitions.
+ *
+ * It never sets `position`, `top`, `left`, `z-index` or `pointer-events` on a part the
+ * components already position: those are mechanics the components own, fixed inline, and a
+ * stylesheet fighting them would be a bug, not a theme.
+ *
+ * Every colour is a custom property with a fallback, so retheming means setting a handful of
+ * variables rather than rewriting rules. See the README for the full list.
+ */
+
+.guide-popover,
+.guide-launcher-panel,
+.guide-hotspot-bubble,
+.guide-checklist {
+  background: var(--guide-surface, #ffffff);
+  color: var(--guide-ink, #111111);
+  border: 1px solid var(--guide-border, #d9d9d9);
+  border-radius: var(--guide-radius, 8px);
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.guide-popover {
+  padding: 16px;
+  max-width: 320px;
+}
+
+.guide-hotspot-bubble {
+  padding: 12px 16px;
+  max-width: 300px;
+}
+
+.guide-launcher-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.guide-checklist {
+  padding: 16px;
+  max-width: 320px;
+}
+
+/* Headers and footers */
+
+.guide-popover-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.guide-popover-title,
+.guide-hotspot-title,
+.guide-checklist-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.guide-popover-body,
+.guide-hotspot-body {
+  margin: 8px 0 0;
+  color: var(--guide-ink, #111111);
+}
+
+.guide-popover-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.guide-popover-count {
+  color: var(--guide-muted, #6b6b6b);
+  font-size: 12px;
+  margin-right: auto;
+}
+
+.guide-popover-awaiting {
+  color: var(--guide-muted, #6b6b6b);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.guide-hotspot-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Buttons: guide-button is the base, guide-button-primary and guide-button-icon layer on it. */
+
+.guide-button {
+  border: 1px solid var(--guide-border, #d9d9d9);
+  border-radius: var(--guide-radius, 8px);
+  background: var(--guide-surface, #ffffff);
+  color: var(--guide-ink, #111111);
+  font: inherit;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.guide-button-primary {
+  background: var(--guide-primary, #2563eb);
+  border-color: var(--guide-primary, #2563eb);
+  color: var(--guide-primary-ink, #ffffff);
+}
+
+.guide-button-icon {
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+/* Checklist */
+
+.guide-checklist-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-checklist-progress {
+  color: var(--guide-muted, #6b6b6b);
+  font-size: 12px;
+  margin-right: auto;
+}
+
+/* A flat track. There is no fill element to size proportionally: the component reports
+progress only through `aria-valuenow`, not through a width or a custom property a stylesheet
+could read, so the filled portion is not something CSS alone can draw. */
+.guide-checklist-bar {
+  height: 4px;
+  margin: 12px 0;
+  background: var(--guide-border, #d9d9d9);
+  border-radius: var(--guide-radius, 8px);
+}
+
+.guide-checklist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-checklist-check {
+  accent-color: var(--guide-primary, #2563eb);
+}
+
+.guide-checklist-item-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.guide-checklist-item-body {
+  color: var(--guide-muted, #6b6b6b);
+  font-size: 12px;
+}
+
+/* A completed item is struck through on its title, not on the whole row, so the still-visible
+body text under it is not read as retracted along with it. */
+.guide-checklist-item[data-guide-complete='true'] .guide-checklist-item-title {
+  text-decoration: line-through;
+  color: var(--guide-muted, #6b6b6b);
+}
+
+/* Launcher */
+
+.guide-launcher {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  background: var(--guide-primary, #2563eb);
+  color: var(--guide-primary-ink, #ffffff);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.guide-launcher-ring {
+  color: var(--guide-primary, #2563eb);
+}
+
+/* Spotlight */
+
+/* The child combinator reaches only the overlay rect painted through the mask, not the two
+rects that build the mask itself: both live under the svg too, and `.guide-spotlight rect`
+without it would recolour the mask and break the hole it cuts. */
+.guide-spotlight > rect {
+  fill: var(--guide-overlay, rgba(0, 0, 0, 0.5));
+}
+
+/* Hotspot marker */
+
+/* No `position` rule here: the component already sets `position: fixed` inline, which is
+already a containing block for the pulse's `::after`, so nothing needs adding for it to work. */
+.guide-hotspot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--guide-primary, #2563eb);
+  cursor: pointer;
+}
+
+.guide-hotspot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: guide-hotspot-pulse 1800ms ease-out infinite;
+}
+
+@keyframes guide-hotspot-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Transitions, guarded the same way the components guard their own. */
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-hotspot::after {
+    animation: none;
+  }
+}
