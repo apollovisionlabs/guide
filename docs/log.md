@@ -4,6 +4,23 @@ Newest first. Add an entry whenever any document in this bundle, or a root guide
 
 ## 2026-09-05
 
+- Fixed a review finding: `INFRA.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `docs/adoption.md` and
+  `docs/migrations.md` still described a two package library after `@apollovisionlabs/guide-unstyled`
+  landed, and one statement was actively wrong: `INFRA.md` claimed both packages declared
+  `"sideEffects": false`, but `@apollovisionlabs/guide-unstyled` declares `["*.css"]` on purpose, so a
+  bundler cannot silently drop an adopter's stylesheet import. Updated every package-count and
+  build-description sentence these five documents got wrong, and added the reasoning for the
+  `sideEffects` difference to `INFRA.md`. `docs/index.md` already said three packages.
+- Fixed the other review finding: `.changeset/unstyled-demo-parity.md` would have been the entire
+  0.1.0 npm changelog for `@apollovisionlabs/guide-unstyled` and never said what the package is.
+  Rewritten to introduce it: a rendering layer for `@apollovisionlabs/guide-core` with no UI
+  toolkit, the three surfaces it renders, that appearance is driven by classes and
+  `data-guide-part` attributes with an optional stylesheet, and its limits. Corrected the "no
+  runtime dependency" claim to "no runtime dependency beyond `@apollovisionlabs/guide-core`",
+  since the package does depend on it. Added a second changeset,
+  `document-guide-unstyled-in-readmes.md`, marking `@apollovisionlabs/guide-core` and
+  `@apollovisionlabs/guide-mui` patch for the README changes already on this branch that no
+  changeset covered.
 - Added [ADR 0019](adr/0019-a-second-rendering-layer-with-no-toolkit.md): `@apollovisionlabs/guide-unstyled`
   renders the tour, the checklist and the hotspots as plain DOM against the same core, with an
   optional stylesheet rather than a Tailwind build, hand written positioning rather than a

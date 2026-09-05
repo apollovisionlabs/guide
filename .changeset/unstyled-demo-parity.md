@@ -2,19 +2,26 @@
 '@apollovisionlabs/guide-unstyled': minor
 ---
 
-The demo application now has a second route rendering the exact same tour, checklist and
-hotspot declarations through this package instead of `@apollovisionlabs/guide-mui`, and
-`e2e/unstyled.spec.ts` runs the same journeys the styled suite runs against it, plus a scenario
-the styled suite cannot have: a tour step near the right edge of a narrow window, asserting the
-popover's own box stays inside the viewport.
+A new rendering layer for `@apollovisionlabs/guide-core`: the tour, the checklist and the
+hotspots as plain DOM elements, with no UI toolkit and no CSS-in-JS.
 
-That real browser run caught a genuine defect: `StepPopover` applied the `zIndex` prop it was
-given as its own stacking level instead of one above it, tying it with `Spotlight` at the same
-level. With the tie, whichever of the two happened to mount later in the DOM painted on top, and
-in practice that was the spotlight, silently swallowing every click on the popover's own
-buttons. `StepPopover` now renders one level above whatever `zIndex` it receives (or the default),
-matching what `@apollovisionlabs/guide-mui`'s equivalent already did and what this package's own
-README already documented.
+It renders the same three surfaces `@apollovisionlabs/guide-mui` does: `GuideTour` (the spotlight
+overlay and the step popover), `Checklist` and `ChecklistLauncher`, and `Hotspots`. Every part
+carries a `guide-` class and a `data-guide-part` attribute and nothing else, so appearance is
+entirely yours to set: write your own CSS against those selectors, import the optional stylesheet
+this package ships (`@apollovisionlabs/guide-unstyled/styles.css`) for a default look driven by
+CSS custom properties, or do both; the stylesheet never sets the positioning or stacking the
+components already compute, so it never fights them.
 
-This package carries no runtime dependency beyond `@apollovisionlabs/guide-core`, with `react`
-and `react-dom` as peers.
+This package has no runtime dependency beyond `@apollovisionlabs/guide-core`. Peer dependencies
+are `react` and `react-dom`, `^19` each.
+
+A few limits to know before installing:
+
+- Positioning is resolved against the viewport, not a scrolling ancestor: a target near the edge
+  of its own scroll container, rather than the window's, is not corrected for.
+- The checklist launcher's button and the hotspot markers share the same default stacking level
+  unless each is given an explicit `zIndex`.
+- The checklist's progress bar exposes `aria-valuenow` for assistive technology, but the shipped
+  stylesheet styles it as a flat track: nothing in the markup carries the percentage as a width or
+  a custom property a stylesheet could read for a proportional fill.

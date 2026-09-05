@@ -24,17 +24,17 @@ supported-peer change, or a public API change.
 
 ## Dependency majors
 
-- **Runtime dependencies are avoided.** `@apollovisionlabs/guide-core` has none. `@apollovisionlabs/guide-mui` has exactly one,
-  `@apollovisionlabs/guide-core` itself. Everything else is a peer or a dev dependency. Adding a first real runtime
-  dependency is an ADR-level decision, and needs a permissive licence
-  ([CONTRIBUTING.md](../CONTRIBUTING.md)).
+- **Runtime dependencies are avoided.** `@apollovisionlabs/guide-core` has none. `@apollovisionlabs/guide-mui` and
+  `@apollovisionlabs/guide-unstyled` each have exactly one, `@apollovisionlabs/guide-core` itself. Everything else is
+  a peer or a dev dependency. Adding a first real runtime dependency is an ADR-level decision, and
+  needs a permissive licence ([CONTRIBUTING.md](../CONTRIBUTING.md)).
 - **Peers express the supported range**, and a range is only advertised once something verifies it.
   `@apollovisionlabs/guide-mui` declares `"@mui/material": "^7 || ^9"`, and the `mui9` job in
   `.github/workflows/ci.yml` installs MUI 9 and typechecks against it. Widening a peer range without
   adding the matching verification is not acceptable. See
   [ADR 0006](adr/0006-support-two-mui-majors.md).
-- **React** is peer-pinned to `^19` in both packages. Supporting another major means deciding what
-  to do about the hooks the core relies on, and would be an ADR.
+- **React** is peer-pinned to `^19` in all three packages. Supporting another major means deciding
+  what to do about the hooks the core relies on, and would be an ADR.
 
 ## Framework and toolchain moves
 
@@ -56,8 +56,9 @@ Both packages are published and versioned with [Changesets](references/changeset
   `GuideTour`. Renaming a prop on either is a breaking change.
 - Pre-1.0, a breaking change is a minor bump; say plainly in the changeset what breaks and what
   the replacement is.
-- Removing or renaming an exported type from `@apollovisionlabs/guide-core` breaks `@apollovisionlabs/guide-mui` too; both packages
-  move together, which is what `updateInternalDependencies: "patch"` handles.
+- Removing or renaming an exported type from `@apollovisionlabs/guide-core` breaks `@apollovisionlabs/guide-mui`
+  and `@apollovisionlabs/guide-unstyled` too; all three packages move together, which is what
+  `updateInternalDependencies: "patch"` handles.
 
 Releases are published by the workflow, with the version bump made in the repository beforehand
 rather than by a pull request the workflow opens. See [INFRA.md](../INFRA.md) for the exact

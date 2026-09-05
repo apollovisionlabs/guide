@@ -23,7 +23,7 @@ What follows is the order to do things in, and the choices you have to make.
 The working example this playbook points at is `apps/demo`, a three-page application in this
 repository that integrates the library exactly as described here. `e2e/` drives it.
 
-## 1. Install the two packages
+## 1. Install the packages
 
 ```bash
 pnpm add @apollovisionlabs/guide-core @apollovisionlabs/guide-mui @mui/material @emotion/react @emotion/styled
@@ -35,12 +35,27 @@ persistence, and the accessibility primitives. It renders nothing and has no run
 `@apollovisionlabs/guide-mui` is one rendering of that engine, built on MUI: a spotlight overlay
 and a step popover. Its only runtime dependency is the core.
 
+If you have no UI toolkit, or do not want to take one on for this, install
+`@apollovisionlabs/guide-unstyled` instead:
+
+```bash
+pnpm add @apollovisionlabs/guide-core @apollovisionlabs/guide-unstyled
+```
+
+It renders the same tour, the same checklist and the same hotspots as plain DOM elements, each
+part carrying a class and a `data-guide-part` attribute for your own CSS to target, with an
+optional stylesheet you can import instead. Its only runtime dependency is `@apollovisionlabs/guide-core`
+too. See [its README](../packages/unstyled/README.md) for the components it swaps in for
+`@apollovisionlabs/guide-mui`'s.
+
 If you intend to draw your own popover, install the core alone and read `activeStep` from
 `useGuideStep()`. Everything below assumes the MUI layer, because that is the shortest path to a
-running tour.
+running tour; swapping in `@apollovisionlabs/guide-unstyled`'s equivalent components instead, the
+rest of this playbook still applies, only the import paths change.
 
-**Worked when**: both packages resolve, and `import { GuideProvider } from '@apollovisionlabs/guide-core'`
-typechecks. React 19 and MUI 7 or 9 are the supported peers.
+**Worked when**: the packages you chose resolve, and `import { GuideProvider } from '@apollovisionlabs/guide-core'`
+typechecks. React 19 is the supported peer for both rendering layers, and MUI 7 or 9 for the MUI
+one.
 
 ## 2. Declare the tour as data
 
@@ -122,8 +137,8 @@ last step.
 
 Two things matter.
 
-Both packages are built with a `"use client"` banner on every emitted file, so importing them does
-not by itself break a server build. But `GuideProvider` uses React state and context, so the
+All three packages are built with a `"use client"` banner on every emitted file, so importing them
+does not by itself break a server build. But `GuideProvider` uses React state and context, so the
 component that renders it is a client component: a root `layout.tsx` is a server component, and you
 need your own `'use client'` wrapper between the two.
 

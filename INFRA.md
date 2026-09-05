@@ -12,7 +12,7 @@ generated:
 
 # Infrastructure
 
-There is no deployed service here: this repository produces two npm packages and a private demo
+There is no deployed service here: this repository produces three npm packages and a private demo
 application. "Infrastructure" means the build, continuous integration, and the release path.
 
 ## Workspace
@@ -29,30 +29,36 @@ satisfy its own peers during tests).
 
 ## Build
 
-Both packages build with tsup (`packages/*/tsup.config.ts`), from a single entry `src/index.ts`:
+All three packages build with tsup (`packages/*/tsup.config.ts`), from a single entry `src/index.ts`:
 
 - **Formats**: ESM (`dist/index.mjs`) and CJS (`dist/index.cjs`), with `.d.ts` and `.d.cts`
   declarations and sourcemaps. `package.json` exposes them through `exports`, `main`, `module` and
   `types`.
 - **Banner**: `"use client";` is prepended to every output file, which Next's App Router requires
-  for a package built on hooks. Verified present at the top of all four emitted bundles.
+  for a package built on hooks. Verified present at the top of all six emitted bundles.
 - **`treeshake: false`, deliberately.** Enabling it routes tsup's CJS output through an
   esbuild-then-rollup pipeline that strips the banner entirely. The configs carry that reason as a
   comment, and it is recorded in
   [ADR 0005](docs/adr/0005-disable-treeshake-to-keep-use-client.md). Consumers are not penalised:
-  both packages declare `"sideEffects": false`, so a consumer's own bundler still eliminates dead
-  code.
+  the core and the MUI package declare `"sideEffects": false`, so a consumer's own bundler still
+  eliminates dead code. `@apollovisionlabs/guide-unstyled` cannot make that same claim: it ships an
+  optional stylesheet, and `false` would let a bundler drop an adopter's own
+  `import '@apollovisionlabs/guide-unstyled/styles.css'` as dead code, with nothing to explain why the
+  styles never appeared. Its `package.json` declares `"sideEffects": ["*.css"]` instead, which still
+  lets a bundler eliminate dead JavaScript but leaves any CSS import alone.
 - **Externals**: React and ReactDOM for the core; those plus `@apollovisionlabs/guide-core`, `@mui/material` and
-  both Emotion packages for the MUI layer. Nothing peer-declared is inlined.
+  both Emotion packages for the MUI layer; React, ReactDOM and `@apollovisionlabs/guide-core` for the
+  unstyled layer. Nothing peer-declared is inlined.
 
 ## Typecheck wiring
 
 `packages/mui/tsconfig.json` maps `@apollovisionlabs/guide-core` to `../core/src/index.ts` and includes
-`../core/src/globals.d.ts`, and `packages/mui/vitest.config.ts` aliases the same path. The repo
+`../core/src/globals.d.ts`, and `packages/mui/vitest.config.ts` aliases the same path;
+`packages/unstyled/tsconfig.json` and `packages/unstyled/vitest.config.ts` do the same. The repo
 therefore typechecks and tests from sources, with no build step required first. Two consequences,
 documented in [ADR 0009](docs/adr/0009-typecheck-core-through-sources.md): a type error introduced
-in the core is reported as a `@apollovisionlabs/guide-mui` failure, and the **emitted declaration files are never
-validated** by `pnpm typecheck`.
+in the core is reported as a `@apollovisionlabs/guide-mui` or `@apollovisionlabs/guide-unstyled` failure, and the
+**emitted declaration files are never validated** by `pnpm typecheck`.
 
 ## Continuous integration
 
@@ -70,8 +76,9 @@ pnpm exec playwright install --with-deps chromium
 pnpm test:e2e
 ```
 
-**The order is load-bearing.** `apps/demo` imports `@apollovisionlabs/guide-core` and `@apollovisionlabs/guide-mui` as workspace
-dependencies resolved through their `dist` output, and `pnpm test:e2e` boots that demo. Moving
+**The order is load-bearing.** `apps/demo` imports `@apollovisionlabs/guide-core`, `@apollovisionlabs/guide-mui` and
+`@apollovisionlabs/guide-unstyled` as workspace dependencies resolved through their `dist` output, and
+`pnpm test:e2e` boots that demo. Moving
 `pnpm build` after the end-to-end step would run Playwright against a missing or stale bundle.
 On failure the `playwright-report` directory is uploaded as an artifact.
 
@@ -84,7 +91,8 @@ than an aspiration: MUI 7 is exercised by the unit tests and the demo, MUI 9 by 
 ## Tests
 
 - **Unit**: Vitest with the jsdom environment and `globals: true`, one config per package, each
-  with its own `test/setup.ts`. 69 tests in `@apollovisionlabs/guide-core`, 27 in `@apollovisionlabs/guide-mui`.
+  with its own `test/setup.ts`. 69 tests in `@apollovisionlabs/guide-core`, 27 in
+  `@apollovisionlabs/guide-mui`, and its own suite in `@apollovisionlabs/guide-unstyled`.
 - **End-to-end**: Playwright (`playwright.config.ts`), a single `chromium` project against
   `http://localhost:5173`, `trace: 'on-first-retry'`. 7 scenarios: four in `e2e/tour.spec.ts`
   (cross-page traversal, resume after interruption, spotlight tracking on scroll, interactive
@@ -99,9 +107,10 @@ than an aspiration: MUI 7 is exercised by the unit tests and the demo, MUI 9 by 
 Everything below is what *exists*, not what is planned.
 
 - **Configured**: Changesets (`.changeset/config.json`), `access: public` and
-  `publishConfig.access: "public"` on both packages, `files: ["dist", "README.md", "LICENSE"]`,
-  a `repository` field pointing at `https://github.com/apollovisionlabs/guide.git`, and a `0.1.0` entry in
-  each `CHANGELOG.md`.
+  `publishConfig.access: "public"` on all three packages, `files: ["dist", "README.md", "LICENSE"]`
+  (plus `"styles.css"` for `@apollovisionlabs/guide-unstyled`), a `repository` field pointing at
+  `https://github.com/apollovisionlabs/guide.git`, and a `0.1.0` entry in each of the two published
+  `CHANGELOG.md` files; `@apollovisionlabs/guide-unstyled` has not published one yet.
 - **A release workflow exists**: `.github/workflows/release.yml`, triggered by a push to `main`.
   It reinstalls, typechecks, tests, builds and runs the end to end suite, then publishes every
   package whose version is not yet on the registry. A `concurrency` group keeps two releases from
@@ -148,8 +157,8 @@ Everything below is what *exists*, not what is planned.
   pinned here, and broken in pnpm 11.0.8. Treat a pnpm major upgrade as a change that has to be
   revalidated against the registry, not as routine maintenance.
 - **The packages sit in the `@apollovisionlabs` scope**, which the organisation already owns:
-  `@apollovisionlabs/guide-core` and `@apollovisionlabs/guide-mui`. The unclaimed `@guide` scope
-  and its fallbacks were abandoned, see
+  `@apollovisionlabs/guide-core`, `@apollovisionlabs/guide-mui` and `@apollovisionlabs/guide-unstyled`. The
+  unclaimed `@guide` scope and its fallbacks were abandoned, see
   [ADR 0012](docs/adr/0012-publish-under-the-apollovisionlabs-scope.md).
 
 ## Demo application

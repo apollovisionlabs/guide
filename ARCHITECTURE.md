@@ -1,7 +1,7 @@
 ---
 type: Guide
 title: Architecture
-description: How the two packages of this monorepo are layered, and the mechanisms that make a guided tour work.
+description: How the three packages of this monorepo are layered, and the mechanisms that make a guided tour work.
 tags: [architecture, monorepo, react, packages]
 status: stable
 generated:
@@ -18,8 +18,9 @@ option a consumer passes), see [README.md](README.md); it is not repeated here.
 ## Repository layout
 
 ```
-packages/core/     @apollovisionlabs/guide-core:  state machine, DOM resolution, a11y, persistence. No UI dependency.
-packages/mui/      @apollovisionlabs/guide-mui:   MUI rendering of what the core exposes.
+packages/core/     @apollovisionlabs/guide-core:     state machine, DOM resolution, a11y, persistence. No UI dependency.
+packages/mui/      @apollovisionlabs/guide-mui:      MUI rendering of what the core exposes.
+packages/unstyled/ @apollovisionlabs/guide-unstyled: plain DOM rendering of what the core exposes, no UI toolkit.
 apps/demo/         demo:         private three-page Vite app, also the Playwright fixture.
 e2e/               Playwright specs run against apps/demo.
 ```
@@ -158,6 +159,6 @@ Recorded as facts, not as complaints:
 
 ## Build and packaging
 
-Both packages build with tsup to ESM + CJS + declarations, with a `"use client"` banner and
+All three packages build with tsup to ESM + CJS + declarations, with a `"use client"` banner and
 `treeshake: false`. The reasoning is in [INFRA.md](INFRA.md) and
 [ADR 0005](docs/adr/0005-disable-treeshake-to-keep-use-client.md).

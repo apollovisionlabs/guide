@@ -23,15 +23,16 @@ Run from the repository root. All four are verified to pass on the current tree.
 
 | Command | What it does |
 | --- | --- |
-| `pnpm typecheck` | `tsc --noEmit` in `packages/core` and `packages/mui`. |
-| `pnpm test` | Vitest, jsdom environment: 69 tests in `@apollovisionlabs/guide-core`, 27 in `@apollovisionlabs/guide-mui`. |
-| `pnpm build` | tsup in both packages: ESM, CJS, declarations, sourcemaps. |
+| `pnpm typecheck` | `tsc --noEmit` in `packages/core`, `packages/mui` and `packages/unstyled`. |
+| `pnpm test` | Vitest, jsdom environment: 69 tests in `@apollovisionlabs/guide-core`, 27 in `@apollovisionlabs/guide-mui`, and its own suite in `@apollovisionlabs/guide-unstyled`. |
+| `pnpm build` | tsup in all three packages: ESM, CJS, declarations, sourcemaps. |
 | `pnpm test:e2e` | Playwright, Chromium only: 7 scenarios in `e2e/`. |
 | `pnpm --filter demo dev` | The demo app on `http://localhost:5173`. |
 
 `pnpm test:e2e` starts the demo itself through Playwright's `webServer`
 (`playwright.config.ts`), reusing an already-running server outside CI. **Run `pnpm build`
-first**: the demo resolves `@apollovisionlabs/guide-core` and `@apollovisionlabs/guide-mui` through their `dist` output, so an
+first**: the demo resolves `@apollovisionlabs/guide-core`, `@apollovisionlabs/guide-mui` and
+`@apollovisionlabs/guide-unstyled` through their `dist` output, so an
 end-to-end run against a stale or absent build tests the wrong code. The CI workflow orders the
 steps for exactly that reason. See [INFRA.md](INFRA.md).
 
