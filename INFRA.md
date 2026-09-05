@@ -90,13 +90,21 @@ than an aspiration: MUI 7 is exercised by the unit tests and the demo, MUI 9 by 
 
 ## Tests
 
-- **Unit**: Vitest with the jsdom environment and `globals: true`, one config per package, each
-  with its own `test/setup.ts`. 69 tests in `@apollovisionlabs/guide-core`, 27 in
-  `@apollovisionlabs/guide-mui`, and its own suite in `@apollovisionlabs/guide-unstyled`.
+- **Unit**: Vitest with the jsdom environment and `globals: true`, one config per package
+  (`@apollovisionlabs/guide-core`, `@apollovisionlabs/guide-mui`, `@apollovisionlabs/guide-unstyled`),
+  each with its own `test/setup.ts`. Run `pnpm test` for the current count rather than trust a
+  number written here: a hardcoded count is stale as soon as someone adds a test.
 - **End-to-end**: Playwright (`playwright.config.ts`), a single `chromium` project against
-  `http://localhost:5173`, `trace: 'on-first-retry'`. 7 scenarios: four in `e2e/tour.spec.ts`
-  (cross-page traversal, resume after interruption, spotlight tracking on scroll, interactive
-  step), three in `e2e/a11y.spec.ts` (full keyboard path, live-region announcements, both themes).
+  `http://localhost:5173`, `trace: 'on-first-retry'`. Run `pnpm test:e2e` for the current count.
+  `e2e/tour.spec.ts` covers cross-page traversal, resuming after interruption, spotlight tracking
+  on scroll, an interactive step, and a step that advances itself on a click; `e2e/a11y.spec.ts`
+  covers the full keyboard path, live-region announcements, and both themes; `e2e/checklist.spec.ts`
+  covers starting a tour from a checklist item, a ticked item surviving a reload, and the launcher's
+  own keyboard operation; `e2e/hotspots.spec.ts` covers a hotspot opening and staying dismissed,
+  deferring to a running tour, and closing from the keyboard; `e2e/unstyled.spec.ts` runs the tour,
+  checklist and hotspot journeys again against `@apollovisionlabs/guide-unstyled`, plus a scenario
+  the styled suite cannot have: a popover near the edge of a narrow window staying inside the
+  viewport.
 - **Visual baselines**: `e2e/a11y.spec.ts-snapshots/tour-light-chromium-darwin.png` and
   `tour-dark-chromium-darwin.png`. They are platform-specific (`darwin`) and their pixel content
   has never been independently verified. They pin whatever was rendered when they were recorded.

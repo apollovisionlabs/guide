@@ -24,9 +24,9 @@ Run from the repository root. All four are verified to pass on the current tree.
 | Command | What it does |
 | --- | --- |
 | `pnpm typecheck` | `tsc --noEmit` in `packages/core`, `packages/mui` and `packages/unstyled`. |
-| `pnpm test` | Vitest, jsdom environment: 69 tests in `@apollovisionlabs/guide-core`, 27 in `@apollovisionlabs/guide-mui`, and its own suite in `@apollovisionlabs/guide-unstyled`. |
+| `pnpm test` | Vitest, jsdom environment, one config per package: `@apollovisionlabs/guide-core`, `@apollovisionlabs/guide-mui`, `@apollovisionlabs/guide-unstyled`. |
 | `pnpm build` | tsup in all three packages: ESM, CJS, declarations, sourcemaps. |
-| `pnpm test:e2e` | Playwright, Chromium only: 7 scenarios in `e2e/`. |
+| `pnpm test:e2e` | Playwright, Chromium only, against `e2e/`: `tour.spec.ts`, `a11y.spec.ts`, `checklist.spec.ts`, `hotspots.spec.ts` and `unstyled.spec.ts`. |
 | `pnpm --filter demo dev` | The demo app on `http://localhost:5173`. |
 
 `pnpm test:e2e` starts the demo itself through Playwright's `webServer`
@@ -69,7 +69,7 @@ chore: public access, demo scroll margin and asserted announcement
 Commits made before the move to the apollovisionlabs organisation are in French. That history is
 left as it is ([ADR 0011](docs/adr/0011-move-to-apollo-vision-labs.md)).
 
-Scopes in use: `core`, `mui`, `demo`. `docs`, `test` and `chore` are used unscoped as well.
+Scopes in use: `core`, `mui`, `unstyled`, `demo`, `ci`. `docs`, `test` and `chore` are used unscoped as well.
 
 ## Language policy
 

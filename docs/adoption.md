@@ -403,7 +403,16 @@ prove it again about the library itself:
 - `e2e/a11y.spec.ts`: the full keyboard walkthrough (focus lands on the dialog, arrow keys move,
   Escape stops); the step position is announced in the `aria-live` region as `"1 / 3"`; both light
   and dark themes render legibly, against screenshot baselines.
-- `e2e/hotspots.spec.ts`: a hotspot explains one element and then stays gone once opened.
+- `e2e/checklist.spec.ts`: an item launches its tour and finishing that tour ticks the item; a
+  ticked item survives a reload; the launcher and its items are reachable and operable from the
+  keyboard, including handing focus into the tour dialog when an item starts one.
+- `e2e/hotspots.spec.ts`: a hotspot explains one element and then stays gone once opened; a hotspot
+  steps aside while a tour points at the same element; a tour started from a hotspot leaves focus
+  on a real element; clicking an open marker again closes its bubble.
+- `e2e/unstyled.spec.ts`: the same tour, checklist and hotspot journeys again, rendered through
+  `@apollovisionlabs/guide-unstyled` instead of `@apollovisionlabs/guide-mui`, plus a scenario the
+  styled suite cannot have: a step near the right edge of a narrow window keeps its own popover
+  inside the viewport.
 
 What is yours to test, because it depends on your application and not on the library:
 
