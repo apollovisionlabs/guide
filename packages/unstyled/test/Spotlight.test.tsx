@@ -56,4 +56,13 @@ describe('Spotlight', () => {
     expect(svg).toHaveClass('guide-spotlight')
     expect(svg).toHaveAttribute('data-guide-part', 'spotlight')
   })
+
+  it('dims the overlay even with no stylesheet loaded', () => {
+    // Without a fallback fill, an unstyled consumer gets an opaque black screen instead of a
+    // dimmed overlay: this is the difference between plain and broken.
+    render(<Spotlight rect={rect} />)
+    const overlay = document.querySelector('svg > rect')
+    expect(overlay).toHaveAttribute('fill')
+    expect(overlay?.getAttribute('fill')).not.toBe('black')
+  })
 })

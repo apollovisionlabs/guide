@@ -143,18 +143,20 @@ export function StepPopover({
         tabIndex={-1}
         style={{ position: 'fixed', top: `${y}px`, left: `${x}px`, zIndex: zIndex ?? DEFAULT_Z_INDEX }}
       >
-        <h2 id={titleId} className="guide-popover-title" data-guide-part="popover-title">
-          {title}
-        </h2>
-        <button
-          type="button"
-          className="guide-button guide-button-icon"
-          data-guide-part="close"
-          aria-label={text.close}
-          onClick={onStop}
-        >
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <div className="guide-popover-header" data-guide-part="popover-header">
+          <h2 id={titleId} className="guide-popover-title" data-guide-part="popover-title">
+            {title}
+          </h2>
+          <button
+            type="button"
+            className="guide-button guide-button-icon"
+            data-guide-part="close"
+            aria-label={text.close}
+            onClick={onStop}
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
 
         <p id={bodyId} className="guide-popover-body" data-guide-part="popover-body">
           {body}

@@ -204,6 +204,16 @@ describe('StepPopover', () => {
     expect(close).toHaveAttribute('data-guide-part', 'close')
   })
 
+  it('wraps the title and close button in a header part, not a bare descendant selector', () => {
+    // Without this wrapper a stylesheet would have to target `.guide-popover > h2`, an element
+    // selector the parts table exists to avoid.
+    setup()
+    const title = screen.getByText('Title')
+    const header = title.closest('[data-guide-part="popover-header"]')
+    expect(header).toHaveClass('guide-popover-header')
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Close' }))
+  })
+
   it('carries the documented class and data-guide-part for the back button', () => {
     setup({ isFirst: false })
     const back = screen.getByRole('button', { name: 'Back' })

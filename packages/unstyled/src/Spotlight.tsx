@@ -75,7 +75,15 @@ export function Spotlight({
             />
           </mask>
         </defs>
-        <rect width="100%" height="100%" mask={`url(#${maskId})`} />
+        {/* fill is a presentation attribute, not part of the style object, on purpose: a
+        presentation attribute loses to any CSS declaration, so an adopter's own
+        `.guide-spotlight rect { fill: ... }` (or the shipped stylesheet) overrides it with
+        ordinary CSS specificity. Putting this colour in the inline style object instead would
+        make it win over any such rule and be unoverridable, which is the opposite of what an
+        unstyled package promises. Without any stylesheet at all this still has to read as a
+        dimmed overlay rather than a black screen blocking the whole application, so the
+        fallback here is a translucent black rather than the SVG default opaque fill. */}
+        <rect width="100%" height="100%" fill="rgba(0, 0, 0, 0.5)" mask={`url(#${maskId})`} />
       </svg>
     </Portal>
   )
