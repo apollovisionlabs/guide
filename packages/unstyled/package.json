@@ -1,0 +1,29 @@
+{
+  "name": "@apollovisionlabs/guide-unstyled",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": ["*.css"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "styles.css", "README.md", "LICENSE"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./styles.css": "./styles.css"
+  },
+  "publishConfig": { "access": "public" },
+  "repository": { "type": "git", "url": "git+https://github.com/apollovisionlabs/guide.git" },
+  "keywords": ["react", "onboarding", "product-tour", "walkthrough", "unstyled", "headless", "accessibility"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": { "@apollovisionlabs/guide-core": "workspace:*" },
+  "peerDependencies": { "react": "^19" }
+}

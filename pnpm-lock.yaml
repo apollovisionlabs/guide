@@ -114,6 +114,15 @@ importers:
         specifier: ^7.3.9
         version: 7.3.11(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react@19.2.8))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
 
+  packages/unstyled:
+    dependencies:
+      '@apollovisionlabs/guide-core':
+        specifier: workspace:*
+        version: link:../core
+      react:
+        specifier: ^19
+        version: 19.2.8
+
 packages:
 
   '@adobe/css-tools@4.5.0':
