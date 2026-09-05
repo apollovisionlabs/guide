@@ -131,14 +131,20 @@
   margin-right: auto;
 }
 
-/* A flat track. There is no fill element to size proportionally: the component reports
-progress only through `aria-valuenow`, not through a width or a custom property a stylesheet
-could read, so the filled portion is not something CSS alone can draw. */
+/* The track, and the filled portion drawn over it. The component sets only the fill's width,
+which is the one thing CSS cannot know; its colour and its height belong here. */
 .guide-checklist-bar {
   height: 4px;
   margin: 12px 0;
   background: var(--guide-border, #d9d9d9);
   border-radius: var(--guide-radius, 8px);
+  overflow: hidden;
+}
+
+.guide-checklist-bar-fill {
+  height: 100%;
+  background: var(--guide-primary, #2563eb);
+  border-radius: inherit;
 }
 
 .guide-checklist-list {

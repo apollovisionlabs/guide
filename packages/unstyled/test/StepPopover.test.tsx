@@ -197,11 +197,11 @@ describe('StepPopover', () => {
 
     const next = screen.getByRole('button', { name: 'Next' })
     expect(next).toHaveClass('guide-button', 'guide-button-primary')
-    expect(next).toHaveAttribute('data-guide-part', 'next')
+    expect(next).toHaveAttribute('data-guide-part', 'popover-next')
 
     const close = screen.getByRole('button', { name: 'Close' })
     expect(close).toHaveClass('guide-button', 'guide-button-icon')
-    expect(close).toHaveAttribute('data-guide-part', 'close')
+    expect(close).toHaveAttribute('data-guide-part', 'popover-close')
   })
 
   it('wraps the title and close button in a header part, not a bare descendant selector', () => {
@@ -219,7 +219,29 @@ describe('StepPopover', () => {
     const back = screen.getByRole('button', { name: 'Back' })
     expect(back).toHaveClass('guide-button')
     expect(back).not.toHaveClass('guide-button-primary')
-    expect(back).toHaveAttribute('data-guide-part', 'previous')
+    expect(back).toHaveAttribute('data-guide-part', 'popover-previous')
+  })
+
+  it('prefixes every part it emits, so no value in the table is a bare word', () => {
+    // ADR 0019 makes these values public API. `close`, `previous` and `next` were emitted
+    // unprefixed while every sibling in this same component, and both other surfaces, prefix,
+    // so an adopter selector like [data-guide-part="close"] would have matched only the tour.
+    setup()
+    const parts = Array.from(
+      screen.getByRole('dialog').querySelectorAll('[data-guide-part]'),
+    ).map((node) => node.getAttribute('data-guide-part'))
+    expect(parts.length).toBeGreaterThan(0)
+    expect(parts.filter((part) => !part?.startsWith('popover-'))).toEqual([])
+  })
+
+  it('is legible with no stylesheet loaded, through custom properties an adopter can set', () => {
+    // Without this the popover's background computes to rgba(0, 0, 0, 0) and its text prints
+    // straight over the page copy behind it. The value is a var() reference rather than a flat
+    // colour so that setting --guide-surface on any ancestor still rethemes it.
+    setup()
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.style.background).toBe('var(--guide-surface, #ffffff)')
+    expect(dialog.style.color).toBe('var(--guide-ink, #111111)')
   })
 
   it('carries the documented class and data-guide-part for the footer', () => {

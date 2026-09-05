@@ -436,6 +436,18 @@ describe('Hotspots', () => {
     )
   })
 
+  it('is legible with no stylesheet loaded, through custom properties an adopter can set', async () => {
+    // Without this the bubble's background computes to rgba(0, 0, 0, 0) and its text prints
+    // straight over the page copy behind it. The value is a var() reference rather than a flat
+    // colour so that setting --guide-surface on any ancestor still rethemes it.
+    const user = userEvent.setup()
+    render(<Page />)
+    await user.click(await screen.findByRole('button', { name: /Filters/ }))
+    const dialog = await screen.findByRole('dialog', { name: 'Filters' })
+    expect(dialog.style.background).toBe('var(--guide-surface, #ffffff)')
+    expect(dialog.style.color).toBe('var(--guide-ink, #111111)')
+  })
+
   it('carries the documented class and part for the tour button', async () => {
     const user = userEvent.setup()
     const tour: Tour = {

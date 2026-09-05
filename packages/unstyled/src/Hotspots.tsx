@@ -286,7 +286,19 @@ function HotspotMarker({
           aria-labelledby={titleId}
           aria-describedby={bodyId}
           tabIndex={-1}
-          style={{ position: 'fixed', top: `${y}px`, left: `${x}px`, zIndex: resolvedZIndex + 1 }}
+          // background and color are inline for legibility, not appearance: with no stylesheet
+          // loaded the bubble's background computes to rgba(0, 0, 0, 0) and its text prints
+          // straight over the page copy behind it. They are var() references rather than flat
+          // colours so an adopter still rethemes them by setting one custom property, which a
+          // flat inline colour would make impossible.
+          style={{
+            position: 'fixed',
+            top: `${y}px`,
+            left: `${x}px`,
+            zIndex: resolvedZIndex + 1,
+            background: 'var(--guide-surface, #ffffff)',
+            color: 'var(--guide-ink, #111111)',
+          }}
         >
           <h2 id={titleId} className="guide-hotspot-title" data-guide-part="hotspot-title">
             {hotspot.title}

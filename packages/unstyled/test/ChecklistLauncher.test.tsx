@@ -106,6 +106,95 @@ describe('ChecklistLauncher', () => {
     await waitFor(() => expect(dialog).not.toBeInTheDocument())
   })
 
+  it('closes the panel on a click outside it', async () => {
+    // A mouse user opens the panel, clicks the page to dismiss it, and before this the panel
+    // stayed open while the click landed on the content underneath. The hotspot bubble in this
+    // same package already closes this way; this mirrors it rather than inventing a second
+    // mechanism.
+    const user = userEvent.setup()
+    renderLauncher(
+      <>
+        <ChecklistLauncher checklistId="demo" />
+        <div data-testid="page-content">page content</div>
+      </>,
+    )
+    await user.click(await screen.findByRole('button', { name: /Checklist/ }))
+    await screen.findByRole('dialog')
+
+    await user.click(screen.getByTestId('page-content'))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('keeps a click inside the panel from closing it', async () => {
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" />)
+    await user.click(await screen.findByRole('button', { name: /Checklist/ }))
+    const dialog = await screen.findByRole('dialog')
+
+    await user.click(screen.getByText('First'))
+
+    expect(dialog).toBeInTheDocument()
+  })
+
+  it('returns focus to the launcher button after an outside click', async () => {
+    const user = userEvent.setup()
+    renderLauncher(
+      <>
+        <ChecklistLauncher checklistId="demo" />
+        <div data-testid="page-content">page content</div>
+      </>,
+    )
+    const launcher = await screen.findByRole('button', { name: /Checklist/ })
+    await user.click(launcher)
+    await screen.findByRole('dialog')
+
+    await user.click(screen.getByTestId('page-content'))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await waitFor(() => expect(document.activeElement).toBe(launcher))
+  })
+
+  it('does not claim aria-modal, which nothing in this layer enforces', async () => {
+    // The panel traps focus but applies neither aria-hidden nor inert to the rest of the app,
+    // so aria-modal="true" promised a screen reader an inertness that is not there. The
+    // hotspot bubble in this same package is a role="dialog" without it for the same reason.
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" />)
+    await user.click(await screen.findByRole('button', { name: /Checklist/ }))
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).not.toHaveAttribute('aria-modal')
+  })
+
+  it('is legible with no stylesheet loaded, through custom properties an adopter can set', async () => {
+    // Without this the panel's background computes to rgba(0, 0, 0, 0) and the checklist's
+    // text prints straight over the page copy behind it. The value is a var() reference rather
+    // than a flat colour so that setting --guide-surface on any ancestor still rethemes it.
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" />)
+    await user.click(await screen.findByRole('button', { name: /Checklist/ }))
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.style.background).toBe('var(--guide-surface, #ffffff)')
+    expect(dialog.style.color).toBe('var(--guide-ink, #111111)')
+  })
+
+  it('takes its corner inset from a custom property, so CSS alone can move it', async () => {
+    // The inset was a hard 24px inline, which beats any rule an adopter writes: clearing a
+    // fixed cookie banner or a mobile tab bar needed !important. Through a custom property,
+    // setting --guide-launcher-offset on any ancestor moves it.
+    renderLauncher(<ChecklistLauncher checklistId="demo" />)
+    const anchor = await screen.findByTestId('checklist-launcher-anchor')
+    expect(anchor.style.bottom).toBe('var(--guide-launcher-offset, 24px)')
+    expect(anchor.style.right).toBe('var(--guide-launcher-offset, 24px)')
+  })
+
+  it('takes the same custom property for the opposite corner', async () => {
+    renderLauncher(<ChecklistLauncher checklistId="demo" placement="top-left" />)
+    const anchor = await screen.findByTestId('checklist-launcher-anchor')
+    expect(anchor.style.top).toBe('var(--guide-launcher-offset, 24px)')
+    expect(anchor.style.left).toBe('var(--guide-launcher-offset, 24px)')
+  })
+
   it('shows a determinate ring reflecting the progress', async () => {
     renderLauncher(<ChecklistLauncher checklistId="demo" />, {
       storage: storageWithCompleted(['one']),

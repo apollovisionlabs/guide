@@ -84,7 +84,17 @@ export function Checklist({ checklistId, title, onDismiss, onActivate, labels }:
         aria-valuenow={progress}
         aria-valuemin={0}
         aria-valuemax={100}
-      />
+      >
+        {/* The track alone could never show progress: the computed value was spent entirely on
+        aria-valuenow, so a screen reader user heard "33" while a sighted user saw a flat bar
+        forever. The width is data-driven geometry, which is why it is inline; the fill's
+        colour and height stay in the stylesheet, where appearance belongs. */}
+        <div
+          className="guide-checklist-bar-fill"
+          data-guide-part="checklist-bar-fill"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
       <ul className="guide-checklist-list">
         {items.map((item) => (
           <li

@@ -73,6 +73,20 @@ describe('Checklist', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33')
   })
 
+  it('draws the filled portion of the bar, not only aria-valuenow', async () => {
+    // The track alone told two audiences different things: a screen reader heard "33" while a
+    // sighted user saw a flat bar that never moved. The width is data-driven geometry, so it
+    // is inline; the fill's colour and height stay in the stylesheet.
+    const { container } = renderChecklist(<Checklist checklistId="demo" />, {
+      storage: storageWithCompleted(['one']),
+    })
+    await screen.findByText('1 of 3', { selector: '.guide-checklist-progress' })
+    const fill = container.querySelector<HTMLElement>('[data-guide-part="checklist-bar-fill"]')
+    expect(fill).not.toBeNull()
+    expect(fill).toHaveClass('guide-checklist-bar-fill')
+    expect(fill?.style.width).toBe('33%')
+  })
+
   it('renders one row per item with the completed one marked', async () => {
     renderChecklist(<Checklist checklistId="demo" />, {
       storage: storageWithCompleted(['one']),

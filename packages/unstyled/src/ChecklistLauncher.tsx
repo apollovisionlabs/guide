@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useChecklist, useFocusTrap, type ResolvedChecklistItem } from '@apollovisionlabs/guide-core'
 import { usePosition } from './usePosition'
 import { Portal } from './Portal'
@@ -31,7 +31,12 @@ export interface ChecklistLauncherProps {
   labels?: Partial<ChecklistLauncherLabels>
 }
 
-const CORNER_OFFSET = 24
+// The inset an adopter most often needs to change, to clear a fixed cookie banner or a mobile
+// tab bar. It has to be inline, because the anchor's `position: fixed` is mechanics the
+// component owns, but a flat `24` inline would beat any rule an adopter writes and leave
+// `!important` as the only way out. Through a custom property, setting
+// `--guide-launcher-offset` on any ancestor moves it with ordinary CSS.
+const CORNER_INSET = 'var(--guide-launcher-offset, 24px)'
 const RING_SIZE = 64
 
 // Matches StepPopover and Spotlight's DEFAULT_Z_INDEX. The launcher must stay one level below
@@ -39,14 +44,14 @@ const RING_SIZE = 64
 const DEFAULT_Z_INDEX = 1299
 
 function cornerStyle(placement: NonNullable<ChecklistLauncherProps['placement']>): {
-  top?: number
-  bottom?: number
-  left?: number
-  right?: number
+  top?: string
+  bottom?: string
+  left?: string
+  right?: string
 } {
   return {
-    ...(placement.startsWith('bottom') ? { bottom: CORNER_OFFSET } : { top: CORNER_OFFSET }),
-    ...(placement.endsWith('right') ? { right: CORNER_OFFSET } : { left: CORNER_OFFSET }),
+    ...(placement.startsWith('bottom') ? { bottom: CORNER_INSET } : { top: CORNER_INSET }),
+    ...(placement.endsWith('right') ? { right: CORNER_INSET } : { left: CORNER_INSET }),
   }
 }
 
@@ -102,6 +107,38 @@ export function ChecklistLauncher({
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [open, close])
+
+  // Deferred focus recovery, stored so a component that unmounts mid-flight leaves no stray
+  // timer to fire against a gone component. Same reason as Hotspots.tsx's.
+  const outsideClickTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(outsideClickTimeoutRef.current), [])
+
+  // Mirrors the hotspot bubble's own outside-click close in this same package (see
+  // Hotspots.tsx), rather than inventing a second mechanism: mousedown, ignoring the panel and
+  // the launcher button, so clicking the page dismisses the panel instead of leaving it open
+  // while the click lands on the content underneath.
+  useEffect(() => {
+    if (!open || !container) return
+    const onPointerDown = (event: MouseEvent) => {
+      const node = event.target as Node
+      if (container.contains(node)) return
+      if (buttonEl?.contains(node)) return
+      close()
+      // useFocusTrap's cleanup runs synchronously here and restores focus to the launcher
+      // button, but the browser's own default action for this same mousedown, which blurs
+      // whatever is focused when the click lands outside it, has not fired yet: it runs after
+      // this listener returns and wins the race, leaving focus on document.body. Deferring the
+      // check to after the current task lets that blur happen first. A click that landed on a
+      // real, focusable control is left alone: that control has already claimed focus, and
+      // pulling it back would be focus theft.
+      clearTimeout(outsideClickTimeoutRef.current)
+      outsideClickTimeoutRef.current = setTimeout(() => {
+        if (document.activeElement === document.body) buttonEl?.focus()
+      })
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    return () => document.removeEventListener('mousedown', onPointerDown)
+  }, [open, container, buttonEl, close])
 
   // Nothing is drawn until the initial restore from storage has settled. Without this, a
   // checklist already dismissed, or partly completed, in storage would still get a launcher
@@ -165,8 +202,8 @@ export function ChecklistLauncher({
 
   // Ticking items one after another is the normal way to use the list, so the panel must stay
   // open for a plain tick. It only closes when the activated item hands off to something that
-  // needs the screen: a tour (which would otherwise be stuck behind an aria-hidden launcher)
-  // or a navigation away from the current page.
+  // needs the screen: a tour, whose spotlight and popover paint above the panel and whose focus
+  // trap would fight this one, or a navigation away from the current page.
   const onActivate = (item: ResolvedChecklistItem) => {
     if (item.tourId || item.href) close()
   }
@@ -224,10 +261,26 @@ export function ChecklistLauncher({
           className="guide-launcher-panel"
           data-guide-part="launcher-panel"
           role="dialog"
-          aria-modal="true"
+          // Deliberately no aria-modal. This layer traps focus but applies neither aria-hidden
+          // nor inert to the rest of the application, so aria-modal="true" promised a screen
+          // reader an inertness that is not there: its virtual cursor can still read the page
+          // behind the panel. Making the claim true would mean marking every sibling of the
+          // portal inert, a whole mechanism this package does not have and the hotspot bubble
+          // in the same package does not claim either. Dropping the claim is the honest half.
           aria-label={dialogLabel}
           tabIndex={-1}
-          style={{ position: 'fixed', top: `${y}px`, left: `${x}px`, zIndex: resolvedZIndex + 1 }}
+          // background and color are inline for legibility, not appearance: with no stylesheet
+          // loaded the panel's background computes to rgba(0, 0, 0, 0) and the checklist's text
+          // prints straight over the page copy behind it. They are var() references rather than
+          // flat colours so an adopter still rethemes them by setting one custom property.
+          style={{
+            position: 'fixed',
+            top: `${y}px`,
+            left: `${x}px`,
+            zIndex: resolvedZIndex + 1,
+            background: 'var(--guide-surface, #ffffff)',
+            color: 'var(--guide-ink, #111111)',
+          }}
         >
           <Checklist
             checklistId={checklistId}

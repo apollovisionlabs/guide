@@ -44,6 +44,22 @@ export function triggerResizeObserver(element: Element) {
 
 globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver
 
+// jsdom runs no layout, so `document.documentElement.clientWidth` and `clientHeight` are both
+// 0 rather than the viewport size a browser reports. usePosition clamps against those two
+// (they exclude a space-taking scrollbar, which `window.innerWidth` includes, and every rect
+// they are compared with comes from getBoundingClientRect, which excludes it too), so without
+// this stub every floating element in every test would clamp against a zero-sized viewport.
+// The default mirrors window.innerWidth/innerHeight, which is what a browser with overlay
+// scrollbars reports; a test that needs the two to disagree redefines these itself.
+Object.defineProperty(document.documentElement, 'clientWidth', {
+  configurable: true,
+  get: () => window.innerWidth,
+})
+Object.defineProperty(document.documentElement, 'clientHeight', {
+  configurable: true,
+  get: () => window.innerHeight,
+})
+
 if (!window.matchMedia) {
   window.matchMedia = ((query: string) => ({
     matches: false,

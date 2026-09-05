@@ -31,8 +31,16 @@ function sameSize(a: Size | null, b: Size): boolean {
   return a !== null && a.width === b.width && a.height === b.height
 }
 
+// documentElement.clientWidth/clientHeight, not window.innerWidth/innerHeight: the window
+// pair includes a space-taking scrollbar, while every rect this is compared against comes from
+// getBoundingClientRect, which excludes it. Clamping against the window put a right-clamped
+// floating element partly underneath the scrollbar on any platform that reserves space for
+// one. On a platform with overlay scrollbars the two are equal, so this costs nothing there.
 function readViewport(): Size {
-  return { width: window.innerWidth, height: window.innerHeight }
+  return {
+    width: document.documentElement.clientWidth,
+    height: document.documentElement.clientHeight,
+  }
 }
 
 function sameViewport(a: Size, b: Size): boolean {

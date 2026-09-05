@@ -143,7 +143,21 @@ export function StepPopover({
         aria-describedby={bodyId}
         {...(modal ? { 'aria-modal': 'true' as const } : {})}
         tabIndex={-1}
-        style={{ position: 'fixed', top: `${y}px`, left: `${x}px`, zIndex: (zIndex ?? DEFAULT_Z_INDEX) + 1 }}
+        // Position and stacking are mechanics. `background` and `color` are here for a
+        // different reason: with no stylesheet loaded the popover's background computes to
+        // rgba(0, 0, 0, 0) and its text prints straight over the page copy behind it, with no
+        // boundary at all. They are var() references rather than flat colours on purpose: a
+        // flat inline colour would beat every rule an adopter writes and make the package
+        // unthemeable, while this renders correctly with no CSS at all AND still yields to
+        // `--guide-surface` / `--guide-ink` set on any ancestor.
+        style={{
+          position: 'fixed',
+          top: `${y}px`,
+          left: `${x}px`,
+          zIndex: (zIndex ?? DEFAULT_Z_INDEX) + 1,
+          background: 'var(--guide-surface, #ffffff)',
+          color: 'var(--guide-ink, #111111)',
+        }}
       >
         <div className="guide-popover-header" data-guide-part="popover-header">
           <h2 id={titleId} className="guide-popover-title" data-guide-part="popover-title">
@@ -152,7 +166,7 @@ export function StepPopover({
           <button
             type="button"
             className="guide-button guide-button-icon"
-            data-guide-part="close"
+            data-guide-part="popover-close"
             aria-label={text.close}
             onClick={onStop}
           >
@@ -172,7 +186,7 @@ export function StepPopover({
             <button
               type="button"
               className="guide-button"
-              data-guide-part="previous"
+              data-guide-part="popover-previous"
               onClick={onPrevious}
             >
               {text.previous}
@@ -186,7 +200,7 @@ export function StepPopover({
             <button
               type="button"
               className="guide-button guide-button-primary"
-              data-guide-part="next"
+              data-guide-part="popover-next"
               onClick={onNext}
             >
               {isLast ? text.finish : text.next}
