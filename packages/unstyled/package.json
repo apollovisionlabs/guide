@@ -25,5 +25,5 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": { "@apollovisionlabs/guide-core": "workspace:*" },
-  "peerDependencies": { "react": "^19" }
+  "peerDependencies": { "react": "^19", "react-dom": "^19" }
 }
