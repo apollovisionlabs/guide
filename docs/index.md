@@ -4,8 +4,9 @@ okf_version: "0.2"
 
 # Documentation map
 
-Documentation for `guide`, an MIT-licensed monorepo publishing two React packages: `@apollovisionlabs/guide-core`,
-a headless product-tour engine, and `@apollovisionlabs/guide-mui`, its MUI rendering layer.
+Documentation for `guide`, an MIT-licensed monorepo publishing three React packages:
+`@apollovisionlabs/guide-core`, a headless product-tour engine, `@apollovisionlabs/guide-mui`, its MUI rendering
+layer, and `@apollovisionlabs/guide-unstyled`, a rendering layer with no UI toolkit and an optional stylesheet.
 
 Read this file first, then the playbook relevant to your task. Contribution triggers are in
 [AGENTS.md](../AGENTS.md).
@@ -33,7 +34,7 @@ Read this file first, then the playbook relevant to your task. Contribution trig
 
 ## Decisions
 
-[adr/index.md](adr/index.md) lists eighteen records, `0001` to `0018`, plus [adr/template.md](adr/template.md).
+[adr/index.md](adr/index.md) lists nineteen records, `0001` to `0019`, plus [adr/template.md](adr/template.md).
 
 - [0001](adr/0001-headless-core-and-rendering-layer.md) Split a headless core from the rendering layer
 - [0002](adr/0002-logical-targets-via-data-attribute.md) Resolve targets by logical key, never by CSS selector

@@ -62,6 +62,9 @@ importers:
       '@apollovisionlabs/guide-mui':
         specifier: workspace:*
         version: link:../../packages/mui
+      '@apollovisionlabs/guide-unstyled':
+        specifier: workspace:*
+        version: link:../../packages/unstyled
       '@emotion/react':
         specifier: ^11.14.0
         version: 11.14.0(@types/react@19.2.18)(react@19.2.8)

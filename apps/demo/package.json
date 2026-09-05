@@ -12,6 +12,7 @@
     "@emotion/styled": "^11.14.0",
     "@apollovisionlabs/guide-core": "workspace:*",
     "@apollovisionlabs/guide-mui": "workspace:*",
+    "@apollovisionlabs/guide-unstyled": "workspace:*",
     "@mui/material": "^7.3.9",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

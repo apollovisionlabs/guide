@@ -2,6 +2,28 @@
 
 Newest first. Add an entry whenever any document in this bundle, or a root guide, changes.
 
+## 2026-09-05
+
+- Added [ADR 0019](adr/0019-a-second-rendering-layer-with-no-toolkit.md): `@apollovisionlabs/guide-unstyled`
+  renders the tour, the checklist and the hotspots as plain DOM against the same core, with an
+  optional stylesheet rather than a Tailwind build, hand written positioning rather than a
+  dependency on one, and parity across all three surfaces rather than a tour only preview. Listed
+  it in [adr/index.md](adr/index.md) and updated the package count and the ADR count here.
+- `apps/demo` gained a second route, `/unstyled`, rendering `productTour`, `onboardingChecklist`
+  and `hotspots` (the exact same declarations the first route renders through
+  `@apollovisionlabs/guide-mui`) through `@apollovisionlabs/guide-unstyled` instead, importing its
+  stylesheet. `e2e/unstyled.spec.ts` runs the same journeys `tour.spec.ts`, `checklist.spec.ts` and
+  `hotspots.spec.ts` already run against it, plus a scenario the styled suite cannot have: a tour
+  step near the right edge of a narrow window, asserting the popover's own box stays inside the
+  viewport.
+- That real browser run caught a genuine defect in `packages/unstyled/src/StepPopover.tsx`: it
+  applied the `zIndex` prop it was given directly, tying it with `Spotlight` at the same stacking
+  level instead of sitting one above it as the package's own README already documented and as
+  `@apollovisionlabs/guide-mui`'s equivalent already did. With the tie, whichever of the two
+  happened to mount later in the DOM painted on top, and in practice that was the spotlight,
+  silently swallowing clicks on the popover's own buttons. Fixed, and added a changeset marking
+  `@apollovisionlabs/guide-unstyled` minor.
+
 ## 2026-09-04
 
 - Corrected the checklist restore fix below: `ChecklistProvider`'s restore effect awaited each

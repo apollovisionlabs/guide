@@ -22,7 +22,9 @@ const DEFAULT_LABELS: StepPopoverLabels = {
   awaitingAction: 'Click the highlighted element to continue.',
 }
 
-// Matches MUI's theme.zIndex.modal + 1 default, so the popover sits above the spotlight.
+// Matches Spotlight's own DEFAULT_Z_INDEX. The one added below, not this constant, is what
+// keeps the popover above the spotlight: both components receive the same `zIndex` prop from
+// GuideTour, so the offset has to live on whichever one needs to end up on top.
 const DEFAULT_Z_INDEX = 1300
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -141,7 +143,7 @@ export function StepPopover({
         aria-describedby={bodyId}
         {...(modal ? { 'aria-modal': 'true' as const } : {})}
         tabIndex={-1}
-        style={{ position: 'fixed', top: `${y}px`, left: `${x}px`, zIndex: zIndex ?? DEFAULT_Z_INDEX }}
+        style={{ position: 'fixed', top: `${y}px`, left: `${x}px`, zIndex: (zIndex ?? DEFAULT_Z_INDEX) + 1 }}
       >
         <div className="guide-popover-header" data-guide-part="popover-header">
           <h2 id={titleId} className="guide-popover-title" data-guide-part="popover-title">

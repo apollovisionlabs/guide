@@ -25,3 +25,4 @@ sequentially, zero-padded.
 | [0016](0016-one-storage-contract-for-tours-and-checklists.md) | One storage contract for tours and checklists | stable |
 | [0017](0017-advancing-on-an-action-implies-an-interactive-step.md) | Advancing on an action implies an interactive step | stable |
 | [0018](0018-hotspots-defer-to-a-running-tour.md) | Hotspots defer to a running tour, and a stranded focus lands on the step's target | stable |
+| [0019](0019-a-second-rendering-layer-with-no-toolkit.md) | A second rendering layer with no toolkit | stable |

@@ -25,6 +25,9 @@ export function AppRoutes({ onToggleMode }: AppRoutesProps) {
           <Button color="inherit" data-testid="toggle-mode" onClick={onToggleMode}>
             Toggle mode
           </Button>
+          <Button color="inherit" component={Link} to="/unstyled">
+            Unstyled demo
+          </Button>
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ py: 4 }}>
