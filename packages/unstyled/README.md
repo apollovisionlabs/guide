@@ -20,8 +20,23 @@ runtime.
 
 **Without the stylesheet.** Import the components and render them under `GuideProvider` (and
 `ChecklistProvider` / `HotspotProvider`, as needed) exactly as documented in the
-[root README](../../README.md). Nothing is drawn with any colour, spacing or border: every element
-is unstyled HTML carrying its `guide-` class, ready for your own stylesheet to target.
+[root README](../../README.md). Almost everything is unstyled HTML carrying its `guide-` class,
+with no spacing, border or typography of its own, ready for your own stylesheet to target. Four
+things do ship a visible default, because without them the layer is not plain, it is broken:
+
+| What | Default | How to change it |
+| --- | --- | --- |
+| The three floating surfaces (popover, hotspot bubble, launcher panel) | `background: var(--guide-surface, #ffffff)` and `color: var(--guide-ink, #111111)`, set inline | Set `--guide-surface` / `--guide-ink` on any ancestor. |
+| The spotlight overlay | a 50% black fill, an SVG presentation attribute | Any CSS `fill` rule, or `--guide-overlay` with the stylesheet loaded. |
+| The launcher progress ring | `stroke="currentColor"`, an SVG presentation attribute | Any CSS `stroke` or `color` rule. |
+| The hotspot marker's dot | `fill="currentColor"`, an SVG presentation attribute | Any CSS `fill` or `color` rule. |
+
+The surfaces' two colours are inline because a transparent panel prints its text straight over
+the page copy behind it, with no boundary at all, which is unreadable rather than plain. They are
+`var()` references rather than flat colours on purpose: a flat inline colour would beat every rule
+an adopter writes and make the package unthemeable, whereas this renders correctly with no
+stylesheet at all and still yields to one custom property set anywhere above it. The three SVG
+defaults are presentation attributes, which lose to any CSS declaration, for the same reason.
 
 **With the stylesheet.** Import the CSS once, anywhere in your app:
 
@@ -114,6 +129,17 @@ Renders nothing until the checklist's own restore from storage has settled
 (`useChecklist(checklistId).restored`), so a checklist already dismissed or partly completed never
 flashes its pre-restore state for one paint.
 
+The progress bar is determinate: `guide-checklist-bar` is the track and `guide-checklist-bar-fill`
+inside it carries the percentage as an inline `width`, so the same number a screen reader reads off
+`aria-valuenow` is the one a sighted user sees. The fill's colour and height come from CSS; only
+its width, which no stylesheet can know, is set by the component.
+
+**Differs from `@apollovisionlabs/guide-mui`:** this `Checklist` announces its progress through
+`useAnnouncer` whenever it changes, so a screen reader user ticking items hears "2 of 4" the way a
+sighted user reads it off the bar. The MUI layer's `Checklist` does not. This is deliberate, not an
+oversight on either side, but it does mean the two layers are not identical to assistive
+technology; the MUI layer is expected to gain the announcement rather than this one to lose it.
+
 ### `ChecklistLauncher`
 
 Wraps `Checklist` behind a floating button showing `completedCount/total`, opened as a panel.
@@ -127,6 +153,16 @@ Wraps `Checklist` behind a floating button showing `completedCount/total`, opene
 | `labels` | `Partial<ChecklistLauncherLabels>` | see below | Wording, extends `ChecklistLabels`. |
 
 `ChecklistLauncherLabels` adds `fabLabel: (title, completed, total) => \`${title}, ${completed} of ${total} complete\`` (the button's accessible name; the ring around it is decorative and invisible to a screen reader) and `dismissed: (title) => \`${title} dismissed\`` (a focus destination announced when the panel is dismissed).
+
+The panel closes on `Escape` and on a click anywhere outside it (the launcher button itself
+excepted, which toggles it), mirroring the hotspot bubble in this same package. Focus returns to
+the launcher button either way.
+
+The panel is a `role="dialog"` that traps focus, but it deliberately carries **no `aria-modal`**.
+This layer applies neither `aria-hidden` nor `inert` to the rest of the application, so a screen
+reader's virtual cursor can still reach the page behind the panel, and claiming `aria-modal="true"`
+would promise an inertness that is not there. The MUI layer's panel is rendered by MUI's own
+`Modal`, which does apply `aria-hidden` to the rest of the app, so it makes the claim honestly.
 
 Dismissing from inside the panel removes both the button and the panel in the same commit. Because
 nothing would be left to return focus to, an off-screen status message takes focus for a moment
@@ -165,13 +201,14 @@ build selectors against them.
 | popover footer | `guide-popover-footer` | `popover-footer` |
 | step counter | `guide-popover-count` | `popover-count` |
 | waiting sentence | `guide-popover-awaiting` | `popover-awaiting` |
-| next or finish button | `guide-button guide-button-primary` | `next` |
-| back button | `guide-button` | `previous` |
-| close button | `guide-button guide-button-icon` | `close` |
+| next or finish button | `guide-button guide-button-primary` | `popover-next` |
+| back button | `guide-button` | `popover-previous` |
+| close button | `guide-button guide-button-icon` | `popover-close` |
 | checklist container | `guide-checklist` | `checklist` |
 | checklist heading | `guide-checklist-title` | `checklist-title` |
 | checklist progress text | `guide-checklist-progress` | `checklist-progress` |
 | checklist progress bar | `guide-checklist-bar` | `checklist-bar` |
+| checklist progress fill | `guide-checklist-bar-fill` | `checklist-bar-fill` |
 | checklist item row | `guide-checklist-item` | `checklist-item` |
 | checklist item checkbox | `guide-checklist-check` | `checklist-check` |
 | checklist dismiss button | `guide-button` | `checklist-dismiss` |
@@ -203,7 +240,10 @@ shipped stylesheet has no rule for it and one would have no visible effect.
 
 ## Custom properties
 
-The shipped stylesheet reads every colour through one of these, each with a fallback:
+The shipped stylesheet reads every colour through one of these, each with a fallback. Three of
+them are also read inline by the components themselves, so they work with no stylesheet loaded:
+`--guide-surface` and `--guide-ink` on the three floating surfaces, and `--guide-launcher-offset`
+on the launcher's corner inset.
 
 | Property | Fallback | Used for |
 | --- | --- | --- |
@@ -214,7 +254,12 @@ The shipped stylesheet reads every colour through one of these, each with a fall
 | `--guide-primary` | `#2563eb` | Primary buttons, the launcher button and ring, the hotspot marker and its pulse, the checklist checkbox. |
 | `--guide-primary-ink` | `#ffffff` | Text on a primary button and on the launcher button. |
 | `--guide-overlay` | `rgba(0, 0, 0, 0.5)` | The spotlight's dimmed background. |
+| `--guide-launcher-offset` | `24px` | Distance between the checklist launcher and the two viewport edges of its corner. |
 | `--guide-radius` | `8px` | Corner radius shared by the popover, panel, bubble, checklist, buttons and progress track. |
+
+`--guide-launcher-offset` is the one to reach for when the launcher has to clear a fixed cookie
+banner or a mobile tab bar: it moves the button away from both edges of whichever corner
+`placement` puts it in.
 
 Set any subset on a wrapping element (or `:root`) to retheme:
 
@@ -245,6 +290,10 @@ flush with the button's right edge.
   Every floating part renders through a `Portal` into `document.body` specifically to avoid one
   class of positioning bug (an ancestor with `transform`, `filter` or `contain` breaking `fixed`
   positioning), but scroll containers are not accounted for.
+- **Positioning clamps against the layout viewport.** `document.documentElement.clientWidth` and
+  `clientHeight`, which exclude a space-taking scrollbar, rather than `window.innerWidth` and
+  `innerHeight`, which include it: every rect they are compared against comes from
+  `getBoundingClientRect`, which excludes it too.
 - **No runtime dependency beyond `@apollovisionlabs/guide-core`.** No UI toolkit, no styling
   runtime. Peer dependencies are `react` and `react-dom` (`^19` each).
 - **The default stacking of the hotspots and the checklist launcher share a layer.** Both default
@@ -252,10 +301,6 @@ flush with the button's right edge.
   `zIndex` prop, so an ambient hotspot marker and the checklist launcher button can end up at the
   same stacking level, ordered only by DOM order. Give one of them an explicit `zIndex` if you
   need a guaranteed order between them.
-- **No proportional fill for the checklist progress bar.** `guide-checklist-bar` exposes
-  `aria-valuenow` for assistive technology, but nothing in the markup carries the percentage as a
-  width or a custom property a stylesheet could read, so the shipped rule styles it as a flat
-  track only.
 
 ## Compatibility
 
