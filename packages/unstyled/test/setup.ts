@@ -1,9 +1,45 @@
 import '@testing-library/jest-dom/vitest'
 
+// A real ResizeObserver invokes its callback whenever an observed element's size changes,
+// which is exactly what usePosition relies on to reposition a floating element that grows or
+// shrinks after mount (a tour popover whose body text wraps to a new height, say). jsdom has
+// no ResizeObserver at all, so this stub keeps track of what each instance observes and lets a
+// test fire the callback for a given element, rather than being an inert no-op.
+type ResizeObserverStubCallback = (entries: ResizeObserverEntry[], observer: ResizeObserver) => void
+
 class ResizeObserverStub {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  static instances = new Set<ResizeObserverStub>()
+
+  private readonly callback: ResizeObserverStubCallback
+  private readonly elements = new Set<Element>()
+
+  constructor(callback: ResizeObserverStubCallback) {
+    this.callback = callback
+    ResizeObserverStub.instances.add(this)
+  }
+
+  observe(element: Element) {
+    this.elements.add(element)
+  }
+
+  unobserve(element: Element) {
+    this.elements.delete(element)
+  }
+
+  disconnect() {
+    this.elements.clear()
+    ResizeObserverStub.instances.delete(this)
+  }
+
+  fire(element: Element) {
+    if (!this.elements.has(element)) return
+    this.callback([{ target: element } as ResizeObserverEntry], this as unknown as ResizeObserver)
+  }
+}
+
+/** Fires every ResizeObserver currently observing `element`, as a browser would on a resize. */
+export function triggerResizeObserver(element: Element) {
+  for (const instance of ResizeObserverStub.instances) instance.fire(element)
 }
 
 globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver

@@ -10,11 +10,12 @@ export interface UsePositionOptions {
   padding?: number
 }
 
-// The values StepPopover already uses: an explicit 12px offset modifier, and Popper's own
-// unconfigured preventOverflow default of 0 for padding.
+// The offset matches StepPopover's explicit 12px offset modifier. No component on this
+// branch exposes a padding prop, so 8px is the default every adopter gets: enough that a
+// bubble clamped to the viewport edge does not sit flush against it.
 const DEFAULT_PLACEMENT: Placement = 'bottom'
 const DEFAULT_OFFSET = 12
-const DEFAULT_PADDING = 0
+const DEFAULT_PADDING = 8
 
 export interface UsePositionResult extends Positioned {
   /** Callback ref the floating element must carry, so its size can be measured. */

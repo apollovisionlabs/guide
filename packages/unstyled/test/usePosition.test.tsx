@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { usePosition } from '../src/usePosition'
 import { computePosition } from '../src/computePosition'
+import { triggerResizeObserver } from './setup'
 
 function setViewport(width: number, height: number) {
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
@@ -40,7 +41,7 @@ describe('usePosition', () => {
       anchorRect,
       floatingSize,
       { width: 1024, height: 768 },
-      { placement: 'bottom', offset: 12, padding: 0 },
+      { placement: 'bottom', offset: 12, padding: 8 },
     )
 
     expect(result.current.x).toBe(expected.x)
@@ -86,10 +87,51 @@ describe('usePosition', () => {
       anchorRect,
       floatingSize,
       { width: 260, height: 768 },
-      { placement: 'bottom', offset: 12, padding: 0 },
+      { placement: 'bottom', offset: 12, padding: 8 },
     )
 
     expect(result.current.x).toBe(expected.x)
+    expect(result.current.x).not.toBe(before.x)
+  })
+
+  it('recomputes when the floating element resizes after mount', () => {
+    setViewport(1024, 768)
+    const anchor = elementWithRect(anchorRect)
+    const floating = elementWithRect({ top: 0, left: 0, ...floatingSize })
+
+    const { result } = renderHook(() => usePosition(anchor, {}))
+    act(() => {
+      result.current.ref(floating)
+    })
+    const before = { x: result.current.x, y: result.current.y }
+
+    // The body text wraps to a wider box: the ordinary case for a tour popover whose content
+    // changes after the first paint, without the floating element ever unmounting.
+    const grown = { width: 250, height: 60 }
+    floating.getBoundingClientRect = vi.fn(() => ({
+      top: 0,
+      left: 0,
+      ...grown,
+      right: grown.width,
+      bottom: grown.height,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    })) as unknown as HTMLElement['getBoundingClientRect']
+
+    act(() => {
+      triggerResizeObserver(floating)
+    })
+
+    const expected = computePosition(
+      anchorRect,
+      grown,
+      { width: 1024, height: 768 },
+      { placement: 'bottom', offset: 12, padding: 8 },
+    )
+
+    expect(result.current.x).toBe(expected.x)
+    expect(result.current.y).toBe(expected.y)
     expect(result.current.x).not.toBe(before.x)
   })
 })
