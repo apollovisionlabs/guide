@@ -92,16 +92,16 @@ export function computePosition(
     }
   }
 
-  const alongX = chosen === 'top' || chosen === 'bottom'
-  if (alongX) {
-    // The lower clamp wins when the floating element is wider than the viewport, which keeps
-    // it at the padding rather than pushing it off the left edge.
-    const furthest = viewport.width - padding - floating.width
-    coords = { ...coords, x: Math.min(Math.max(coords.x, padding), Math.max(padding, furthest)) }
-  } else {
-    const furthest = viewport.height - padding - floating.height
-    coords = { ...coords, y: Math.min(Math.max(coords.y, padding), Math.max(padding, furthest)) }
-  }
+  // Clamp both axes unconditionally, not only the cross axis of the chosen side. A bubble that
+  // cannot be read at all, because it hangs off the edge of the window, is worse than one that
+  // merely overlaps the anchor it points at: an overlap is a visual imperfection, an off-screen
+  // bubble is unusable. This also covers the case where neither side fit the flip check and the
+  // originally requested side was kept as a fallback. When the chosen side already fits, both
+  // clamps are a no-op.
+  const furthestX = viewport.width - padding - floating.width
+  coords = { ...coords, x: Math.min(Math.max(coords.x, padding), Math.max(padding, furthestX)) }
+  const furthestY = viewport.height - padding - floating.height
+  coords = { ...coords, y: Math.min(Math.max(coords.y, padding), Math.max(padding, furthestY)) }
 
   return { x: coords.x, y: coords.y, placement: chosen }
 }

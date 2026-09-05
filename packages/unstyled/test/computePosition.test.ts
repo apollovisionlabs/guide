@@ -74,4 +74,30 @@ describe('computePosition', () => {
     expect(Number.isFinite(result.x)).toBe(true)
     expect(Number.isFinite(result.y)).toBe(true)
   })
+
+  it('keeps the box inside the viewport on both axes when neither side fits', () => {
+    const tall = { width: 200, height: 700 }
+    const result = computePosition(centred, tall, viewport, options)
+    expect(result).toEqual({ x: 350, y: 92, placement: 'bottom' })
+    expect(result.x).toBeGreaterThanOrEqual(8)
+    expect(result.x + tall.width).toBeLessThanOrEqual(992)
+    expect(result.y).toBeGreaterThanOrEqual(8)
+    expect(result.y + tall.height).toBeLessThanOrEqual(792)
+  })
+
+  it('composes a flip with a cross-axis shift in the same call', () => {
+    // Too close to the bottom edge (indeed past it) to fit below, and too close to the right
+    // edge to centre. A short floating element makes the flipped side's own far edge the thing
+    // that overflows, not just the near edge that decides the flip.
+    const nearBottomRight = { top: 820, left: 950, width: 40, height: 5 }
+    const short = { width: 200, height: 10 }
+    const result = computePosition(nearBottomRight, short, viewport, options)
+    expect(result).toEqual({ x: 792, y: 782, placement: 'top' })
+  })
+
+  it('inverts the clamp bound through an extreme padding rather than an oversized floating element', () => {
+    const anchor = { top: 450, left: 100, width: 100, height: 40 }
+    const result = computePosition(anchor, floating, viewport, { ...options, placement: 'right', padding: 370 })
+    expect(result).toEqual({ x: 370, y: 370, placement: 'right' })
+  })
 })
