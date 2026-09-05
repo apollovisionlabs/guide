@@ -294,7 +294,7 @@ function HotspotMarker({
           <p id={bodyId} className="guide-hotspot-body" data-guide-part="hotspot-body">
             {hotspot.body}
           </p>
-          <div>
+          <div className="guide-hotspot-actions" data-guide-part="hotspot-actions">
             {hotspot.tourId && (
               <button
                 type="button"
