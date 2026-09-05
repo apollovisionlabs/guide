@@ -87,6 +87,23 @@ describe('Checklist', () => {
     expect(fill?.style.width).toBe('33%')
   })
 
+  it('draws the bar itself with no stylesheet, through custom properties an adopter can set', async () => {
+    // The fill's width alone was not enough: with no stylesheet the track had height 0 and the
+    // fill no background, so a component that claims to render a progress bar rendered
+    // literally nothing. Absent is not plain. Same indirection as every other legibility
+    // default in this package: works with no CSS, still rethemes from one variable.
+    const { container } = renderChecklist(<Checklist checklistId="demo" />, {
+      storage: storageWithCompleted(['one']),
+    })
+    await screen.findByText('1 of 3', { selector: '.guide-checklist-progress' })
+    const track = container.querySelector<HTMLElement>('[data-guide-part="checklist-bar"]')
+    const fill = container.querySelector<HTMLElement>('[data-guide-part="checklist-bar-fill"]')
+    expect(track?.style.height).toBe('var(--guide-bar-height, 4px)')
+    expect(track?.style.background).toBe('var(--guide-border, #d9d9d9)')
+    expect(fill?.style.height).toBe('100%')
+    expect(fill?.style.background).toBe('var(--guide-primary, #2563eb)')
+  })
+
   it('renders one row per item with the completed one marked', async () => {
     renderChecklist(<Checklist checklistId="demo" />, {
       storage: storageWithCompleted(['one']),

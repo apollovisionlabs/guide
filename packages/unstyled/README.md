@@ -21,7 +21,7 @@ runtime.
 **Without the stylesheet.** Import the components and render them under `GuideProvider` (and
 `ChecklistProvider` / `HotspotProvider`, as needed) exactly as documented in the
 [root README](../../README.md). Almost everything is unstyled HTML carrying its `guide-` class,
-with no spacing, border or typography of its own, ready for your own stylesheet to target. Four
+with no spacing, border or typography of its own, ready for your own stylesheet to target. Five
 things do ship a visible default, because without them the layer is not plain, it is broken:
 
 | What | Default | How to change it |
@@ -30,10 +30,13 @@ things do ship a visible default, because without them the layer is not plain, i
 | The spotlight overlay | a 50% black fill, an SVG presentation attribute | Any CSS `fill` rule, or `--guide-overlay` with the stylesheet loaded. |
 | The launcher progress ring | `stroke="currentColor"`, an SVG presentation attribute | Any CSS `stroke` or `color` rule. |
 | The hotspot marker's dot | `fill="currentColor"`, an SVG presentation attribute | Any CSS `fill` or `color` rule. |
+| The checklist progress bar | a 4px track in `--guide-border` with a fill in `--guide-primary`, set inline | Set `--guide-bar-height`, `--guide-border` or `--guide-primary`. |
 
 The surfaces' two colours are inline because a transparent panel prints its text straight over
-the page copy behind it, with no boundary at all, which is unreadable rather than plain. They are
-`var()` references rather than flat colours on purpose: a flat inline colour would beat every rule
+the page copy behind it, with no boundary at all, which is unreadable rather than plain; the
+progress bar's are inline because a bar with no height and no colour draws nothing at all, and a
+component that says it renders a bar and renders nothing is absent rather than plain. All of them
+are `var()` references rather than flat colours on purpose: a flat inline colour would beat every rule
 an adopter writes and make the package unthemeable, whereas this renders correctly with no
 stylesheet at all and still yields to one custom property set anywhere above it. The three SVG
 defaults are presentation attributes, which lose to any CSS declaration, for the same reason.
@@ -111,6 +114,14 @@ The tour's dialog: title, body, step count and navigation buttons.
 `Escape` stops the tour, `ArrowRight` advances, `ArrowLeft` goes back; all three are ignored while
 focus is in a text input, and `ArrowRight` is also ignored while `awaitsAction` is set.
 
+**Rendering it standalone: pass `modal={false}`.** With `modal` left at its default the popover
+emits `aria-modal="true"`, which tells a screen reader that everything outside it is inert. Under
+`GuideTour` that is true, because the `Spotlight` overlay is mounted with it and really does swallow
+the page. Rendered on its own it is not: this layer applies neither `aria-hidden` nor `inert` to
+anything, so the claim would be a promise nothing keeps, exactly the one `ChecklistLauncher`'s panel
+deliberately does not make. Pass `modal={false}` unless you are supplying an inert layer of your
+own, in which case keep the default and the claim is yours to honour.
+
 ### `Checklist`
 
 Renders a checklist inline: a progress bar, one row per item with a checkbox and a dismiss button.
@@ -131,8 +142,10 @@ flashes its pre-restore state for one paint.
 
 The progress bar is determinate: `guide-checklist-bar` is the track and `guide-checklist-bar-fill`
 inside it carries the percentage as an inline `width`, so the same number a screen reader reads off
-`aria-valuenow` is the one a sighted user sees. The fill's colour and height come from CSS; only
-its width, which no stylesheet can know, is set by the component.
+`aria-valuenow` is the one a sighted user sees. The track's height and both colours are inline too,
+through `--guide-bar-height`, `--guide-border` and `--guide-primary`, so the bar is drawn with no
+stylesheet loaded and still rethemes from those three variables. The stylesheet adds only its
+margin and its corner radius.
 
 **Differs from `@apollovisionlabs/guide-mui`:** this `Checklist` announces its progress through
 `useAnnouncer` whenever it changes, so a screen reader user ticking items hears "2 of 4" the way a
@@ -241,9 +254,10 @@ shipped stylesheet has no rule for it and one would have no visible effect.
 ## Custom properties
 
 The shipped stylesheet reads every colour through one of these, each with a fallback. Three of
-them are also read inline by the components themselves, so they work with no stylesheet loaded:
-`--guide-surface` and `--guide-ink` on the three floating surfaces, and `--guide-launcher-offset`
-on the launcher's corner inset.
+of them are also read inline by the components themselves, so they work with no stylesheet loaded:
+`--guide-surface` and `--guide-ink` on the three floating surfaces, `--guide-launcher-offset` on the
+launcher's corner inset, and `--guide-bar-height`, `--guide-border` and `--guide-primary` on the
+checklist progress bar.
 
 | Property | Fallback | Used for |
 | --- | --- | --- |
@@ -255,6 +269,7 @@ on the launcher's corner inset.
 | `--guide-primary-ink` | `#ffffff` | Text on a primary button and on the launcher button. |
 | `--guide-overlay` | `rgba(0, 0, 0, 0.5)` | The spotlight's dimmed background. |
 | `--guide-launcher-offset` | `24px` | Distance between the checklist launcher and the two viewport edges of its corner. |
+| `--guide-bar-height` | `4px` | Thickness of the checklist progress bar. |
 | `--guide-radius` | `8px` | Corner radius shared by the popover, panel, bubble, checklist, buttons and progress track. |
 
 `--guide-launcher-offset` is the one to reach for when the launcher has to clear a fixed cookie

@@ -131,19 +131,18 @@
   margin-right: auto;
 }
 
-/* The track, and the filled portion drawn over it. The component sets only the fill's width,
-which is the one thing CSS cannot know; its colour and its height belong here. */
+/* The track, and the filled portion drawn over it. Their height and their two colours are set
+inline by the component, through the same custom properties named below, so the bar is drawn
+with no stylesheet at all: repeating those declarations here would be dead, since an inline
+style always wins. What is left is what only a stylesheet does. Retheme through
+`--guide-bar-height`, `--guide-border` and `--guide-primary`. */
 .guide-checklist-bar {
-  height: 4px;
   margin: 12px 0;
-  background: var(--guide-border, #d9d9d9);
   border-radius: var(--guide-radius, 8px);
   overflow: hidden;
 }
 
 .guide-checklist-bar-fill {
-  height: 100%;
-  background: var(--guide-primary, #2563eb);
   border-radius: inherit;
 }
 

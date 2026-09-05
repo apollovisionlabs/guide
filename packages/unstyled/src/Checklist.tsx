@@ -84,15 +84,28 @@ export function Checklist({ checklistId, title, onDismiss, onActivate, labels }:
         aria-valuenow={progress}
         aria-valuemin={0}
         aria-valuemax={100}
+        // A bar that draws nothing at all is not plain, it is absent: with these left to the
+        // stylesheet the track had height 0 and the fill no colour, so a component that says it
+        // renders a progress bar rendered literally nothing without CSS. Same indirection as
+        // every other legibility default in this package: var() with a fallback, so it works
+        // with no stylesheet AND still rethemes from one variable set on any ancestor.
+        style={{
+          height: 'var(--guide-bar-height, 4px)',
+          background: 'var(--guide-border, #d9d9d9)',
+        }}
       >
         {/* The track alone could never show progress: the computed value was spent entirely on
         aria-valuenow, so a screen reader user heard "33" while a sighted user saw a flat bar
-        forever. The width is data-driven geometry, which is why it is inline; the fill's
-        colour and height stay in the stylesheet, where appearance belongs. */}
+        forever. The width is data-driven geometry, which is the one thing no stylesheet can
+        know; the height simply fills the track it sits in. */}
         <div
           className="guide-checklist-bar-fill"
           data-guide-part="checklist-bar-fill"
-          style={{ width: `${progress}%` }}
+          style={{
+            width: `${progress}%`,
+            height: '100%',
+            background: 'var(--guide-primary, #2563eb)',
+          }}
         />
       </div>
       <ul className="guide-checklist-list">
