@@ -49,6 +49,7 @@ Take `packages/mui/package.json`, `tsconfig.json`, `tsup.config.ts` and `vitest.
 {
   "name": "@apollovisionlabs/guide-unstyled",
   "version": "0.0.0",
+  "sideEffects": ["*.css"],
   "files": ["dist", "styles.css", "README.md", "LICENSE"],
   "exports": {
     ".": {
@@ -64,7 +65,12 @@ Take `packages/mui/package.json`, `tsconfig.json`, `tsup.config.ts` and `vitest.
 }
 ```
 
-There are no `devDependencies` and no `@mui/material`, `@emotion/*` peers. Keep `type`, `license`, `sideEffects`, `main`, `module`, `types`, `publishConfig`, `repository` and `scripts` identical in shape to the sibling's.
+There are no `devDependencies` and no `@mui/material`, `@emotion/*` peers. Keep `type`, `license`, `main`, `module`, `types`, `publishConfig`, `repository` and `scripts` identical in shape to the sibling's.
+
+`sideEffects` deliberately does NOT match the sibling. `guide-mui` sets it to `false`, which is right for a
+package that ships no CSS. Here that value would let a bundler drop an adopter's
+`import '@apollovisionlabs/guide-unstyled/styles.css'` on the grounds that it does nothing, and they would
+get unstyled markup with no error explaining it. `["*.css"]` is the value.
 
 `tsup.config.ts`: same as the sibling with `external` reduced to `['react', 'react-dom', '@apollovisionlabs/guide-core']`.
 
@@ -159,7 +165,8 @@ describe('computePosition', () => {
   })
 
   it('flips to the opposite side when the requested one overflows', () => {
-    // 60px from the bottom edge: a 100px bubble plus an 8px offset does not fit below.
+    // Its lower edge is 20px from the bottom of the viewport, so a 100px bubble plus an 8px offset
+    // does not fit below it.
     const low = { top: 740, left: 400, width: 100, height: 40 }
     const result = computePosition(low, floating, viewport, options)
     expect(result.placement).toBe('top')
@@ -558,7 +565,7 @@ Document the full list of custom properties in the README.
 
 - [ ] **Step 2: Prove the stylesheet matches the markup**
 
-Write a test that reads `styles.css` and the built component source, extracts every `.guide-` class the stylesheet targets, and asserts each one appears in the source. A stylesheet naming a class nothing renders is dead, and a part nothing styles is invisible in the default look. Prove it red by adding a rule for a class that does not exist, then remove it.
+Write a test that reads `styles.css` and `packages/unstyled/src/*.tsx`, extracts every `.guide-` class the stylesheet targets, and asserts each one appears in the source. A stylesheet naming a class nothing renders is dead, and a part nothing styles is invisible in the default look. Prove it red by adding a rule for a class that does not exist, then remove it.
 
 - [ ] **Step 3: Write the package README**
 
