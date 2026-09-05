@@ -1,5 +1,15 @@
 # @apollovisionlabs/guide-mui
 
+## 0.4.1
+
+### Patch Changes
+
+- 18d139e: Documentation only, no code change. Both READMEs now mention `@apollovisionlabs/guide-unstyled`,
+  the plain DOM rendering layer that ships alongside `@apollovisionlabs/guide-mui`: in the
+  introduction, in the compatibility table, and in the prior art section.
+- Updated dependencies [18d139e]
+  - @apollovisionlabs/guide-core@0.3.1
+
 ## 0.4.0
 
 ### Minor Changes
