@@ -267,6 +267,34 @@ describe('ChecklistLauncher', () => {
     expect(screen.queryByRole('button', { name: /Get started/ })).not.toBeInTheDocument()
   })
 
+  it('hides the dismissal confirmation visually without depending on a stylesheet', async () => {
+    const user = userEvent.setup()
+    renderLauncher(<ChecklistLauncher checklistId="demo" title="Get started" />)
+    await user.click(screen.getByRole('button', { name: /Get started/ }))
+    await screen.findByRole('dialog')
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+
+    const confirmation = await screen.findByText('Get started dismissed')
+    // Asserted as the exact declarations that do the hiding, not a vague "is hidden": jsdom
+    // computes no layout, so a check against the rendered box (e.g. its bounding rect) would
+    // pass against almost anything. This element exists only as a focus destination and is
+    // never meant to be seen, styled or not, so these are set inline rather than left to a
+    // class a stylesheet might not have loaded yet, the same way packages/core/src/a11y.ts's
+    // announcerNode hides its own always-present live region.
+    //
+    // clip is set in the source (see ChecklistLauncher.tsx) but is not asserted here: jsdom's
+    // CSSStyleDeclaration does not implement the property at all, silently dropping it from
+    // both a plain `node.style.clip = ...` and React's style object alike, which is exactly
+    // why a11y.ts's own test of the identical pattern never asserts it either. Real browsers
+    // do implement it.
+    expect(confirmation).toHaveStyle({
+      width: '1px',
+      height: '1px',
+      overflow: 'hidden',
+      whiteSpace: 'nowrap',
+    })
+  })
+
   it('drops the dismissal confirmation once focus moves on', async () => {
     const user = userEvent.setup()
     renderLauncher(<ChecklistLauncher checklistId="demo" title="Get started" />)

@@ -130,7 +130,22 @@ export function ChecklistLauncher({
             node?.focus()
           }}
           onBlur={() => setDismissedHere(false)}
-          style={{ position: 'fixed', top: 0, left: 0 }}
+          // This element exists only as a focus destination: nobody, styled or not, is meant
+          // to see it, so hiding it is mechanics rather than appearance the styling contract
+          // reserves to a class. `announcerNode` in packages/core/src/a11y.ts settles the same
+          // question the same way, setting these properties directly on the node it creates;
+          // this mirrors that precedent rather than leaving the sink plainly visible until a
+          // stylesheet happens to be loaded, the same failure the spotlight shipped with.
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: 1,
+            height: 1,
+            overflow: 'hidden',
+            clip: 'rect(0 0 0 0)',
+            whiteSpace: 'nowrap',
+          }}
         >
           {text.dismissed(title ?? 'Checklist')}
         </div>
