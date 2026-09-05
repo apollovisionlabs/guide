@@ -1,3 +1,6 @@
 export * from './computePosition'
 export * from './usePosition'
 export * from './Portal'
+export * from './Spotlight'
+export * from './StepPopover'
+export * from './GuideTour'
