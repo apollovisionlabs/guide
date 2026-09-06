@@ -10,6 +10,14 @@ generated:
   directed_by: human:remy dème
 ---
 
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/guide-logo-dark.svg">
+    <img src="docs/assets/guide-logo-light.svg" width="240" alt="guide, by Apollo Vision Labs">
+  </picture>
+</p>
+
 # guide
 
 `guide` is a headless React library for building in-app product tours. `@apollovisionlabs/guide-core` owns the
