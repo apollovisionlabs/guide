@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="64" viewBox="0 0 240 64" role="img" aria-label="guide, by Apollo Vision Labs">
+  <g transform="translate(4,10)">
+    <path d="M22 6 L37 36 H30.8 L22 17.6 L13.2 36 H7 Z" fill="#1a4fd8" transform="scale(1.0)"/>
+    <circle cx="22" cy="29.8" r="3.6" fill="#1a4fd8"/>
+  </g>
+  <text x="52" y="42" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="30" font-weight="650" letter-spacing="-0.5" fill="#16181d">guide</text>
+  <text x="53" y="56" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="8.5" letter-spacing="2.4" fill="#1a4fd8">APOLLO VISION LABS</text>
+</svg>
